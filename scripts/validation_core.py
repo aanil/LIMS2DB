@@ -54,4 +54,4 @@ if __name__ == "__main__":
     help = "number of days to look back for projects open date")
 
     args = parser.parse_args()
-    validate_cores(parser.days)
+    validate_cores(args.days)
