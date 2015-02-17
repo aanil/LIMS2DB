@@ -53,4 +53,5 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--days", dest="days", type=int, default=90,  
     help = "number of days to look back for projects open date")
 
+    args = parser.parse_args()
     validate_cores(parser.days)
