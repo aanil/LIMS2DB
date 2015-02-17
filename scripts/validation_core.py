@@ -8,10 +8,10 @@ import scilifelab.lims_utils.objectsDB as oldDB
 import datetime
 import argparse
 
-def validate_cores(days):
+def validate_cores(args):
     mylims = Lims(BASEURI, USERNAME, PASSWORD)
     pjs=mylims.get_projects()
-    couch = load_couch_server('/Users/denismoreno/opt/config/post_process.yaml')
+    couch = load_couch_server(args.conf)
     proj_db = couch['projects']
     samp_db = couch['samples']
     tested=0
@@ -22,7 +22,7 @@ def validate_cores(days):
             opDate=datetime.datetime.strptime(p.open_date, '%Y-%m-%d')
             now=datetime.datetime.now()
 
-            if now-opDate < datetime.timedelta(days=days):
+            if now-opDate < datetime.timedelta(days=args.days):
                 tested+=1
                 print "comparing project {0}".format(p.name)
                 oldpj= oldDB.ProjectDB(mylims, p.id, samp_db)
@@ -52,6 +52,9 @@ if __name__ == "__main__":
     
     parser.add_argument("-d", "--days", dest="days", type=int, default=90,  
     help = "number of days to look back for projects open date")
+    parser.add_option("-c", "--conf", dest = "conf", default = os.path.join(
+                      os.environ['HOME'],'opt/config/post_process.yaml'), help =
+                      "Config file.  Default: ~/opt/config/post_process.yaml")
 
     args = parser.parse_args()
-    validate_cores(args.days)
+    validate_cores(args)
