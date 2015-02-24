@@ -57,9 +57,9 @@ def main(args):
         else:
             log.warn("more than one row with name {0} found".format(ws.obj['name']))
     else:
-        yesterday = datetime.today() - timedelta(args.days)
-        stryes = yesterday.strftime("%Y-%m-%dT%H:%M:%SZ")
-        wsts = lims.get_processes(type=pc.WORKSET.values(),last_modified=stryes)
+        starting_date= datetime.today() - timedelta(args.days)
+        str_date= starting_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+        wsts = lims.get_processes(type=pc.WORKSET.values(),last_modified=str_date)
         masterProcess(args, wsts, lims, log)
     
     
