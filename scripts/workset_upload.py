@@ -7,7 +7,7 @@ from genologics.lims_utils import *
 from genologics.config import BASEURI, USERNAME, PASSWORD
 import process_categories as pc 
 from datetime import datetime, timedelta
-import statusdb.db as sdb
+from statusdb.db.utils import *
 import multiprocessing as mp
 import Queue
 import logging
