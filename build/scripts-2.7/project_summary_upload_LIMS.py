@@ -1,27 +1,27 @@
-#!/Users/denismoreno/anaconda/envs/test/bin/python
+#!/Users/denismoreno/anaconda/envs/lims2db/bin/python
 """Script to load project info from Lims into the project database in statusdb.
 
 Maya Brandi, Science for Life Laboratory, Stockholm, Sweden.
 """
 from __future__ import print_function
-import sys
-import os
-import codecs
+from genologics.config import BASEURI, USERNAME, PASSWORD
+from genologics.lims import *
+from LIMS2DB.objectsDB.functions import *
 from optparse import OptionParser
 from statusdb.db.utils import *
+
 from pprint import pprint
-from genologics.lims import *
-from genologics.config import BASEURI, USERNAME, PASSWORD
 
-import LIMS2DB.objectsDB.objectsDB as DB
-from LIMS2DB.objectsDB.functions import *
-
+import codecs
 import datetime
-import time
-import multiprocessing as mp
-import Queue
+import LIMS2DB.objectsDB.objectsDB as DB
 import logging
 import logging.handlers
+import multiprocessing as mp
+import os
+import Queue
+import sys
+import time
 
    
 class PSUL():

@@ -395,18 +395,18 @@ class SampleDB():
                     else:
                         key = None 
                     if key:
-                        lims_run = Process(lims, id = steps.lastseq['id'])
-                        run_dict = dict(lims_run.udf.items())
+                        lims_run = Process(self.lims, id = steps.lastseq['id'])
+                        run_dict = dict(self.lims_run.udf.items())
                         if preps[key].has_key('reagent_label') and run_dict.has_key('Finish Date'):
                             try:
-                                dem_art = Artifact(lims, id = steps.latestdem['outart'])
+                                dem_art = Artifact(self.lims, id = steps.latestdem['outart'])
                                 dem_qc = dem_art.qc_flag
                             except ValueError:
                                 #Miseq projects might not have a demultiplexing step here
                                 #so the artifact id might be None
                                 dem_qc=None
-                            seq_art = Artifact(lims, id = steps.lastseq['inart'])
-                            lims_run = Process(lims, id = steps.lastseq['id'])
+                            seq_art = Artifact(self.lims, id = steps.lastseq['inart'])
+                            lims_run = Process(self.lims, id = steps.lastseq['id'])
                             samp_run_met_id = self._make_sample_run_id(seq_art, 
                                                            lims_run, preps[key],
                                                           steps.lastseq['type'])
@@ -432,7 +432,7 @@ class SampleDB():
     def _make_sample_run_id(self, seq_art, lims_run, prep, run_type):
         samp_run_met_id = None
         barcode = self._get_barcode(prep['reagent_label'])
-        if run_type == "MiSeq Run (MiSeq) 4.0":
+        if run_type in ["46", "MiSeq Run (MiSeq) 4.0"]:
             lane = seq_art.location[1].split(':')[1]
         else:
             lane = seq_art.location[1].split(':')[0]
@@ -497,7 +497,7 @@ class SampleDB():
                                         pro_per_art = self.processes_per_artifact)
                     steps = ProcessSpec(history.history, history.history_list, 
                                         self.application)
-                    prep = Prep(self.name)
+                    prep = Prep(self.name, self.lims)
                     prep.set_prep_info(steps, self.application)
                     if not preps.has_key(prep.id2AB) and prep.id2AB:
                         preps[prep.id2AB] = prep.prep_info
@@ -536,7 +536,7 @@ class SampleDB():
         not go through POOLING, the reagent_labels are fetched from the input 
         artifact of the last AGRLIBVAL step in the history"""
         if steps.firstpoolstep:
-            inart = Artifact(lims, id = steps.firstpoolstep['inart'])
+            inart = Artifact(self.lims, id = steps.firstpoolstep['inart'])
             if len(inart.reagent_labels) == 1:
                 return inart.reagent_labels[0]
         if last_libval.has_key('reagent_labels'): 
@@ -622,8 +622,8 @@ class InitialQC():
             if self.steps.initialqstart:
                 self.initialqc_info['start_date'] = self.steps.initialqstart['date']
             if self.steps.initialqcend:
-                inart = Artifact(lims, id = self.steps.initialqcend['inart'])
-                process = Process(lims,id = self.steps.initialqcend['id'])
+                inart = Artifact(self.lims, id = self.steps.initialqcend['inart'])
+                process = Process(self.lims,id = self.steps.initialqcend['id'])
                 self.initialqc_info.update(udf_dict(inart))
                 initials = process.technician.initials
                 self.initialqc_info['initials'] = initials
@@ -632,7 +632,7 @@ class InitialQC():
             if self.steps.latestCaliper:
                 self.initialqc_info['caliper_image'] = get_caliper_img(
                                                                self.sample_name,
-                                           self.steps.latestCaliper['id'], lims)
+                                           self.steps.latestCaliper['id'], self.lims)
         return delete_Nones(self.initialqc_info)
 
 
@@ -764,7 +764,8 @@ class Prep():
     sample prep in the project database on status db. Each sample can have 
     many preps. Their keys are named A,B,C,etc.""" 
     
-    def __init__(self, sample_name):
+    def __init__(self, sample_name, lims_instance):
+        self.lims=lims_instance
         self.sample_name=sample_name
         self.prep_info = {
             'reagent_label': None,
@@ -821,12 +822,12 @@ class Prep():
                 self.prep_info['pre_prep_start_date'] = steps.preprepstart['date']
                 self.id2AB = steps.preprepstart['id']
                 if steps.preprepstart['outart']:
-                    art = Artifact(lims, id = steps.preprepstart['outart'])
+                    art = Artifact(self.lims, id = steps.preprepstart['outart'])
                     self.prep_info.update(udf_dict(art))
             elif steps.prepstart:
                 self.id2AB = steps.prepstart['id']
                 if steps.prepstart['outart']:
-                    art = Artifact(lims, id = steps.prepstart['outart'])
+                    art = Artifact(self.lims, id = steps.prepstart['outart'])
                     self.prep_info.update(udf_dict(art))
         if steps.libvalend:
             self.library_validations = self._get_lib_val_info(steps.libvalends,
@@ -866,7 +867,7 @@ class Prep():
                                          libvalstart.has_key('date')) else None
         for agrlibQCstep in agrlibQCsteps:
             library_validation = self.lib_val_templ
-            inart = Artifact(lims, id = agrlibQCstep['inart'])
+            inart = Artifact(self.lims, id = agrlibQCstep['inart'])
             if agrlibQCstep.has_key('date'):
                 library_validation['finish_date'] = agrlibQCstep['date']
             library_validation['start_date'] = start_date
@@ -874,14 +875,14 @@ class Prep():
             library_validation['prep_status'] = inart.qc_flag
             library_validation['reagent_labels'] = inart.reagent_labels
             library_validation.update(udf_dict(inart))
-            initials = Process(lims, id = agrlibQCstep['id']).technician.initials
+            initials = Process(self.lims, id = agrlibQCstep['id']).technician.initials
             if initials:
                 library_validation['initials'] = initials
             if library_validation.has_key("size_(bp)"):
                 average_size_bp = library_validation.pop("size_(bp)")
                 library_validation["average_size_bp"] = average_size_bp
-            if latest_caliper_id and (Process(lims, id=latest_caliper_id['id'])).date_run >= (Process(lims, id=libvalstart['id']).date_run):
+            if latest_caliper_id and (Process(self.lims, id=latest_caliper_id['id'])).date_run >= (Process(self.lims, id=libvalstart['id']).date_run):
                 library_validation["caliper_image"] = get_caliper_img(self.sample_name,
-                                                        latest_caliper_id['id'], lims)
+                                                        latest_caliper_id['id'], self.lims)
             library_validations[agrlibQCstep['id']] = delete_Nones(library_validation)
         return delete_Nones(library_validations) 
