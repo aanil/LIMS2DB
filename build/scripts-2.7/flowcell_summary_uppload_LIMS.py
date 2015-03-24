@@ -1,4 +1,4 @@
-#!/home/maya.brandi/anaconda/envs/LIMS2DB150125/bin/python
+#!/Users/denismoreno/anaconda/envs/lims2db/bin/python
 
 """Script to load runinfo from the lims process: 'Illumina Sequencing (Illumina SBS) 4.0' 
 into the flowcell database in statusdb.
@@ -19,7 +19,6 @@ from LIMS2DB.objectsDB.process_categories import *
 
 lims = Lims(BASEURI, USERNAME, PASSWORD)
 import logging
-import logging.handlers
 
 def get_run_qcs(fc, lanesobj):
     for art in fc.all_inputs():
@@ -71,7 +70,7 @@ def  main(flowcell, all_flowcells,days,conf):
                     if delta.days < days:
                         dbobj["illumina"]["run_summary"] = get_sequencing_info(fc)
                         info = save_couchdb_obj(fc_db, dbobj)
-                        logger.info('flowcell %s %s : _id = %s' % (flowcell_name, info, key))
+                        logging.info('flowcell %s %s : _id = %s' % (flowcell_name, info, key))
     elif flowcell is not None:
         if '-' in flowcell:
             flowcell_name = flowcell
@@ -87,7 +86,7 @@ def  main(flowcell, all_flowcells,days,conf):
             dbobj["illumina"]["run_summary"] = get_sequencing_info(fc)
             get_run_qcs(fc, dbobj['lanes'])
             info = save_couchdb_obj(fc_db, dbobj)
-            logger.info('flowcell %s %s : _id = %s' % (flowcell_name, info, key))
+            logging.info('flowcell %s %s : _id = %s' % (flowcell_name, info, key))
                 
 
 if __name__ == '__main__':
@@ -108,7 +107,6 @@ if __name__ == '__main__':
     help = "Config file.  Default: ~/opt/config/post_process.yaml")
 
     (options, args) = parser.parse_args()
-    logger = logging.getLogger('fsullogger')
-    logger.setLevel(level=logging.INFO)
+    logging.basicConfig(filename='fsul.log',level=logging.INFO)
     main(options.flowcell_name, options.all_flowcells, options.days, options.conf)
 
