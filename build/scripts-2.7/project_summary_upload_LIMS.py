@@ -1,10 +1,9 @@
-#!/home/maya.brandi/anaconda/envs/LIMS2DB150125/bin/python
-from __future__ import print_function
+#!/Users/denismoreno/anaconda/envs/test/bin/python
 """Script to load project info from Lims into the project database in statusdb.
 
 Maya Brandi, Science for Life Laboratory, Stockholm, Sweden.
 """
-
+from __future__ import print_function
 import sys
 import os
 import codecs
