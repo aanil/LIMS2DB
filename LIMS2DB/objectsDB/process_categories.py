@@ -20,7 +20,7 @@ AGRINITQC = {'Description':'Aggregation step of the initial qc protocol',
     '7' : 'Aggregate QC (DNA) 4.0',
     '9' : 'Aggregate QC (RNA) 4.0'}
 PREPREPSTART = {'Description':'Process/processes that can be defined as a start of the library preparation protocol. If the work flow involves two library preparation protocols, such as for exome captue, only the steps of the first protocol should be given here.',
-    '304' : "Ligate 3' adapters (TruSeq small RNA) 1.0"}
+    '304' : "Ligate 3' adapters (TruSeq small RNA) 1.0",
     '74' : 'Shear DNA (SS XT) 4.0'}
 POOLING = {'Description':'To identify the reagent labels (indexes) of each sample. If multiple pooling steps, the first pooling step after indexing should be specified',
     '42': "Library Pooling (Illumina SBS) 4.0",
