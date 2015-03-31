@@ -775,6 +775,7 @@ class Prep():
             'prep_finished_date': None,
             'prep_id': None,
             'workset_setup': None,
+            'workset_name': None,
             'pre_prep_start_date' : None}
         self.id2AB = None
         self.library_validations = {}
@@ -802,6 +803,7 @@ class Prep():
         prep_finished_date  Process         date-run    The date-run of a PREPEND step
         prep_id             Process         id          The lims id of a PREPEND step
         workset_setup       Process         id          The lims id of the last WORKSET step
+        workset_name        Analyte         id          The name of the output artifact with the corresponding sample of the last WORKSET step
         pre_prep_start_date Process         date-run    The date-run of process 'Shear DNA (SS XT) 4.0'. Only for 'Exome capture' projects   
         amount_taken_(ng)   Artifact        udf         'Amount Taknd (ng)' of the output artifact of the first PREPSTART and PREPREPSTART steps in the history
 
@@ -818,6 +820,10 @@ class Prep():
                 self.prep_info['prep_id'] = steps.prepend['id']
             if steps.workset:
                 self.prep_info['workset_setup'] = steps.workset['id']
+                outs=Process(self.lims,id=steps.workset['id']).all_outputs()
+                for out in outs:
+                    if out.type == "Analyte" and len(out.samples) == 1 and out.samples[0].name == self.sample_name: 
+                        self.prep_info['workset_name'] = out.location[0].name
             if steps.preprepstart:
                 self.prep_info['pre_prep_start_date'] = steps.preprepstart['date']
                 self.id2AB = steps.preprepstart['id']
