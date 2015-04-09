@@ -19,6 +19,7 @@ These processes are used to set the sequencing_start_date
 ID  process Name
 === =======================================
 26	Denature, Dilute and Load Sample (MiSeq) 4.0
+710	Cluster Generation (HiSeq X) 1.0
 23	Cluster Generation (Illumina SBS) 4.0
 === =======================================
     
@@ -48,6 +49,7 @@ Process/processes that can be defined as a start of the library preparation prot
 === =======================================
 ID  process Name
 === =======================================
+74	Shear DNA (SS XT) 4.0
 304	Ligate 3' adapters (TruSeq small RNA) 1.0
 === =======================================
     
@@ -91,6 +93,7 @@ To identify the reagent labels (indexes) of each sample. If multiple pooling ste
 ID  process Name
 === =======================================
 308	Library Pooling (TruSeq Small RNA) 1.0
+716	Library Pooling (HiSeq X) 1.0
 58	Pooling For Multiplexed Sequencing (SS XT) 4.0
 255	Library Pooling (Finished Libraries) 4.0
 44	Library Pooling (TruSeq Amplicon) 4.0
@@ -154,6 +157,7 @@ These processes are used to set the dilution_and_pooling_start_date
 ID  process Name
 === =======================================
 39	Library Normalization (Illumina SBS) 4.0
+715	Library Normalization (HiSeq X) 1.0
 40	Library Normalization (MiSeq) 4.0
 === =======================================
     
@@ -216,6 +220,7 @@ Sequencing
 ID  process Name
 === =======================================
 46	MiSeq Run (MiSeq) 4.0
+714	Illumina Sequencing (HiSeq X) 1.0
 38	Illumina Sequencing (Illumina SBS) 4.0
 === =======================================
     
@@ -243,6 +248,7 @@ ID  process Name
 407	Fragment DNA (ThruPlex)
 10	Aliquot Libraries for Hybridization (SS XT)
 117	Applications Generic Process
+454	ThruPlex template preparation and synthesis
 33	Fragment DNA (TruSeq DNA) 4.0
 47	mRNA Purification, Fragmentation & cDNA synthesis (TruSeq RNA) 4.0
 308	Library Pooling (TruSeq Small RNA) 1.0
