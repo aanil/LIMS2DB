@@ -74,7 +74,14 @@ def recursive_comp(stage, prod):
             prod_val = prod[key]
             stage_val = stage[key]
             if (prod_val != stage_val):
-                diff = True
+                if 'genologics.scilifelab.se' in prod_val and 'genologics-stage.scilifelab.se' in stage_val:
+                    stage_val.replace('genologics-stage.scilifelab.se', 'genologics.scilifelab.se')
+                    if (prod_val != stage_val):
+                        diff=True
+                    else:
+                        diff=False
+                else:
+                    diff = True
                 if (type(prod_val) is dict) and (type(stage_val) is dict):
                     diff = diff and recursive_comp(stage_val, prod_val)
                 else:
