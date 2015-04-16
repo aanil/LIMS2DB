@@ -47,9 +47,9 @@ from LIMS2DB.objectsDB.functions import *
 from pprint import pprint
 from genologics.lims import *
 from genologics.config import BASEURI, USERNAME, PASSWORD
-import objectsDB as DB
+import LIMS2DB.objectsDB.objectsDB as DB
 from datetime import date
-lims = Lims(BASEURI, USERNAME, PASSWORD)
+lims = Lims('https://genologics.scilifelab.se:8443', USERNAME, PASSWORD)
 lims_stage = Lims('https://genologics-stage.scilifelab.se:8443', USERNAME, PASSWORD)
 import logging
 
@@ -106,8 +106,9 @@ def  main(proj_name, all_projects, conf, only_closed):
                             if comp_dates(first_of_july, opened):
                                 obj = DB.ProjectDB(lims, proj.id, None)
                                 obj_stage = DB.ProjectDB(lims_stage, proj.id, None)
-                                print
                                 comp_obj(obj_stage.obj, obj.obj)
+                                obj=None
+                                obj_stage=None
                         else:
                             logging.info('Open date missing for project %s' % proj_name)
                 except:
