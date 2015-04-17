@@ -47,9 +47,9 @@ from LIMS2DB.objectsDB.functions import *
 from pprint import pprint
 from genologics.lims import *
 from genologics.config import BASEURI, USERNAME, PASSWORD
-import objectsDB as DB
+import LIMS2DB.objectsDB.objectsDB as DB
 from datetime import date
-lims = Lims(BASEURI, USERNAME, PASSWORD)
+lims = Lims('https://genologics.scilifelab.se:8443', USERNAME, PASSWORD)
 lims_stage = Lims('https://genologics-stage.scilifelab.se:8443', USERNAME, PASSWORD)
 import logging
 
@@ -74,11 +74,19 @@ def recursive_comp(stage, prod):
             prod_val = prod[key]
             stage_val = stage[key]
             if (prod_val != stage_val):
-                diff = True
                 if (type(prod_val) is dict) and (type(stage_val) is dict):
-                    diff = diff and recursive_comp(stage_val, prod_val)
+                    diff = (diff and recursive_comp(stage_val, prod_val))
                 else:
-                    logging.info('Key %s differing: Lims production gives: %s. Lims stage gives %s. ' %( key,prod_val,stage_val))
+                    if 'genologics.scilifelab.se' in prod_val and 'genologics-stage.scilifelab.se' in stage_val:
+                        stage_val.replace('genologics-stage.scilifelab.se', 'genologics.scilifelab.se')
+                        if (prod_val != stage_val):
+                            diff=True
+                            logging.info('Key %s differing: Lims production gives: %s. Lims stage gives %s. ' %( key,prod_val,stage_val))
+                        else:
+                            diff=False
+                    else:
+                        diff = True
+                        logging.info('Key %s differing: Lims production gives: %s. Lims stage gives %s. ' %( key,prod_val,stage_val))
     return diff
 
 def  main(proj_name, all_projects, conf, only_closed):
@@ -106,8 +114,9 @@ def  main(proj_name, all_projects, conf, only_closed):
                             if comp_dates(first_of_july, opened):
                                 obj = DB.ProjectDB(lims, proj.id, None)
                                 obj_stage = DB.ProjectDB(lims_stage, proj.id, None)
-                                print
                                 comp_obj(obj_stage.obj, obj.obj)
+                                obj=None
+                                obj_stage=None
                         else:
                             logging.info('Open date missing for project %s' % proj_name)
                 except:

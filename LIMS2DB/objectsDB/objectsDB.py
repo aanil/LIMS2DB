@@ -100,6 +100,11 @@ class ProjectDB():
                         'project_id' : self.project.id}
         self.obj.update(udf_dict(self.project, PROJ_UDF_EXCEPTIONS, False))
         self.obj['details'] = udf_dict(self.project, PROJ_UDF_EXCEPTIONS)
+        if (self.obj['application'] in FINLIB or ('Library construction method' in self.obj and \
+                ('Library, By user' in self.obj['Library construction method'] or \
+                'Library, In-house' in self.obj['Library construction method']))):
+            self.obj['isFinishedLib']=True
+        self.application=self.obj['application']
         self._get_affiliation()
         self._get_project_summary_info()
 
@@ -178,7 +183,7 @@ class ProjectDB():
         ================    ============    =========== ================
         KEY                 lims_element    lims_field  description
         ================    ============    =========== ================
-        first_initial_qc    Process         date-run    First of all (INITALQCFINISHEDLIB if application in FINLIB else INITALQC) steps run on any sample in the project.
+        first_initial_qc    Process         date-run    First of all (INITALQCFINISHEDLIB if project is a finished library else INITALQC) steps run on any sample in the project.
         no_of_samples       Project                     Number of registered samples for the project
         samples             Sample          Name        Dict of all samples registered for the project. Keys are sample names. Values are described by the project/samples/[sample] doc.
         ================    ============    =========== ================"""
@@ -195,10 +200,11 @@ class ProjectDB():
                                   samp.id,
                                   self.obj['project_name'],
                                   self.samp_db,
-                                  self.obj['application'],
+                                  self.obj['isFinishedLib'],
                                   self.preps.info,
                                   runinfo.info,
-                                  processes_per_artifact = procss_per_art)
+                                  processes_per_artifact = procss_per_art,
+                                  application=self.application)
                 self.obj['samples'][sampDB.name] = sampDB.obj
                 try:
                     initial_qc_start_date = self.obj['samples'][sampDB.name]['initial_qc']['start_date']
@@ -264,16 +270,17 @@ class SampleDB():
     from different lims artifacts and processes."""
 
     def __init__(self, lims_instance , sample_id, project_name, samp_db,
-                        application = None, AgrLibQCs = [], run_info = [],
-                        processes_per_artifact = None): 
+                        isFinLib= None, AgrLibQCs = [], run_info = [],
+                        processes_per_artifact = None, application=None): 
         self.lims = lims_instance
         self.samp_db = samp_db
         self.AgrLibQCs = AgrLibQCs
         self.lims_sample = Sample(self.lims, id = sample_id)
         self.name = self.lims_sample.name
-        self.application = application
+        self.isFinLib = isFinLib 
         self.run_info = run_info
         self.processes_per_artifact = processes_per_artifact
+        self.application=application
         self.obj = {}
         self._get_sample_info()
 
@@ -314,9 +321,9 @@ class SampleDB():
                     preps[prep_id]['sample_run_metrics'] = runs[prep_id]
             self.obj['library_prep'] = self._get_prep_leter(preps)
         initqc = InitialQC(self.lims, self.name, self.processes_per_artifact, 
-                                                            self.application)
+                                                            self.isFinLib)
         self.obj['initial_qc'] = initqc.set_initialqc_info()
-        if self.application in ['Finished library', 'Amplicon with adaptors']:
+        if self.isFinLib :
             category = INITALQCFINISHEDLIB.values()
         else:
             category = INITALQC.values()
@@ -385,8 +392,8 @@ class SampleDB():
                                     lims = self.lims,        
                                     pro_per_art = self.processes_per_artifact)
                     steps = ProcessSpec(history.history, history.history_list, 
-                                                             self.application)
-                    if self.application in ['Finished library', 'Amplicon with adaptors']:
+                                                             self.isFinLib)
+                    if self.isFinLib:
                         key = 'Finished'
                     elif steps.preprepstart:
                         key = steps.preprepstart['id']
@@ -496,7 +503,7 @@ class SampleDB():
                                         lims = self.lims, 
                                         pro_per_art = self.processes_per_artifact)
                     steps = ProcessSpec(history.history, history.history_list, 
-                                        self.application)
+                                        self.isFinLib)
                     prep = Prep(self.name, self.lims)
                     prep.set_prep_info(steps, self.application)
                     if not preps.has_key(prep.id2AB) and prep.id2AB:
@@ -577,13 +584,13 @@ class InitialQC():
     """Instances of this class holds a dictionary formatted for building up the 
     initial_qc field per sample in the project database on status db.""" 
     
-    def __init__(self, lims_inst ,sample, procs_per_art, application):
+    def __init__(self, lims_inst ,sample, procs_per_art, isFinLib):
         self.lims = lims_inst
         self.processes_per_artifact = procs_per_art
         self.sample_name = sample
         self.initialqc_info = {}
         self.steps = None
-        self.application = application
+        self.isFinLib = isFinLib
 
     def _get_initialqc_processes(self):
         outarts = self.lims.get_artifacts(sample_name = self.sample_name,
@@ -598,7 +605,7 @@ class InitialQC():
                                       pro_per_art = self.processes_per_artifact)
             if history.history_list:
                 self.steps = ProcessSpec(history.history, history.history_list,
-                                                               self.application)
+                                                               self.isFinLib)
 
     def set_initialqc_info(self):
         """
@@ -609,10 +616,10 @@ class InitialQC():
         =================== ============    ================    ================
         KEY                 lims_element    lims_field          description
         =================== ============    ================    ================
-        start_date          Process         date-run            First of all (INITALQCFINISHEDLIB if application in FINLIB else INITALQC) steps found for in the artifact history of the output artifact of one of the AGRINITQC steps 
+        start_date          Process         date-run            First of all (INITALQCFINISHEDLIB if project is a finished library else INITALQC) steps found for in the artifact history of the output artifact of one of the AGRINITQC steps 
         finish_date         Process         date-run            One of the AGRINITQC steps
-        initials            Researcher      initials            technician.initials of the last of all (AGRLIBVAL if application in FINLIB else AGRINITQC) steps
-        initial_qc_status   Artifact        qc-flag             qc-flag of the input artifact to the last of all (AGRLIBVAL if application in FINLIB else AGRINITQC) steps
+        initials            Researcher      initials            technician.initials of the last of all (AGRLIBVAL if project is a finished library else AGRINITQC) steps
+        initial_qc_status   Artifact        qc-flag             qc-flag of the input artifact to the last of all (AGRLIBVAL if project is a finished library else AGRINITQC) steps
         caliper_image       Artifact        content-location    content-location of output Result files of the last of all CALIPER steps in the artifact history of the output artifact of one of the AGRINITQC steps
         =================== ============    ================    ================
         """
@@ -640,10 +647,10 @@ class ProcessSpec():
     """Class to identify to what process category a particular process belongs 
     in the artifact history."""
 
-    def __init__(self, hist_sort, hist_list, application):
-        self.application = application
-        self.init_qc = INITALQCFINISHEDLIB if application in FINLIB else INITALQC
-        self.agr_qc = AGRLIBVAL if application in FINLIB else AGRINITQC
+    def __init__(self, hist_sort, hist_list, isFinLib):
+        self.isFinLib=isFinLib
+        self.init_qc = INITALQCFINISHEDLIB if isFinLib else INITALQC
+        self.agr_qc = AGRLIBVAL if isFinLib else AGRINITQC
         self.libvalends = []                
         self.libvalend = None               
         self.libvals = []
@@ -700,7 +707,7 @@ class ProcessSpec():
                                                 LIBVAL), art_steps.values())
                 self.prepreplibvalends += filter(lambda pro: pro['type'] in
                                                 AGRLIBVAL, art_steps.values())
-            elif self.application in FINLIB: 
+            elif self.isFinLib: 
                 # 6) LIBVALSTART LIBVALEND
                 self.libvals += filter(lambda pro: pro['type'] in
                                           LIBVALFINISHEDLIB, art_steps.values())
@@ -810,7 +817,8 @@ class Prep():
         =================== ============    =========== ================
         """
 
-        if aplication in ['Amplicon with adaptors', 'Finished library']:
+
+        if aplication in ['Amplicon with adaptors', 'Finished library'] or self.isFinLib:
             self.id2AB = 'Finished'
         else:
             if steps.prepstart:
