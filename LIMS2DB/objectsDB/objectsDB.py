@@ -190,7 +190,9 @@ class ProjectDB():
 
         samples = self.lims.get_samples(projectlimsid = self.project.id)
         self.obj['no_of_samples'] = len(samples)
-        runinfo=self.demux_procs or self.seq_procs 
+        runinfo=self.seq_procs 
+        if self.demux_procs.info:
+            runinfo=self.demux_procs 
         if len(samples) > 0:
             procss_per_art = self.build_processes_per_artifact(self.lims,
                                                          self.project.name)
@@ -408,7 +410,7 @@ class SampleDB():
                             try:
                                 dem_art = Artifact(self.lims, id = steps.latestdem['outart'])
                                 dem_qc = dem_art.qc_flag
-                            except ValueError:
+                            except (ValueError, TypeError):
                                 #Miseq projects might not have a demultiplexing step here
                                 #so the artifact id might be None
                                 dem_qc=None
