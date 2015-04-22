@@ -100,6 +100,7 @@ class ProjectDB():
                         'project_id' : self.project.id}
         self.obj.update(udf_dict(self.project, PROJ_UDF_EXCEPTIONS, False))
         self.obj['details'] = udf_dict(self.project, PROJ_UDF_EXCEPTIONS)
+        self.obj['isFinishedLib']=False
         if (self.obj['application'] in FINLIB or ('Library construction method' in self.obj and \
                 ('Library, By user' in self.obj['Library construction method'] or \
                 'Library, In-house' in self.obj['Library construction method']))):
@@ -198,13 +199,13 @@ class ProjectDB():
                                                          self.project.name)
             self.obj['first_initial_qc'] = '3000-10-10'
             for samp in samples:
-                sampDB = SampleDB(self.lims,
-                                  samp.id,
-                                  self.obj['project_name'],
-                                  self.samp_db,
-                                  self.obj['isFinishedLib'],
-                                  self.preps.info,
-                                  runinfo.info,
+                sampDB = SampleDB(lims_instance=self.lims,
+                                  sample_id=samp.id,
+                                  project_name=self.obj['project_name'],
+                                  samp_db=self.samp_db,
+                                  isFinLib=self.obj['isFinishedLib'],
+                                  AgrLibQCs=self.preps.info,
+                                  run_info=runinfo.info,
                                   processes_per_artifact = procss_per_art,
                                   application=self.application)
                 self.obj['samples'][sampDB.name] = sampDB.obj
@@ -506,7 +507,7 @@ class SampleDB():
                                         pro_per_art = self.processes_per_artifact)
                     steps = ProcessSpec(history.history, history.history_list, 
                                         self.isFinLib)
-                    prep = Prep(self.name, self.lims)
+                    prep = Prep(self.name, self.lims, self.isFinLib)
                     prep.set_prep_info(steps, self.application)
                     if not preps.has_key(prep.id2AB) and prep.id2AB:
                         preps[prep.id2AB] = prep.prep_info
@@ -773,7 +774,8 @@ class Prep():
     sample prep in the project database on status db. Each sample can have 
     many preps. Their keys are named A,B,C,etc.""" 
     
-    def __init__(self, sample_name, lims_instance):
+    def __init__(self, sample_name, lims_instance, isFinLib):
+        self.isFinLib=isFinLib
         self.lims=lims_instance
         self.sample_name=sample_name
         self.prep_info = {
