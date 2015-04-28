@@ -60,12 +60,17 @@ class ProjectDB():
         escalation_ids = []
         processes = self.lims.get_processes(projectname=self.project.name)
         for p in processes:
-            step = gent.Step(self.lims, id = p.id)
-            if step.actions.escalation:
-                samples_escalated = set()
-                if step.actions.escalation['status'] == "Pending":
-                    shortid = step.id.split("-")[1]
-                    escalation_ids.append(shortid)
+            try:
+                step = gent.Step(self.lims, id = p.id)
+            except:
+                #Some processes do not have a corresponding step. Do not parse escalations for them.
+                logging.warn('Warning. project {0}, process {1} does not seem to have a Step counterpart '.format(self.project.name, p.id))
+            else:
+                if step.actions.escalation:
+                    samples_escalated = set()
+                    if step.actions.escalation['status'] == "Pending":
+                        shortid = step.id.split("-")[1]
+                        escalation_ids.append(shortid)
         if escalation_ids:
             self.obj['escalations'] = escalation_ids
 
