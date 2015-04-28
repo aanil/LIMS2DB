@@ -102,26 +102,17 @@ class PSUL():
     def update_project(self, database):
         """Fetch project info and update project in the database."""
         opended_after_140630 = comp_dates('2014-06-30', self.ordered_opened)
-        #try:
-        if 1==1:
-            self.log.info('Handeling {proj}'.format(proj = self.name))
-            project = database.ProjectDB(self.lims, self.id, self.samp_db)
-            key = find_proj_from_view(self.proj_db, self.name)
-            project.obj['_id'] = find_or_make_key(key)
-#            if not opended_after_140630:
-#                try:
-#                    project.obj = load_status_from_google_docs.get(self.name, project.obj)
-#                except RequestError:
-#                    return "Failed to get the 20158 spreadsheet for project{}".format(self.id)
-            if self.upload_data:
-                info = save_couchdb_obj(self.proj_db, project.obj)
-            else:
-                info = self.print_couchdb_obj_to_file(project.obj)
-            return "project {name} is handled and {info}: _id = {id}".format(
-                               name=self.name, info=info, id=project.obj['_id'])
-#        except:
-#            return ('Issues geting info for {name}. The "Application" udf might'
-#                                         ' be missing'.format(name = self.name))
+        self.log.info('Handeling {proj}'.format(proj = self.name))
+        project = database.ProjectDB(self.lims, self.id, self.samp_db)
+
+        key = find_proj_from_view(self.proj_db, self.name)
+        project.obj['_id'] = find_or_make_key(key)
+        if self.upload_data:
+            info = save_couchdb_obj(self.proj_db, project.obj)
+        else:
+            info = self.print_couchdb_obj_to_file(project.obj)
+        return "project {name} is handled and {info}: _id = {id}".format(
+                           name=self.name, info=info, id=project.obj['_id'])
 
     def project_update_and_logging(self):
         start_time = time.time()
