@@ -412,7 +412,7 @@ class SampleDB():
                     if key:
                         lims_run = Process(self.lims, id = steps.lastseq['id'])
                         run_dict = dict(lims_run.udf.items())
-                        if preps[key].has_key('reagent_label') and run_dict.has_key('Finish Date'):
+                        if preps.get(key, {}).has_key('reagent_label') and run_dict.has_key('Finish Date'):
                             try:
                                 dem_art = Artifact(self.lims, id = steps.latestdem['outart'])
                                 dem_qc = dem_art.qc_flag
@@ -459,8 +459,7 @@ class SampleDB():
                 samp_run_met_id = '_'.join([lane, date, fcid, barcode])
             except TypeError: 
                 #happens if the History object is missing fields, barcode might be None
-                logging.debug(self.name+" ",prep,"-", prep['reagent_label'])
-                raise TypeError
+                logging.debug("Missing field for making the sample run id :{0} {1}-{2}".format(self.name,prep, prep['reagent_label']))
         return samp_run_met_id
 
     def _get_prep_leter(self, prep_info):
