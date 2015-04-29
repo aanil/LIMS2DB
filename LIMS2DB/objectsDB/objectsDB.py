@@ -459,7 +459,7 @@ class SampleDB():
                 samp_run_met_id = '_'.join([lane, date, fcid, barcode])
             except TypeError: 
                 #happens if the History object is missing fields, barcode might be None
-                logging.debug("Missing field for making the sample run id :"+self.name+" ",prep,"-", prep['reagent_label'])
+                logging.debug("Missing field for making the sample run id :{0} {1}-{2}".format(self.name,prep, prep['reagent_label']))
         return samp_run_met_id
 
     def _get_prep_leter(self, prep_info):
