@@ -140,6 +140,12 @@ class Workset:
                                 onelib['date'] = lib.date_run
                                 onelib['name'] = lib.protocol_name
                                 onelib['id'] = lib.id
+                                if 'Concentration' in inp.udf and 'Conc. Units' in inp.udf :
+                                    onelib['concentration']="{0} {1}".format(round(inp.udf['Concentration'], 2), inp.udf['Conc. Units'])
+                                if 'Size (bp)' in inp.udf:
+                                    onelib['size']=round(inp.udf['Size (bp)'],2)
+
+                                onelib['concentration']
                                 pjs[p.id]['samples'][sample.name]['library'][lib.id] = onelib
                                 if 'library_status' not in  pjs[p.id]['samples'][sample.name]:
                                     pjs[p.id]['samples'][sample.name]['library_status'] = inp.qc_flag
