@@ -5,8 +5,9 @@ from genologics.entities import Process
 from genologics.lims import *
 from genologics.lims_utils import *
 from genologics.config import BASEURI, USERNAME, PASSWORD
-import process_categories as pc 
+import LIMS2DB.objectsDB.process_categories as pc 
 from datetime import datetime, timedelta
+import statusdb.db as sdb
 from statusdb.db.utils import *
 import multiprocessing as mp
 import Queue
@@ -88,6 +89,12 @@ class Workset:
         self.obj['technician']=crawler.starting_proc.technician.initials
         self.obj['id']=crawler.starting_proc.id
         self.obj['date_run']=crawler.starting_proc.date_run
+        #only get the latest aggregate qc date
+        latest_date=0
+        for agr in crawler.libaggre:
+            if agr.date_run > latest_date:
+                latest_date=agr.date_run
+        self.obj['last_aggregate']=latest_date
         pjs = {}
         for p in crawler.projects:
             pjs[p.id] = {}
