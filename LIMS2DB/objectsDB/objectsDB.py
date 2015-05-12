@@ -412,7 +412,7 @@ class SampleDB():
                     if key:
                         lims_run = Process(self.lims, id = steps.lastseq['id'])
                         run_dict = dict(lims_run.udf.items())
-                        if preps.get(key, {}).has_key('reagent_label') and run_dict.has_key('Finish Date'):
+                        if preps.get(key, {}).has_key('reagent_label') and run_dict.has_key('Run ID'):
                             try:
                                 dem_art = Artifact(self.lims, id = steps.latestdem['outart'])
                                 dem_qc = dem_art.qc_flag
@@ -430,7 +430,10 @@ class SampleDB():
                                                                  samp_run_met_id)
                                 dpsd = steps.dilstart['date'] if steps.dilstart else None
                                 ssd = steps.seqstart['date'] if steps.seqstart else None
-                                sfd = lims_run.udf['Finish Date'].isoformat()
+                                if 'Finish Date' in lims_run.udf :
+                                    sfd = lims_run.udf['Finish Date'].isoformat()
+                                else:
+                                    sfd=None
                                 d = {'sample_run_metrics_id' : srmi,
                                     'dillution_and_pooling_start_date' : dpsd,
                                     'sequencing_start_date' : ssd,
