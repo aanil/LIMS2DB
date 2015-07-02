@@ -5,14 +5,17 @@ from genologics.entities import Process
 from genologics.lims import *
 from genologics.lims_utils import *
 from genologics.config import BASEURI, USERNAME, PASSWORD
-import LIMS2DB.objectsDB.process_categories as pc 
-from datetime import datetime, timedelta
-import statusdb.db as sdb
 from statusdb.db.utils import *
+from datetime import datetime, timedelta
+from LIMS2DB.utils import merge
+
+import LIMS2DB.objectsDB.process_categories as pc 
+import statusdb.db as sdb
 import multiprocessing as mp
 import Queue
 import logging
 import logging.handlers
+
 
 def setupLog(args):
     mainlog = logging.getLogger('worksetlogger')
@@ -47,6 +50,7 @@ def main(args):
             doc_rev = remote_doc.pop('_rev')
             if remote_doc != ws.obj:
                 #if they are different, though they have the same name, upload the new one
+                ws.obj=merge(ws.obj, remote_doc)
                 ws.obj['_id'] = doc_id
                 ws.obj['_rev'] = doc_rev
                 mycouch.db[doc_id] = ws.obj 
@@ -61,6 +65,7 @@ def main(args):
         starting_date= datetime.today() - timedelta(args.days)
         str_date= starting_date.strftime("%Y-%m-%dT%H:%M:%SZ")
         wsts = lims.get_processes(type=pc.WORKSET.values(),last_modified=str_date)
+        log.info("the following processes will be updated : {0}".format(wsts))
         masterProcess(args, wsts, lims, log)
     
     
@@ -253,6 +258,7 @@ def processWSUL(options, queue, logqueue):
                 doc_rev = remote_doc.pop('_rev')
                 if remote_doc != ws.obj:
                     #if they are different, though they have the same name, upload the new one
+                    ws.obj=merge(ws.obj, remote_doc)
                     ws.obj['_id'] = doc_id
                     ws.obj['_rev'] = doc_rev
                     mycouch.db[doc_id] = ws.obj 

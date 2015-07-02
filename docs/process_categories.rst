@@ -253,6 +253,7 @@ ID  process Name
 47	mRNA Purification, Fragmentation & cDNA synthesis (TruSeq RNA) 4.0
 308	Library Pooling (TruSeq Small RNA) 1.0
 405	RiboZero depletion
+605	Tagmentation, Strand displacement and AMPure purification
 === =======================================
     
 

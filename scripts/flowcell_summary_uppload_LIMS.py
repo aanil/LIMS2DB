@@ -68,7 +68,11 @@ def  main(flowcell, all_flowcells,days,conf):
                     dbobj = fc_db.get(key)
                     print dbobj['modification_time']+'  '+key
                     if delta.days < days:
-                        dbobj["illumina"]["run_summary"] = get_sequencing_info(fc)
+                        dbobj["illumina"]["run_summary"] = get_sequencing_info(fc) #located in genologics.lims_utils
+                        dbobj["lims_data"]={}
+                        dbobj["lims_data"]['step_id']=fc.id
+                        dbobj["lims_data"]['container_id']=fc.all_inputs()[0].location[0].id
+                        dbobj["lims_data"]['container_name']=fc.all_inputs()[0].location[0].name
                         info = save_couchdb_obj(fc_db, dbobj)
                         logging.info('flowcell %s %s : _id = %s' % (flowcell_name, info, key))
     elif flowcell is not None:
