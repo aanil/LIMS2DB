@@ -152,12 +152,9 @@ class Workset:
                                 if 'Size (bp)' in inp.udf:
                                     onelib['size']=round(inp.udf['Size (bp)'],2)
 
-                                onelib['concentration']
                                 pjs[p.id]['samples'][sample.name]['library'][lib.id] = onelib
                                 if 'library_status' not in  pjs[p.id]['samples'][sample.name]:
                                     pjs[p.id]['samples'][sample.name]['library_status'] = inp.qc_flag
-
-
 
 
                     for seq in sorted(crawler.seq, key=lambda s:s.date_run, reverse=True):
