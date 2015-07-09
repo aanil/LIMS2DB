@@ -99,6 +99,8 @@ class Workset:
         for agr in crawler.libaggre:
             if agr.date_run > latest_date:
                 latest_date=agr.date_run
+        if not latest_date:
+            latest_date=None
         self.obj['last_aggregate']=latest_date
         pjs = {}
         for p in crawler.projects:
