@@ -99,6 +99,8 @@ class Workset:
         for agr in crawler.libaggre:
             if agr.date_run > latest_date:
                 latest_date=agr.date_run
+        if not latest_date:
+            latest_date=None
         self.obj['last_aggregate']=latest_date
         pjs = {}
         for p in crawler.projects:
@@ -150,12 +152,9 @@ class Workset:
                                 if 'Size (bp)' in inp.udf:
                                     onelib['size']=round(inp.udf['Size (bp)'],2)
 
-                                onelib['concentration']
                                 pjs[p.id]['samples'][sample.name]['library'][lib.id] = onelib
                                 if 'library_status' not in  pjs[p.id]['samples'][sample.name]:
                                     pjs[p.id]['samples'][sample.name]['library_status'] = inp.qc_flag
-
-
 
 
                     for seq in sorted(crawler.seq, key=lambda s:s.date_run, reverse=True):
