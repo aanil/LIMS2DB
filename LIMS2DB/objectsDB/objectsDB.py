@@ -347,7 +347,7 @@ class SampleDB():
         """
 
         arts = self.lims.get_artifacts(sample_name = sample_name, 
-                                        process_type = process_list)
+                                        process_type = process_list, resolve=True)
         index = -1 if last_day else 0 
         uniqueDates=set([a.parent_process.date_run for a in arts])
         try:
@@ -604,7 +604,7 @@ class InitialQC():
 
     def _get_initialqc_processes(self):
         outarts = self.lims.get_artifacts(sample_name = self.sample_name,
-                                          process_type = AGRINITQC.values())
+                                          process_type = AGRINITQC.values(), resolve=True)
         if outarts:
             outart = Artifact(self.lims, id = max(map(lambda a: a.id, outarts)))
             latestInitQc = outart.parent_process
