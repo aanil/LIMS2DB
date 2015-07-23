@@ -1,4 +1,7 @@
 
+import logging
+import logging.handlers
+
 #merges d2 in d1, keeps values from d1
 def merge(d1, d2):
     """ Will merge dictionary d2 into dictionary d1.
@@ -15,3 +18,13 @@ def merge(d1, d2):
         else:
             d1[key] = d2[key]
     return d1
+
+
+def setupLog(name, args):
+    mainlog = logging.getLogger(name)
+    mainlog.setLevel(level=logging.INFO)
+    mfh = logging.FileHandler(args.logfile)
+    mft = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    mfh.setFormatter(mft)
+    mainlog.addHandler(mfh)
+    return mainlog
