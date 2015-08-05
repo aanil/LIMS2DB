@@ -38,7 +38,11 @@ class ProjectDB():
     project database on statusdb. the data comes from different lims
     artifacts and processes."""
 
-    def __init__(self, lims_instance, project_id, samp_db):
+    def __init__(self, lims_instance, project_id, samp_db, logger):
+        if logger:
+            self.logger=logger
+        else:
+            self.logger=logging.getLogger(__name__)
         self.lims = lims_instance 
         self.samp_db = samp_db
         self.project = Project(self.lims,id = project_id)
@@ -51,9 +55,9 @@ class ProjectDB():
                                                     type = SEQUENCING.values())
         self.seq_procs = ProcessInfo(self.lims, self.seq)
         self._get_project_level_info()
+        self._get_open_escalations()
         self._make_DB_samples()
         self._get_sequencing_finished()
-        self._get_open_escalations()
 
     def _get_open_escalations(self):
         # Need Denis input
@@ -204,6 +208,7 @@ class ProjectDB():
                                                          self.project.name)
             self.obj['first_initial_qc'] = '3000-10-10'
             for samp in samples:
+                self.logger.info("working on {}".format(samp.name))
                 sampDB = SampleDB(lims_instance=self.lims,
                                   sample_id=samp.id,
                                   project_name=self.obj['project_name'],
@@ -462,7 +467,7 @@ class SampleDB():
                 samp_run_met_id = '_'.join([lane, date, fcid, barcode])
             except TypeError: 
                 #happens if the History object is missing fields, barcode might be None
-                logging.debug("Missing field for making the sample run id :{0} {1}-{2}".format(self.name,prep, prep['reagent_label']))
+                self.logger.debug("Missing field for making the sample run id :{0} {1}-{2}".format(self.name,prep, prep['reagent_label']))
         return samp_run_met_id
 
     def _get_prep_leter(self, prep_info):
@@ -539,7 +544,7 @@ class SampleDB():
                 preps['Finished']['reagent_label'] = self.lims_sample.artifact.reagent_labels[0]
             except IndexError:
                 #P821 has nothing here
-                logging.warn("No reagent label for artifact {} in sample {}".format(self.lims_sample.artifact.id, self.name))
+                self.logger.warn("No reagent label for artifact {} in sample {}".format(self.lims_sample.artifact.id, self.name))
                 preps['Finished']['reagent_label'] = None
 
             preps['Finished'] = delete_Nones(preps['Finished'])

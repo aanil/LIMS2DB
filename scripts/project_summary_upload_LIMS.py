@@ -103,7 +103,7 @@ class PSUL():
         """Fetch project info and update project in the database."""
         opended_after_140630 = comp_dates('2014-06-30', self.ordered_opened)
         self.log.info('Handeling {proj}'.format(proj = self.name))
-        project = database.ProjectDB(self.lims, self.id, self.samp_db)
+        project = database.ProjectDB(self.lims, self.id, self.samp_db, self.log)
 
         key = find_proj_from_view(self.proj_db, self.name)
         project.obj['_id'] = find_or_make_key(key)
@@ -180,9 +180,22 @@ def processPSUL(options, queue, logqueue):
             proclog.info("exiting gracefully")
             break
         else:
-            proj=mylims.get_projects(name=projname)[0]
-            P = PSUL(proj, samp_db, proj_db, options.upload, options.days, options.project_name, options.output_f, proclog)
-            P.project_update_and_logging()
+            #locks the project : cannot be updated more than once.
+            lockfile=os.path.join(options.lockdir, projname)
+            if not os.path.exists(lockfile):
+                try:
+                    open(lockfile,'w').close()
+                except:
+                    proclog.error("cannot create lockfile {}".format(lockfile))
+                proj=mylims.get_projects(name=projname)[0]
+                P = PSUL(proj, samp_db, proj_db, options.upload, options.days, options.project_name, options.output_f, proclog)
+                P.project_update_and_logging()
+                try:
+                    os.remove(lockfile)
+                except:
+                    proclog.error("cannot remove lockfile {}".format(lockfile))
+
+
             #signals to queue job is done
             queue.task_done()
 
@@ -310,6 +323,8 @@ if __name__ == '__main__':
                       help = "How many processes will be spawned. Will only work with -a")
     parser.add_option("-l", "--logfile", dest = "logfile", help = ("log file",
                       " that will be used. default is $HOME/lims2db_projects.log "), default=os.path.expanduser("~/lims2db_projects.log"))
+    parser.add_option("--lockdir", dest = "lockdir", help = ("directory handling the lock files",
+                      " to avoid multiple updating of one project. default is $HOME/psul_locks "), default=os.path.expanduser("~/psul_locks"))
 
     (options, args) = parser.parse_args()
     main(options)
