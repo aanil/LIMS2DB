@@ -140,7 +140,7 @@ def main(options):
     mainlims = Lims(BASEURI, USERNAME, PASSWORD)
     mainlog = logging.getLogger('psullogger')
     mainlog.setLevel(level=logging.INFO)
-    mfh = logging.FileHandler(options.logfile)
+    mfh = logging.RotatingFileHandler(options.logfile, maxBytes=209715200, backupCount=5)
     mft = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     mfh.setFormatter(mft)
     mainlog.addHandler(mfh)
