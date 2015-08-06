@@ -87,7 +87,7 @@ class PSUL():
 
                 start_update = False
 
-        else
+        else:
             if (not opended_after_130630) or closed_for_a_while:
                 if self.man_name:   ## Ask wether to update
                     start_update = raw_input("""
