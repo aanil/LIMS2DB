@@ -187,9 +187,12 @@ def processPSUL(options, queue, logqueue):
                     open(lockfile,'w').close()
                 except:
                     proclog.error("cannot create lockfile {}".format(lockfile))
-                proj=mylims.get_projects(name=projname)[0]
-                P = PSUL(proj, samp_db, proj_db, options.upload, options.days, options.project_name, options.output_f, proclog)
-                P.project_update_and_logging()
+                try:
+                    proj=mylims.get_projects(name=projname)[0]
+                    P = PSUL(proj, samp_db, proj_db, options.upload, options.days, options.project_name, options.output_f, proclog)
+                    P.project_update_and_logging()
+                except :
+                    proclog.error(sys.exc_info()[0])
                 try:
                     os.remove(lockfile)
                 except:
