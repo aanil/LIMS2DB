@@ -23,7 +23,7 @@ def merge(d1, d2):
 def setupLog(name, args):
     mainlog = logging.getLogger(name)
     mainlog.setLevel(level=logging.INFO)
-    mfh = logging.RotatingFileHandler(args.logfile, maxBytes=209715200, backupCount=5)
+    mfh = logging.handlers.RotatingFileHandler(args.logfile, maxBytes=209715200, backupCount=5)
     mft = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     mfh.setFormatter(mft)
     mainlog.addHandler(mfh)

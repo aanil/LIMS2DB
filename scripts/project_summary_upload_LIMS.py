@@ -340,7 +340,7 @@ if __name__ == '__main__':
                       " that will be used. default is $HOME/lims2db_projects.log "), default=os.path.expanduser("~/lims2db_projects.log"))
     parser.add_option("--lockdir", dest = "lockdir", help = ("directory handling the lock files",
                       " to avoid multiple updating of one project. default is $HOME/psul_locks "), default=os.path.expanduser("~/psul_locks"))
-    parser.add_option("-h", "--hours", dest = "hours",type='int', help = ("only handle projects modified in the last X hours"), default=None)
+    parser.add_option("-j", "--hours", dest = "hours",type='int', help = ("only handle projects modified in the last X hours"), default=None)
 
     (options, args) = parser.parse_args()
     main(options)
