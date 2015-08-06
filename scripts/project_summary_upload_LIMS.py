@@ -204,7 +204,7 @@ def processPSUL(options, queue, logqueue):
                     P = PSUL(proj, samp_db, proj_db, options.upload, options.days, options.project_name, options.output_f, proclog, options.hours)
                     P.project_update_and_logging()
                 except :
-                    proclog.error(sys.exc_info()[0])
+                    proclog.error("\n".join(sys.exc_info()))
                 try:
                     os.remove(lockfile)
                 except:
