@@ -84,7 +84,7 @@ class PSUL():
         else:
             info = self.print_couchdb_obj_to_file(project.obj)
 
-        log.info("project {name} is handled and {info}: _id = {id}".format(
+        self.log.info("project {name} is handled and {info}: _id = {id}".format(
                            name=self.name, info=info, id=project.obj['_id']))
 
     def handle_project(self):
@@ -111,8 +111,8 @@ def main(options):
     if options.all_projects:
         if options.hours:
             delta=datetime.timedelta(hours=-options.hours)
-            time_string=(datetime.datetime.now()-f).strftime('%Y-%m-%dT%H:%M:%SCET')
-            projects=self.lims.get_projects(last_modified=time_string)
+            time_string=(datetime.datetime.now()-delta).strftime('%Y-%m-%dT%H:%M:%SCET')
+            projects=mainlims.get_projects(last_modified=time_string)
         else:
             projects = mainlims.get_projects()
         masterProcess(options,projects, mainlims, mainlog)
