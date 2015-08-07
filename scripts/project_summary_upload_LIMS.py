@@ -161,7 +161,7 @@ def processPSUL(options, queue, logqueue):
                     P.handle_project()
                 except :
                     error=sys.exc_info()
-                    proclog.error("{0}:{1}\n{2}".format(error[0], error[1], traceback.print_tb(error[2])))
+                    proclog.error("{0}:{1}\n{2}".format(error[0], error[1], traceback.extract_tb(error[2])))
                 try:
                     os.remove(lockfile)
                 except:
