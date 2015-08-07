@@ -22,6 +22,7 @@ import os
 import Queue
 import sys
 import time
+import traceback
 
    
 class PSUL():
@@ -92,8 +93,6 @@ class PSUL():
             self.update_project()
 
 def main(options):
-    man_name = options.project_name
-    all_projects = options.all_projects
     conf = options.conf
     upload_data = options.upload
     output_f = options.output_f
@@ -113,6 +112,7 @@ def main(options):
             delta=datetime.timedelta(hours=options.hours)
             time_string=(datetime.datetime.now()-delta).strftime('%Y-%m-%dT%H:%M:%SCET')
             projects=mainlims.get_projects(last_modified=time_string)
+            mainlog.info("project list : {0}".format(" ".join([p.id for p in projects])))
         else:
             projects = mainlims.get_projects()
         masterProcess(options,projects, mainlims, mainlog)
@@ -122,7 +122,7 @@ def main(options):
             mainlog.warn('No project named {man_name} in Lims'.format(
                         man_name = options.project_name))
         else:
-            P = PSUL(proj[0], samp_db, proj_db, options.upload, man_name, output_f, mainlog)
+            P = PSUL(proj[0], samp_db, proj_db, options.upload, options.project_name, output_f, mainlog)
             P.handle_project()
 
 def processPSUL(options, queue, logqueue):
@@ -161,7 +161,7 @@ def processPSUL(options, queue, logqueue):
                     P.handle_project()
                 except :
                     error=sys.exc_info()
-                    proclog.error("{0}:{1}\n{2}".format(error[0], error[1], error[2]))
+                    proclog.error("{0}:{1}\n{2}".format(error[0], error[1], traceback.print_tb(error[2])))
                 try:
                     os.remove(lockfile)
                 except:
