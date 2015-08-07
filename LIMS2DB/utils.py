@@ -1,6 +1,7 @@
 
 import logging
 import logging.handlers
+import traceback
 
 #merges d2 in d1, keeps values from d1
 def merge(d1, d2):
@@ -29,4 +30,11 @@ def setupLog(name, args):
     mainlog.addHandler(mfh)
     return mainlog
 
+
+def formatStack(stack):
+    formatted_error=[]
+    for trace in stack:
+        formatted_error.append("File {f}: line {l} in {i}\n{e}".format(f=trace[0], l=trace[1], i=trace[2], e=trace[3]))
+
+    return "\n".join(formatted_error)
 
