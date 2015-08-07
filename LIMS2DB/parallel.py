@@ -9,6 +9,7 @@ import Queue
 
 from genologics.entities import Process
 from genologics.config import BASEURI, USERNAME, PASSWORD
+from genologics.lims import *
 
 def processWSUL(options, queue, logqueue):
     mycouch = sdb.Couch()
