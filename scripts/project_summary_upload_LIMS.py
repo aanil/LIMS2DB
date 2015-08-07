@@ -110,7 +110,7 @@ def main(options):
 
     if options.all_projects:
         if options.hours:
-            delta=datetime.timedelta(hours=-options.hours)
+            delta=datetime.timedelta(hours=options.hours)
             time_string=(datetime.datetime.now()-delta).strftime('%Y-%m-%dT%H:%M:%SCET')
             projects=mainlims.get_projects(last_modified=time_string)
         else:
