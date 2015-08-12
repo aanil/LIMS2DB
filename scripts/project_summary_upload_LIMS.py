@@ -214,7 +214,6 @@ def masterProcess(options,projectList, mainlims, logger):
             log=logQueue.get(False)
             logger.handle(log)
         except Queue.Empty:
-            logger.info("Queue is empty, waiting on children")
             if not stillRunning(childs):
                 notDone=False
                 break
