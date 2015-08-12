@@ -109,13 +109,7 @@ def main(options):
     mainlog.addHandler(mfh)
 
     if options.all_projects:
-        if options.hours:
-            delta=datetime.timedelta(hours=options.hours)
-            time_string=(datetime.datetime.now()-delta).strftime('%Y-%m-%dT%H:%M:%SCET')
-            projects=mainlims.get_projects(last_modified=time_string)
-            mainlog.info("project list : {0}".format(" ".join([p.id for p in projects])))
-        else:
-            projects = mainlims.get_projects()
+        projects=create_projects_list(options, mainlims, mainlog)
         masterProcess(options,projects, mainlims, mainlog)
     elif options.project_name:
         proj = mainlims.get_projects(name = options.project_name)
@@ -125,6 +119,24 @@ def main(options):
         else:
             P = PSUL(proj[0], samp_db, proj_db, options.upload, options.project_name, output_f, mainlog)
             P.handle_project()
+
+def create_projects_list(options, lims, log):
+        projects = lims.get_projects()
+        if options.hours:
+            delta=datetime.timedelta(hours=options.hours)
+            #timestring for processes is different from timestring for projects. First needs Z, second needs full timezone
+            time_string_pc=(datetime.datetime.now()-delta).strftime('%Y-%m-%dT%H:%M:%SZ')
+            time_string_pj=(datetime.datetime.now()-delta).strftime('%Y-%m-%dT%H:%M:%SCET')
+            valid_projects=lims.get_projects(last_modified=time_string_pj)
+            for proj in projects:
+                procs=lims.get_processes(last_modified=time_string_pc, projectname=proj.name)
+                if procs:
+                    valid_projects.append(proj)
+            log.info("project list : {0}".format(" ".join([p.id for p in valid_projects])))
+            return valid_projects
+        else:
+            log.info("project list : {0}".format(" ".join([p.id for p in projects])))
+            return projects
 
 def processPSUL(options, queue, logqueue):
     couch = load_couch_server(options.conf)
@@ -144,10 +156,14 @@ def processPSUL(options, queue, logqueue):
         #grabs project from queue
         try:
             projname = queue.get(block=True, timeout=3)
+            proclog.info("Approximately {} projects left in queue".format(queue.qsize()))
         except Queue.Empty:
             work=False
             proclog.info("exiting gracefully")
             break
+        except NotImplementedError:
+            #qsize failed, no big deal
+            pass
         else:
             #locks the project : cannot be updated more than once.
             lockfile=os.path.join(options.lockdir, projname)
@@ -198,6 +214,7 @@ def masterProcess(options,projectList, mainlims, logger):
             log=logQueue.get(False)
             logger.handle(log)
         except Queue.Empty:
+            logger.info("Queue is empty, waiting on children")
             if not stillRunning(childs):
                 notDone=False
                 break
@@ -298,6 +315,7 @@ if __name__ == '__main__':
     parser.add_option("--lockdir", dest = "lockdir", help = ("directory handling the lock files",
                       " to avoid multiple updating of one project. default is $HOME/psul_locks "), default=os.path.expanduser("~/psul_locks"))
     parser.add_option("-j", "--hours", dest = "hours",type='int', help = ("only handle projects modified in the last X hours"), default=None)
+    parser.add_option("-k", "--control", dest = "control", action="store_true", help = ("only perform a dry-run"), default=False)
 
     (options, args) = parser.parse_args()
     main(options)
