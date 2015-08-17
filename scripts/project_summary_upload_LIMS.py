@@ -156,6 +156,7 @@ def processPSUL(options, queue, logqueue):
         #grabs project from queue
         try:
             projname = queue.get(block=True, timeout=3)
+            proclog.info("Starting work on {} ".format(projname))
             proclog.info("Approximately {} projects left in queue".format(queue.qsize()))
         except Queue.Empty:
             work=False
