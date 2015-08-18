@@ -68,7 +68,7 @@ class ProjectDB():
                 step = gent.Step(self.lims, id = p.id)
             except:
                 #Some processes do not have a corresponding step. Do not parse escalations for them.
-                logging.warn('Warning. project {0}, process {1} does not seem to have a Step counterpart '.format(self.project.name, p.id))
+                self.logger.warn('Warning. project {0}, process {1} does not seem to have a Step counterpart '.format(self.project.name, p.id))
             else:
                 if step.actions.escalation:
                     samples_escalated = set()
@@ -153,7 +153,7 @@ class ProjectDB():
         if len(project_summary) > 0:
             self.obj['project_summary'] = udf_dict(project_summary[0])
         if len(project_summary) > 1:
-            logging.warn('Warning. project summary process run more than once')
+            self.logger.warn('Warning. project summary process run more than once')
 
     def _get_sequencing_finished(self):
         """
@@ -217,7 +217,8 @@ class ProjectDB():
                                   AgrLibQCs=self.preps.info,
                                   run_info=runinfo.info,
                                   processes_per_artifact = procss_per_art,
-                                  application=self.application)
+                                  application=self.application,
+                                  logger=self.logger)
                 self.obj['samples'][sampDB.name] = sampDB.obj
                 try:
                     initial_qc_start_date = self.obj['samples'][sampDB.name]['initial_qc']['start_date']
@@ -284,7 +285,7 @@ class SampleDB():
 
     def __init__(self, lims_instance , sample_id, project_name, samp_db,
                         isFinLib= None, AgrLibQCs = [], run_info = [],
-                        processes_per_artifact = None, application=None): 
+                        processes_per_artifact = None, application=None, logger=None): 
         self.lims = lims_instance
         self.samp_db = samp_db
         self.AgrLibQCs = AgrLibQCs
@@ -296,6 +297,7 @@ class SampleDB():
         self.application=application
         self.obj = {}
         self._get_sample_info()
+        self.logger=logger
 
     def _get_sample_info(self):
         """
