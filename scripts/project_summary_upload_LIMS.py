@@ -204,6 +204,7 @@ def masterProcess(options,projectList, mainlims, logger):
         p = mp.Process(target=processPSUL, args=(options,projectsQueue, logQueue))
         p.start()
         childs.append(p)
+        time.sleep(2)
     #populate queue with data   
     for proj in orderedprojectlist:
         projectsQueue.put(proj.name)
