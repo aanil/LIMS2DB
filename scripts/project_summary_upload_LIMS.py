@@ -143,7 +143,10 @@ def create_projects_list(options, lims, log):
         elif options.input:
             with open(options.input, "r") as input_file:
                 for pname in input_file:
-                    projects.append(lims.get_projects(name=pname.rstrip()))
+                    try:
+                        projects.append(lims.get_projects(name=pname.rstrip())[0] )
+                    except IndexError:
+                        pass
 
             return projects
 
