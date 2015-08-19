@@ -55,8 +55,8 @@ class PSUL():
 
         if self.open_date:
             return self.open_date
-        elif 'Order received' in self.proj.udfs:
-            return self.udfs['Order received'].isoformat()
+        elif 'Order received' in self.proj.udf:
+            return self.proj.udf['Order received'].isoformat()
         else:
             return datetime.date.today().strftime("%Y-%m-%d")
 
