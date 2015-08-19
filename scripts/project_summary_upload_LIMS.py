@@ -108,10 +108,7 @@ def main(options):
     mfh.setFormatter(mft)
     mainlog.addHandler(mfh)
 
-    if options.all_projects:
-        projects=create_projects_list(options, mainlims, mainlog)
-        masterProcess(options,projects, mainlims, mainlog)
-    elif options.project_name:
+    if options.project_name:
         proj = mainlims.get_projects(name = options.project_name)
         if not proj:
             mainlog.warn('No project named {man_name} in Lims'.format(
@@ -119,24 +116,39 @@ def main(options):
         else:
             P = PSUL(proj[0], samp_db, proj_db, options.upload, options.project_name, output_f, mainlog)
             P.handle_project()
+    else :
+        projects=create_projects_list(options, mainlims, mainlog)
+        masterProcess(options,projects, mainlims, mainlog)
 
 def create_projects_list(options, lims, log):
-        projects = lims.get_projects()
-        if options.hours:
-            delta=datetime.timedelta(hours=options.hours)
-            #timestring for processes is different from timestring for projects. First needs Z, second needs full timezone
-            time_string_pc=(datetime.datetime.now()-delta).strftime('%Y-%m-%dT%H:%M:%SZ')
-            time_string_pj=(datetime.datetime.now()-delta).strftime('%Y-%m-%dT%H:%M:%SCET')
-            valid_projects=lims.get_projects(last_modified=time_string_pj)
-            for proj in projects:
-                procs=lims.get_processes(last_modified=time_string_pc, projectname=proj.name)
-                if procs:
-                    valid_projects.append(proj)
-            log.info("project list : {0}".format(" ".join([p.id for p in valid_projects])))
-            return valid_projects
-        else:
-            log.info("project list : {0}".format(" ".join([p.id for p in projects])))
+        projects=[]
+        if options.all_projects:
+            projects = lims.get_projects()
+            if options.hours:
+                delta=datetime.timedelta(hours=options.hours)
+                #timestring for processes is different from timestring for projects. First needs Z, second needs full timezone
+                time_string_pc=(datetime.datetime.now()-delta).strftime('%Y-%m-%dT%H:%M:%SZ')
+                time_string_pj=(datetime.datetime.now()-delta).strftime('%Y-%m-%dT%H:%M:%SCET')
+                valid_projects=lims.get_projects(last_modified=time_string_pj)
+                for proj in projects:
+                    procs=lims.get_processes(last_modified=time_string_pc, projectname=proj.name)
+                    if procs:
+                        valid_projects.append(proj)
+                log.info("project list : {0}".format(" ".join([p.id for p in valid_projects])))
+                return valid_projects
+            else:
+                log.info("project list : {0}".format(" ".join([p.id for p in projects])))
+                return projects
+
+        elif options.input:
+            with open(options.input, "r") as input_file:
+                for pname in input_file:
+                    projects.append(lims.get_projects(name=pname.rstrip()))
+
             return projects
+
+
+
 
 def processPSUL(options, queue, logqueue):
     couch = load_couch_server(options.conf)
@@ -151,6 +163,10 @@ def processPSUL(options, queue, logqueue):
     mft = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     mfh.setFormatter(mft)
     proclog.addHandler(mfh)
+    try:
+        time.sleep(int(procname[8:]))
+    except:
+        time.sleep(1)
 
     while work:
         #grabs project from queue
@@ -204,7 +220,6 @@ def masterProcess(options,projectList, mainlims, logger):
         p = mp.Process(target=processPSUL, args=(options,projectsQueue, logQueue))
         p.start()
         childs.append(p)
-        time.sleep(2)
     #populate queue with data   
     for proj in orderedprojectlist:
         projectsQueue.put(proj.name)
@@ -317,6 +332,7 @@ if __name__ == '__main__':
                       " to avoid multiple updating of one project. default is $HOME/psul_locks "), default=os.path.expanduser("~/psul_locks"))
     parser.add_option("-j", "--hours", dest = "hours",type='int', help = ("only handle projects modified in the last X hours"), default=None)
     parser.add_option("-k", "--control", dest = "control", action="store_true", help = ("only perform a dry-run"), default=False)
+    parser.add_option("-i", "--input", dest = "input", help = ("path to the input file containing projects to update"), default=None)
 
     (options, args) = parser.parse_args()
     main(options)
