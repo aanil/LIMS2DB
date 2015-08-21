@@ -99,6 +99,7 @@ for p in pjs:
                     lbr=clean_names(oneps.udf['Lab responsible'])
                     summary[lbr]=completed
 
+control=''
 for resp in summary:
     plist=set()#no duplicates
     body=''
@@ -117,6 +118,7 @@ for resp in summary:
             plist.add(struct['project'])
             body+='Project {} {} on {} by {}\n'.format(struct['project'], struct['action'],struct['date'],struct['techID'])
     if body!= '':
+        control+="{} : {}\n".format(email[resp], body)
         body+='\n\n--\nThis mail is an automated mail that is generated once a day and summarizes the events of the previous days in the lims, \
 for the projects you are described as "Lab responsible" or "Bioinfo Responsible". You can send comments or suggestions to {}'.format(operator)
         msg=MIMEText(body)
@@ -131,3 +133,12 @@ for the projects you are described as "Lab responsible" or "Bioinfo Responsible"
         s = smtplib.SMTP('smtp.ki.se')
         s.sendmail('genologics-lims@scilifelab.se', msg['To'], msg.as_string())
         s.quit()
+
+
+ctrlmsg= MIMEText(control)
+ctrlmsg['Subject']='[Lims update] Control'
+ctrlmsg['From']='Lims_monitor'
+ctrlmsg['To'] = operator
+s = smtplib.SMTP('smtp.ki.se')
+s.sendmail('genologics-lims@scilifelab.se', ctrlmsg['To'], ctrlmsg.as_string())
+s.quit()
