@@ -47,8 +47,7 @@ def clean_names(name):
 
 for p in pjs:
     #Assuming this will be run on the early morning, this grabs all processes from the list that have been modified the day before
-    #pro=lims.get_processes(projectname=p.name, type=project_types, last_modified=yesterday.strftime("%Y-%m-%dT00:00:00Z"));
-    pro=lims.get_processes(projectname=p.name, type=project_types, last_modified=sixMonthsAgo.strftime("%Y-%m-%dT00:00:00Z"));
+    pro=lims.get_processes(projectname=p.name, type=project_types, last_modified=yesterday.strftime("%Y-%m-%dT00:00:00Z"));
     completed=[]
     bfr=None
     lbr=None
