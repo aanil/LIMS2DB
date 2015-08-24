@@ -907,6 +907,11 @@ class Prep():
             library_validation['prep_status'] = inart.qc_flag
             library_validation['reagent_labels'] = inart.reagent_labels
             library_validation.update(udf_dict(inart))
+            #Neoprep special case
+            if 'Normalized conc. (nM)' in inart.udf:
+                library_validation['conc_units']="nM"
+                library_validation['concentration']=inart.udf['Normalized conc. (nM)']
+
             initials = Process(self.lims, id = agrlibQCstep['id']).technician.initials
             if initials:
                 library_validation['initials'] = initials

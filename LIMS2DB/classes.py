@@ -143,8 +143,8 @@ class LimsCrawler:
                 for i in self.inputs:
                     if i.type == "Analyte" and (self.samples.intersection(i.samples)):
                         nextsteps.update(self.lims.get_processes(inputartifactlimsid=i.id))
-                else:
-                    starting_step=self.starting_proc
+            else:
+                starting_step=self.starting_proc
         if starting_step:
             for o in starting_step.all_outputs():
                 if o.type == "Analyte" and (self.samples.intersection(o.samples)):
