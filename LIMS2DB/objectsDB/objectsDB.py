@@ -895,8 +895,11 @@ class Prep():
         """
 
         library_validations = {}
-        start_date = libvalstart['date'] if (libvalstart and 
-                                         libvalstart.has_key('date')) else None
+        try:
+            start_date=libvalstart['date']
+        except:
+            start_date=None
+
         for agrlibQCstep in agrlibQCsteps:
             library_validation = self.lib_val_templ
             inart = Artifact(self.lims, id = agrlibQCstep['inart'])
@@ -908,9 +911,15 @@ class Prep():
             library_validation['reagent_labels'] = inart.reagent_labels
             library_validation.update(udf_dict(inart))
             #Neoprep special case
-            if 'Normalized conc. (nM)' in inart.udf:
+            if 'NeoPrep' in agrlibQCstep['name']:
+                library_validation['start_date'] = agrlibQCstep.get('date')
                 library_validation['conc_units']="nM"
                 library_validation['concentration']=inart.udf['Normalized conc. (nM)']
+                for art in Process(self.lims, id = agrlibQCstep['id']).all_outputs():
+                    if self.sample_name in [s.name for s in art.samples] and art.name == self.sample_name:
+                        library_validation['prep_status'] = art.qc_flag
+                        library_validation['reagent_labels'] = art.reagent_labels
+
 
             initials = Process(self.lims, id = agrlibQCstep['id']).technician.initials
             if initials:
