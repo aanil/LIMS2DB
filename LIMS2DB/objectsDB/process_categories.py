@@ -50,6 +50,7 @@ PREPEND = {'Description':'Process that can be defined as a end of the library pr
     '456' : 'Purification (ThruPlex)',
     '111' : 'Amplify Captured Libraries to Add Index Tags (SS XT) 4.0',
     '406' : 'End repair, size selection, A-tailing and adapter ligation (TruSeq PCR-free DNA) 4.0',
+    '805' : 'NeoPrep Library Prep v1.0',
     '311': 'Sample Placement (Size Selection)'}
 LIBVAL = {'Description':'All processes included in the library validation protocol, except the aggregation step. If the work flow involves two library preparation protocols, such as for exome capture, only the steps of the second protocol should be given here.',
     '62' : 'qPCR QC (Library Validation) 4.0',
@@ -65,7 +66,8 @@ LIBVALFINISHEDLIB = {'Description':'',
     '17' : 'Bioanalyzer QC (Library Validation) 4.0',
     '24' : 'Customer Gel QC'}
 AGRLIBVAL = {'Description':'The aggregation step of the library validation protocol',
-    '8': 'Aggregate QC (Library Validation) 4.0'}
+    '8': 'Aggregate QC (Library Validation) 4.0',
+    '806': 'NeoPrep Library QC v1.0'}
 SEQSTART = {'Description':'These processes are used to set the sequencing_start_date',
     '23':'Cluster Generation (Illumina SBS) 4.0',
     '26':'Denature, Dilute and Load Sample (MiSeq) 4.0',

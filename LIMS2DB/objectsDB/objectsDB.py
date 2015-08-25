@@ -38,7 +38,11 @@ class ProjectDB():
     project database on statusdb. the data comes from different lims
     artifacts and processes."""
 
-    def __init__(self, lims_instance, project_id, samp_db):
+    def __init__(self, lims_instance, project_id, samp_db, logger):
+        if logger:
+            self.logger=logger
+        else:
+            self.logger=logging.getLogger(__name__)
         self.lims = lims_instance 
         self.samp_db = samp_db
         self.project = Project(self.lims,id = project_id)
@@ -51,9 +55,9 @@ class ProjectDB():
                                                     type = SEQUENCING.values())
         self.seq_procs = ProcessInfo(self.lims, self.seq)
         self._get_project_level_info()
+        self._get_open_escalations()
         self._make_DB_samples()
         self._get_sequencing_finished()
-        self._get_open_escalations()
 
     def _get_open_escalations(self):
         # Need Denis input
@@ -64,7 +68,7 @@ class ProjectDB():
                 step = gent.Step(self.lims, id = p.id)
             except:
                 #Some processes do not have a corresponding step. Do not parse escalations for them.
-                logging.warn('Warning. project {0}, process {1} does not seem to have a Step counterpart '.format(self.project.name, p.id))
+                self.logger.warn('Warning. project {0}, process {1} does not seem to have a Step counterpart '.format(self.project.name, p.id))
             else:
                 if step.actions.escalation:
                     samples_escalated = set()
@@ -149,7 +153,7 @@ class ProjectDB():
         if len(project_summary) > 0:
             self.obj['project_summary'] = udf_dict(project_summary[0])
         if len(project_summary) > 1:
-            logging.warn('Warning. project summary process run more than once')
+            self.logger.warn('Warning. project summary process run more than once')
 
     def _get_sequencing_finished(self):
         """
@@ -204,6 +208,7 @@ class ProjectDB():
                                                          self.project.name)
             self.obj['first_initial_qc'] = '3000-10-10'
             for samp in samples:
+                self.logger.info("working on {}".format(samp.name))
                 sampDB = SampleDB(lims_instance=self.lims,
                                   sample_id=samp.id,
                                   project_name=self.obj['project_name'],
@@ -212,7 +217,8 @@ class ProjectDB():
                                   AgrLibQCs=self.preps.info,
                                   run_info=runinfo.info,
                                   processes_per_artifact = procss_per_art,
-                                  application=self.application)
+                                  application=self.application,
+                                  logger=self.logger)
                 self.obj['samples'][sampDB.name] = sampDB.obj
                 try:
                     initial_qc_start_date = self.obj['samples'][sampDB.name]['initial_qc']['start_date']
@@ -279,7 +285,7 @@ class SampleDB():
 
     def __init__(self, lims_instance , sample_id, project_name, samp_db,
                         isFinLib= None, AgrLibQCs = [], run_info = [],
-                        processes_per_artifact = None, application=None): 
+                        processes_per_artifact = None, application=None, logger=None): 
         self.lims = lims_instance
         self.samp_db = samp_db
         self.AgrLibQCs = AgrLibQCs
@@ -291,6 +297,7 @@ class SampleDB():
         self.application=application
         self.obj = {}
         self._get_sample_info()
+        self.logger=logger
 
     def _get_sample_info(self):
         """
@@ -347,7 +354,7 @@ class SampleDB():
         """
 
         arts = self.lims.get_artifacts(sample_name = sample_name, 
-                                        process_type = process_list)
+                                        process_type = process_list, resolve=True)
         index = -1 if last_day else 0 
         uniqueDates=set([a.parent_process.date_run for a in arts])
         try:
@@ -462,7 +469,7 @@ class SampleDB():
                 samp_run_met_id = '_'.join([lane, date, fcid, barcode])
             except TypeError: 
                 #happens if the History object is missing fields, barcode might be None
-                logging.debug("Missing field for making the sample run id :{0} {1}-{2}".format(self.name,prep, prep['reagent_label']))
+                self.logger.debug("Missing field for making the sample run id :{0} {1}-{2}".format(self.name,prep, prep['reagent_label']))
         return samp_run_met_id
 
     def _get_prep_leter(self, prep_info):
@@ -539,7 +546,7 @@ class SampleDB():
                 preps['Finished']['reagent_label'] = self.lims_sample.artifact.reagent_labels[0]
             except IndexError:
                 #P821 has nothing here
-                logging.warn("No reagent label for artifact {} in sample {}".format(self.lims_sample.artifact.id, self.name))
+                self.logger.warn("No reagent label for artifact {} in sample {}".format(self.lims_sample.artifact.id, self.name))
                 preps['Finished']['reagent_label'] = None
 
             preps['Finished'] = delete_Nones(preps['Finished'])
@@ -604,7 +611,7 @@ class InitialQC():
 
     def _get_initialqc_processes(self):
         outarts = self.lims.get_artifacts(sample_name = self.sample_name,
-                                          process_type = AGRINITQC.values())
+                                          process_type = AGRINITQC.values(), resolve=True)
         if outarts:
             outart = Artifact(self.lims, id = max(map(lambda a: a.id, outarts)))
             latestInitQc = outart.parent_process
@@ -888,8 +895,11 @@ class Prep():
         """
 
         library_validations = {}
-        start_date = libvalstart['date'] if (libvalstart and 
-                                         libvalstart.has_key('date')) else None
+        try:
+            start_date=libvalstart['date']
+        except:
+            start_date=None
+
         for agrlibQCstep in agrlibQCsteps:
             library_validation = self.lib_val_templ
             inart = Artifact(self.lims, id = agrlibQCstep['inart'])
@@ -900,6 +910,17 @@ class Prep():
             library_validation['prep_status'] = inart.qc_flag
             library_validation['reagent_labels'] = inart.reagent_labels
             library_validation.update(udf_dict(inart))
+            #Neoprep special case
+            if 'NeoPrep' in agrlibQCstep['name']:
+                library_validation['start_date'] = agrlibQCstep.get('date')
+                library_validation['conc_units']="nM"
+                library_validation['concentration']=inart.udf['Normalized conc. (nM)']
+                for art in Process(self.lims, id = agrlibQCstep['id']).all_outputs():
+                    if self.sample_name in [s.name for s in art.samples] and art.name == self.sample_name:
+                        library_validation['prep_status'] = art.qc_flag
+                        library_validation['reagent_labels'] = art.reagent_labels
+
+
             initials = Process(self.lims, id = agrlibQCstep['id']).technician.initials
             if initials:
                 library_validation['initials'] = initials

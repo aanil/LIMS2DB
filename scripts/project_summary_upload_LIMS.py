@@ -9,6 +9,7 @@ from genologics.lims import *
 from LIMS2DB.objectsDB.functions import *
 from optparse import OptionParser
 from statusdb.db.utils import *
+from LIMS2DB.utils import formatStack
 
 from pprint import pprint
 
@@ -22,10 +23,11 @@ import os
 import Queue
 import sys
 import time
+import traceback
 
    
 class PSUL():
-    def __init__(self, proj, samp_db, proj_db, upload_data, days, man_name, output_f, log):
+    def __init__(self, proj, samp_db, proj_db, upload_data, man_name, output_f, log):
         self.proj = proj
         self.id = proj.id
         self.udfs = proj.udf
@@ -36,9 +38,8 @@ class PSUL():
         self.proj_db = proj_db
         self.upload_data = upload_data
         self.man_name = man_name
-        self.days = days
         self.output_f = output_f
-        self.ordered_opened = None
+        self.ordered_opened = self.get_ordered_opened()
         self.lims = Lims(BASEURI, USERNAME, PASSWORD)
         self.log=log
 
@@ -53,57 +54,30 @@ class PSUL():
         """Is project registered as opened or ordered?"""
 
         if self.open_date:
-            self.ordered_opened = self.open_date
-        elif 'Order received' in dict(self.udfs.items()).keys():
-            self.ordered_opened = self.udfs['Order received'].isoformat()
+            return self.open_date
+        elif 'Order received' in self.proj.udf:
+            return self.proj.udf['Order received'].isoformat()
         else:
-            self.log.info("Project is not updated because 'Order received' date and "
-                     "'open date' is missing for project {name}".format(
-                     name = self.name))
-
-    def get_days_closed(self):
-        """Project registered as closed?"""
-
-        if self.close_date:
-            closed=datetime.datetime.strptime(self.close_date,"%Y-%m-%d" )
-            return (datetime.datetime.today() - closed).days
-        else:
-            return 0
+            return datetime.date.today().strftime("%Y-%m-%d")
 
     def determine_update(self):
         """Determine wether to and how to update project"""
-        days_closed = self.get_days_closed()
-        opended_after_130630 = comp_dates('2013-06-30', self.ordered_opened)
-        closed_for_a_while = (days_closed > self.days)
+        opened_after_130630 = comp_dates('2013-06-30', self.ordered_opened)
         log_info = ''
-        if (not opended_after_130630) or closed_for_a_while:
-            if self.man_name:   ## Ask wether to update
-                start_update = raw_input("""
-                Project {name} was ordered or opended at {ord_op} and has been 
-                closed for {days} days. Do you still want to load the data from 
-                lims into statusdb? 
-                Press enter for No, any other key for Yes! """.format(
-                name = self.name, ord_op = self.ordered_opened, days = days_closed))
-            else:               ## Do not update
+        if not opened_after_130630 :
                 start_update = False
-                log_info = ('Project is not updated because: ')
-                if closed_for_a_while:
-                    log_info += ('It has been closed for {days} days. '.format(
-                                 days = days_closed))
-                if not opended_after_130630:
-                    log_info += ('It was opened or ordered before 2013-06-30 '
-                                 '({ord_op})'.format(ord_op = self.ordered_opened))
+                self.log.info('Project is not updated because: '
+                    'It was opened or ordered before 2013-06-30 : '
+                    '({ord_op})'.format(ord_op = self.ordered_opened))
         else:
             start_update = True
-        if start_update:
-            log_info = self.update_project(DB)
-        return log_info
 
-    def update_project(self, database):
+        return start_update
+
+    def update_project(self):
         """Fetch project info and update project in the database."""
-        opended_after_140630 = comp_dates('2014-06-30', self.ordered_opened)
-        self.log.info('Handeling {proj}'.format(proj = self.name))
-        project = database.ProjectDB(self.lims, self.id, self.samp_db)
+        self.log.info('Handling {proj}'.format(proj = self.name))
+        project = DB.ProjectDB(self.lims, self.id, self.samp_db, self.log)
 
         key = find_proj_from_view(self.proj_db, self.name)
         project.obj['_id'] = find_or_make_key(key)
@@ -111,26 +85,15 @@ class PSUL():
             info = save_couchdb_obj(self.proj_db, project.obj)
         else:
             info = self.print_couchdb_obj_to_file(project.obj)
-        return "project {name} is handled and {info}: _id = {id}".format(
-                           name=self.name, info=info, id=project.obj['_id'])
 
-    def project_update_and_logging(self):
-        start_time = time.time()
-        self.get_ordered_opened()
-        if self.ordered_opened:
-            log_info = self.determine_update()
-        else:
-            log_info = ('No open date or order date found for project {name}. '
-                        'Project not updated.'.format(name = self.name))
-        elapsed = time.time() - start_time
-        self.log.info('Time - {elapsed} : Proj Name - '
-                 '{name}'.format(elapsed = elapsed, name = self.name))
-        self.log.info(log_info) 
+        self.log.info("project {name} is handled and {info}: _id = {id}".format(
+                           name=self.name, info=info, id=project.obj['_id']))
+
+    def handle_project(self):
+        if self.determine_update():
+            self.update_project()
 
 def main(options):
-    man_name = options.project_name
-    all_projects = options.all_projects
-    days = options.days
     conf = options.conf
     upload_data = options.upload
     output_f = options.output_f
@@ -140,22 +103,55 @@ def main(options):
     mainlims = Lims(BASEURI, USERNAME, PASSWORD)
     mainlog = logging.getLogger('psullogger')
     mainlog.setLevel(level=logging.INFO)
-    mfh = logging.FileHandler(options.logfile)
+    mfh = logging.handlers.RotatingFileHandler(options.logfile, maxBytes=209715200, backupCount=5)
     mft = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     mfh.setFormatter(mft)
     mainlog.addHandler(mfh)
 
-    if all_projects:
-        projects = mainlims.get_projects()
-        masterProcess(options,projects, mainlims, mainlog)
-    elif man_name:
-        proj = mainlims.get_projects(name = man_name)
+    if options.project_name:
+        proj = mainlims.get_projects(name = options.project_name)
         if not proj:
             mainlog.warn('No project named {man_name} in Lims'.format(
-                        man_name = man_name))
+                        man_name = options.project_name))
         else:
-            P = PSUL(proj[0], samp_db, proj_db, upload_data, days, man_name, output_f, mainlog)
-            P.project_update_and_logging()
+            P = PSUL(proj[0], samp_db, proj_db, options.upload, options.project_name, output_f, mainlog)
+            P.handle_project()
+    else :
+        projects=create_projects_list(options, mainlims, mainlog)
+        masterProcess(options,projects, mainlims, mainlog)
+
+def create_projects_list(options, lims, log):
+        projects=[]
+        if options.all_projects:
+            projects = lims.get_projects()
+            if options.hours:
+                delta=datetime.timedelta(hours=options.hours)
+                #timestring for processes is different from timestring for projects. First needs Z, second needs full timezone
+                time_string_pc=(datetime.datetime.now()-delta).strftime('%Y-%m-%dT%H:%M:%SZ')
+                time_string_pj=(datetime.datetime.now()-delta).strftime('%Y-%m-%dT%H:%M:%SCET')
+                valid_projects=lims.get_projects(last_modified=time_string_pj)
+                for proj in projects:
+                    procs=lims.get_processes(last_modified=time_string_pc, projectname=proj.name)
+                    if procs:
+                        valid_projects.append(proj)
+                log.info("project list : {0}".format(" ".join([p.id for p in valid_projects])))
+                return valid_projects
+            else:
+                log.info("project list : {0}".format(" ".join([p.id for p in projects])))
+                return projects
+
+        elif options.input:
+            with open(options.input, "r") as input_file:
+                for pname in input_file:
+                    try:
+                        projects.append(lims.get_projects(name=pname.rstrip())[0] )
+                    except IndexError:
+                        pass
+
+            return projects
+
+
+
 
 def processPSUL(options, queue, logqueue):
     couch = load_couch_server(options.conf)
@@ -170,19 +166,47 @@ def processPSUL(options, queue, logqueue):
     mft = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     mfh.setFormatter(mft)
     proclog.addHandler(mfh)
+    try:
+        time.sleep(int(procname[8:]))
+    except:
+        time.sleep(1)
 
     while work:
         #grabs project from queue
         try:
             projname = queue.get(block=True, timeout=3)
+            proclog.info("Starting work on {} ".format(projname))
+            proclog.info("Approximately {} projects left in queue".format(queue.qsize()))
         except Queue.Empty:
             work=False
             proclog.info("exiting gracefully")
             break
+        except NotImplementedError:
+            #qsize failed, no big deal
+            pass
         else:
-            proj=mylims.get_projects(name=projname)[0]
-            P = PSUL(proj, samp_db, proj_db, options.upload, options.days, options.project_name, options.output_f, proclog)
-            P.project_update_and_logging()
+            #locks the project : cannot be updated more than once.
+            lockfile=os.path.join(options.lockdir, projname)
+            if not os.path.exists(lockfile):
+                try:
+                    open(lockfile,'w').close()
+                except:
+                    proclog.error("cannot create lockfile {}".format(lockfile))
+                try:
+                    proj=mylims.get_projects(name=projname)[0]
+                    P = PSUL(proj, samp_db, proj_db, options.upload, options.project_name, options.output_f, proclog)
+                    P.handle_project()
+                except :
+                    error=sys.exc_info()
+                    stack=traceback.extract_tb(error[2])
+                    proclog.error("{0}:{1}\n{2}".format(error[0], error[1], formatStack(stack)))
+
+                try:
+                    os.remove(lockfile)
+                except:
+                    proclog.error("cannot remove lockfile {}".format(lockfile))
+
+
             #signals to queue job is done
             queue.task_done()
 
@@ -294,9 +318,6 @@ if __name__ == '__main__':
     parser.add_option("-a", "--all_projects", dest = "all_projects", action = 
                       "store_true", default = False, help = ("Upload all Lims ",
                       "projects into couchDB. Don't use with -f flagg."))
-    parser.add_option("-d", "--days",type='int', dest = "days", default = 60, help = (
-                      "Projects with a close_date older than DAYS days are not",
-                      " updated. Default is 60 days. Use with -a flagg"))
     parser.add_option("-c", "--conf", dest = "conf", default = os.path.join(
                       os.environ['HOME'],'opt/config/post_process.yaml'), help =
                       "Config file.  Default: ~/opt/config/post_process.yaml")
@@ -310,6 +331,11 @@ if __name__ == '__main__':
                       help = "How many processes will be spawned. Will only work with -a")
     parser.add_option("-l", "--logfile", dest = "logfile", help = ("log file",
                       " that will be used. default is $HOME/lims2db_projects.log "), default=os.path.expanduser("~/lims2db_projects.log"))
+    parser.add_option("--lockdir", dest = "lockdir", help = ("directory handling the lock files",
+                      " to avoid multiple updating of one project. default is $HOME/psul_locks "), default=os.path.expanduser("~/psul_locks"))
+    parser.add_option("-j", "--hours", dest = "hours",type='int', help = ("only handle projects modified in the last X hours"), default=None)
+    parser.add_option("-k", "--control", dest = "control", action="store_true", help = ("only perform a dry-run"), default=False)
+    parser.add_option("-i", "--input", dest = "input", help = ("path to the input file containing projects to update"), default=None)
 
     (options, args) = parser.parse_args()
     main(options)
