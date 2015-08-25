@@ -55,6 +55,8 @@ def processWSUL(options, queue, logqueue):
                     ws.obj['_rev'] = doc_rev
                     mycouch.db[doc_id] = ws.obj 
                     proclog.info("updating {0}".format(ws.obj['name']))
+                else:
+                    proclog.info("not modifying {0}".format(ws.obj['name']))
             elif len(view[ws.obj['name']].rows) == 0:
                 #it is a new doc, upload it
                 mycouch.save(ws.obj) 
