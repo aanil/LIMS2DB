@@ -139,12 +139,13 @@ Process that can be defined as a end of the library preparation. If more than on
 === =======================================
 ID  process Name
 === =======================================
-157	Applications Finish Prep
-311	Sample Placement (Size Selection)
-456	Purification (ThruPlex)
 406	End repair, size selection, A-tailing and adapter ligation (TruSeq PCR-free DNA) 4.0
 109	CA Purification
 111	Amplify Captured Libraries to Add Index Tags (SS XT) 4.0
+157	Applications Finish Prep
+805	NeoPrep Library Prep v1.0
+311	Sample Placement (Size Selection)
+456	Purification (ThruPlex)
 === =======================================
     
 
@@ -266,6 +267,7 @@ The aggregation step of the library validation protocol
 ID  process Name
 === =======================================
 8	Aggregate QC (Library Validation) 4.0
+806	NeoPrep Library QC v1.0
 === =======================================
     
 

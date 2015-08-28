@@ -16,7 +16,7 @@ import LIMS2DB.parallel as lpar
 
 
 def main(args):
-    log = lutils.setupLog('worksetlogger', args)
+    log = lutils.setupLog('worksetlogger', args.logfile)
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     #this will decide how far back we are looking
     if args.ws:
