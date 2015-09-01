@@ -83,6 +83,9 @@ if __name__ == '__main__':
     default=os.path.join(os.environ['HOME'],'opt/config/post_process.yaml'), 
     help = "Config file.  Default: ~/opt/config/post_process.yaml")
 
+    parser.add_argument("-q", "--queue", dest="queue", 
+    help = "Internal testing parameter")
+
     parser.add_argument("-l", "--log", dest="logfile", 
     default=os.path.join(os.environ['HOME'],'workset_upload.log'), 
     help = "log file.  Default: ~/workset_upload.log")
