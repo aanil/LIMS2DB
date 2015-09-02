@@ -109,12 +109,12 @@ def main(args):
             if resp != struct['tech'] and not struct['sum']:    
                 plist.add(struct['project'])
                 body+="In project {},  {} ({})".format(struct['project'], struct['process'], struct['limsid'])
-                if struct['start']:
+                if struct['start'] and yesterday.strftime("%Y-%m-%d") == struct['start']:
                     body+="started on {}, ".format(struct['start'])
                 elif struct['end']:
                     body+="ended on {}, ".format(struct['end'])
                 else:  
-                    body+="has been modified yesterday, "
+                    body+="has been updated yesterday, "
                 body+="Done by {}\n".format(struct['tech'])
             elif struct['sum']:
                 plist.add(struct['project'])
