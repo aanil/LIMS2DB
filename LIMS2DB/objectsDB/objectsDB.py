@@ -131,8 +131,8 @@ class ProjectDB():
         affiliation     Lab             Affiliation project.researcher.lab
         ============    ============    =========== ================"""
 
-        researcher_udfs = dict(self.project.researcher.lab.udf.items())
-        if researcher_udfs.has_key('Affiliation'):
+        if self.project.researcher and researcher_udfs.has_key('Affiliation'):
+            researcher_udfs = dict(self.project.researcher.lab.udf.items())
             self.obj['affiliation'] = researcher_udfs['Affiliation']
 
 
