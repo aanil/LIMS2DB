@@ -12,7 +12,7 @@ def diff_project_objects(pj_id, couch, logfile):
     log = setupLog('diff - {}'.format(pj_id), logfile)
     lims = Lims(BASEURI, USERNAME, PASSWORD)
 
-    view = proj_db.view('project/project_id')
+    view = proj_db.view('projects/lims_followed')
         
     try:
         old_project_couchid = view[pj_id].rows[0].value
