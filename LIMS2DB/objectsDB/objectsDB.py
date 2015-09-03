@@ -104,9 +104,10 @@ class ProjectDB():
                         'open_date' : self.project.open_date,
                         'close_date' : self.project.close_date,
                         'entity_type' : 'project_summary',
-                        'contact' : self.project.researcher.email,
                         'project_name' : self.project.name,
                         'project_id' : self.project.id}
+        if self.project.researcher:
+            self.obj['contact']=self.project.researcher.email
         self.obj.update(udf_dict(self.project, PROJ_UDF_EXCEPTIONS, False))
         self.obj['details'] = udf_dict(self.project, PROJ_UDF_EXCEPTIONS)
         self.obj['isFinishedLib']=False
