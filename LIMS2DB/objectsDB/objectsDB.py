@@ -296,8 +296,8 @@ class SampleDB():
         self.processes_per_artifact = processes_per_artifact
         self.application=application
         self.obj = {}
-        self._get_sample_info()
         self.logger=logger
+        self._get_sample_info()
 
     def _get_sample_info(self):
         """
