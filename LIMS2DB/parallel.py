@@ -37,6 +37,8 @@ def processWSUL(options, queue, logqueue):
             break
         else:
             wsp = Process(mylims, id=ws_id)
+            if not wsp.date_run
+                continue
             lc = lclasses.LimsCrawler(mylims, wsp)
             lc.crawl()
             try:
