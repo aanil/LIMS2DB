@@ -30,13 +30,17 @@ def processWSUL(options, queue, logqueue):
         #grabs project from queue
         try:
             ws_id = queue.get(block=True, timeout=3)
+            proclog.info("Starting work on {}".format(ws_id))
         except Queue.Empty:
             work = False
             proclog.info("exiting gracefully")
             break
         else:
             wsp = Process(mylims, id=ws_id)
+            if not wsp.date_run
+                continue
             lc = lclasses.LimsCrawler(mylims, wsp)
+            lc.crawl()
             try:
                 ws = lclasses.Workset(mylims,lc, proclog)
             except NameError:
@@ -86,6 +90,10 @@ def masterProcess(options,wslist, mainlims, logger):
         p.start()
         childs.append(p)
     #populate queue with data   
+    #CHEATING
+    if options.queue:
+        worksetQueue.put(options.queue)
+        orderedwslist=[]
     for ws in orderedwslist:
         worksetQueue.put(ws.id)
 

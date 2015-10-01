@@ -80,8 +80,12 @@ class Workset:
                                 onelib['id'] = lib.id
                                 if 'Concentration' in inp.udf and 'Conc. Units' in inp.udf :
                                     onelib['concentration']="{0} {1}".format(round(inp.udf['Concentration'], 2), inp.udf['Conc. Units'])
+                                if 'Molar Conc. (nM)' in inp.udf :
+                                    onelib['concentration']="{0} nM".format(round(inp.udf['Molar Conc. (nM)'], 2)) 
                                 if 'Size (bp)' in inp.udf:
                                     onelib['size']=round(inp.udf['Size (bp)'],2)
+                                if 'NeoPrep Machine QC' in inp.udf and onelib['status'] == 'UNKNOWN':
+                                    onelib['status'] = inp.udf['NeoPrep Machine QC']
 
                                 pjs[p.id]['samples'][sample.name]['library'][lib.id] = onelib
                                 if 'library_status' not in  pjs[p.id]['samples'][sample.name]:

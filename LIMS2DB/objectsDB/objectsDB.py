@@ -104,9 +104,10 @@ class ProjectDB():
                         'open_date' : self.project.open_date,
                         'close_date' : self.project.close_date,
                         'entity_type' : 'project_summary',
-                        'contact' : self.project.researcher.email,
                         'project_name' : self.project.name,
                         'project_id' : self.project.id}
+        if self.project.researcher:
+            self.obj['contact']=self.project.researcher.email
         self.obj.update(udf_dict(self.project, PROJ_UDF_EXCEPTIONS, False))
         self.obj['details'] = udf_dict(self.project, PROJ_UDF_EXCEPTIONS)
         self.obj['isFinishedLib']=False
@@ -130,9 +131,8 @@ class ProjectDB():
         affiliation     Lab             Affiliation project.researcher.lab
         ============    ============    =========== ================"""
 
-        researcher_udfs = dict(self.project.researcher.lab.udf.items())
-        if researcher_udfs.has_key('Affiliation'):
-            self.obj['affiliation'] = researcher_udfs['Affiliation']
+        if self.project.researcher and 'Affiliation' in self.project.researcher.lab.udf :
+            self.obj['affiliation'] = self.project.researcher.lab.udf['Affiliation']
 
 
     def _get_project_summary_info(self):
@@ -296,8 +296,8 @@ class SampleDB():
         self.processes_per_artifact = processes_per_artifact
         self.application=application
         self.obj = {}
-        self._get_sample_info()
         self.logger=logger
+        self._get_sample_info()
 
     def _get_sample_info(self):
         """
