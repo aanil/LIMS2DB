@@ -111,9 +111,9 @@ class ProjectDB():
         self.obj.update(udf_dict(self.project, PROJ_UDF_EXCEPTIONS, False))
         self.obj['details'] = udf_dict(self.project, PROJ_UDF_EXCEPTIONS)
         self.obj['isFinishedLib']=False
-        if (self.obj['application'] in FINLIB or ('Library construction method' in self.obj and \
-                ('Library, By user' in self.obj['Library construction method'] or \
-                'Library, In-house' in self.obj['Library construction method']))):
+        if (self.obj['application'] in FINLIB or ('library_construction_method' in self.obj.get('details', {}) and \
+                ('Library, By user' in self.obj['details']['library_construction_method'] or \
+                'Library, In-house' in self.obj['details']['library_construction_method']))):
             self.obj['isFinishedLib']=True
         self.application=self.obj['application']
         self._get_affiliation()
