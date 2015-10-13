@@ -541,9 +541,11 @@ class SampleDB():
                             if last_libval.has_key('prep_status'):
                                 preps[prep.id2AB]['prep_status'] = last_libval['prep_status']
                             preps[prep.id2AB]['reagent_label'] = self._pars_reagent_labels(steps, last_libval)
+                            preps[prep.id2AB]['barcode'] = self._get_barcode_from_name(preps[prep.id2AB]['reagent_label'])
         if preps.has_key('Finished'):
             try:
                 preps['Finished']['reagent_label'] = self.lims_sample.artifact.reagent_labels[0]
+                preps[prep.id2AB]['barcode'] = self._get_barcode_from_name(preps['Finished']['reagent_label'])
             except IndexError:
                 #P821 has nothing here
                 self.logger.warn("No reagent label for artifact {} in sample {}".format(self.lims_sample.artifact.id, self.name))
@@ -552,6 +554,12 @@ class SampleDB():
             preps['Finished'] = delete_Nones(preps['Finished'])
         
         return preps
+
+    def _get_barcode_from_name(self, barcode_name):
+       rts=self.lims.get_reagent_types(name=barcode_name)
+       for rt in rts:
+           return rt.sequence
+       return None
 
 
     def _pars_reagent_labels(self, steps, last_libval):
