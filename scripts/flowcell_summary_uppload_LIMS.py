@@ -104,7 +104,7 @@ if __name__ == '__main__':
     parser.add_option("-f", "--flowcell", dest="flowcell_name", default=None, 
     help = "eg: AD1TAPACXX. Don't use with -a flag and -t should also be used along this.")
     
-    parser.add_option("-t", "--type", dest="run_type", default=None, choices=['miseq', 'hiseq', 'hiseqx'],
+    parser.add_option("-t", "--type", dest="run_type", default=None, choices=process_dict.keys(),
     help = "Specify the type of run to look, should be specified when -f is given")
 
     parser.add_option("-a", "--all_flowcells", dest="all_flowcells", action="store_true", default=False, 
