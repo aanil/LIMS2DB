@@ -8,6 +8,7 @@ Maya Brandi, Science for Life Laboratory, Stockholm, Sweden.
 import sys
 import os
 import codecs
+import logging
 from optparse import OptionParser
 from pprint import pprint
 from genologics.lims import *
@@ -18,7 +19,9 @@ from statusdb.db.utils import *
 from LIMS2DB.objectsDB.process_categories import *
 
 lims = Lims(BASEURI, USERNAME, PASSWORD)
-import logging
+process_dict = {'hiseq':'Illumina Sequencing (Illumina SBS) 4.0',
+                'hiseqx':'Illumina Sequencing (HiSeq X) 1.0',
+                'miseq':'MiSeq Run (MiSeq) 4.0'}
 
 def get_run_qcs(fc, lanesobj):
     for art in fc.all_inputs():
@@ -47,8 +50,7 @@ def  main(flowcell, all_flowcells,days,conf,run_type):
     today = date.today()
     couch = load_couch_server(conf)
     fc_db = couch['flowcells']
-    xfc_db = couch['x_flowcells']
-    process_dict = {'hiseq':'Illumina Sequencing (Illumina SBS) 4.0', 'miseq':'MiSeq Run (MiSeq) 4.0', 'hiseqx':'Illumina Sequencing (HiSeq X) 1.0'}    
+    xfc_db = couch['x_flowcells']    
     # Collect flowcell processes based upon how script is called
     if all_flowcells:
         flowcells = lims.get_processes(type = process_dict.values())
@@ -72,18 +74,25 @@ def  main(flowcell, all_flowcells,days,conf,run_type):
             #Happens if fc has no date run, we should just not update and get to the next flowcell
             continue
         
-        fc_is_hiseqx = False
         fc_udfs = dict(fc.udf.items())
         try:
             flowcell_name = fc_udfs['Flow Cell ID']
+            fc_type = "miseq"
+            #for hiseq/hiseqx the entry in database is named with position + flowcell id
             if not '-' in flowcell_name:
                 flowcell_name = "%s%s" % (fc_udfs['Flow Cell Position'],fc_udfs['Flow Cell ID'])
+                fc_type = "hiseq"
                 if 'HiSeq X' in fc_udfs['SBS Kit Type']:
-                    fc_is_hiseqx = True
+                    fc_type = "hiseqx"
         except KeyError:
             continue
-
-        db_con = xfc_db if fc_is_hiseqx else fc_db  #this might be not neccesary in near future            
+        
+        #take right database to put information, this might be not neccesary in near future
+        if fc_type == "hiseqx":
+            db_con = xfc_db 
+        elif fc_type in ["hiseq", "miseq"]:
+            db_con = fc_db
+        
         key = find_flowcell_from_view(db_con, flowcell_name)
         if key:
             dbobj = db_con.get(key)
