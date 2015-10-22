@@ -62,25 +62,25 @@ def  main(flowcell, all_flowcells,days,conf,run_type):
             flowcells = [lims.get_processes(type = process_dict[run_type], udf = {'Flow Cell ID' : fc_id})[0]]
             days = float('inf') #no need of days check when a flowcell is specified
         except:
-            raise SystemExit("Could not find any process for FC %s (type: %s)" % (flowcell, run_type))
+            raise SystemExit("Could not find any process for FC {} (type: {})".format(flowcell, run_type))
     
     for fc in flowcells:
         try:
             closed = date(*map(int, fc.date_run.split('-')))
             delta = today-closed
-            if not delta.days < days:
+            if delta.days > days:
                 continue
         except AttributeError:
             #Happens if fc has no date run, we should just not update and get to the next flowcell
             continue
-        
+
         fc_udfs = dict(fc.udf.items())
         try:
             flowcell_name = fc_udfs['Flow Cell ID']
             fc_type = "miseq"
             #for hiseq/hiseqx the entry in database is named with position + flowcell id
             if not '-' in flowcell_name:
-                flowcell_name = "%s%s" % (fc_udfs['Flow Cell Position'],fc_udfs['Flow Cell ID'])
+                flowcell_name = "{}{}".format(fc_udfs['Flow Cell Position'],fc_udfs['Flow Cell ID'])
                 fc_type = "hiseq"
                 if 'HiSeq X' in fc_udfs['SBS Kit Type']:
                     fc_type = "hiseqx"
@@ -96,7 +96,7 @@ def  main(flowcell, all_flowcells,days,conf,run_type):
         key = find_flowcell_from_view(db_con, flowcell_name)
         if key:
             dbobj = db_con.get(key)
-            logging.info('Fetched DB entry for FC %s with key %s' % (flowcell_name, key))
+            logging.info('Fetched DB entry for FC {} with key {}'.format(flowcell_name, key))
             dbobj["lims_data"] = {}
             dbobj["lims_data"]['step_id'] = fc.id
             dbobj["lims_data"]['container_id'] = fc.all_inputs()[0].location[0].id
@@ -104,7 +104,7 @@ def  main(flowcell, all_flowcells,days,conf,run_type):
             dbobj["lims_data"]["run_summary"] = get_sequencing_info(fc) #located in genologics.lims_utils
 #            get_run_qcs(fc, dbobj['lanes']) ## it is commented and not removed cause of uncertainity
             info = save_couchdb_obj(db_con, dbobj, add_time_log=False)
-            logging.info('flowcell %s %s : _id = %s' % (flowcell_name, info, key))                
+            logging.info('flowcell {} {} : _id = {}'.format(flowcell_name, info, key))                
 
 if __name__ == '__main__':
     usage = "Usage:       python flowcell_summary_upload_LIMS.py [options]"
