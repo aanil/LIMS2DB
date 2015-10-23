@@ -205,6 +205,8 @@ def processPSUL(options, queue, logqueue):
                     os.remove(lockfile)
                 except:
                     proclog.error("cannot remove lockfile {}".format(lockfile))
+            else:
+                proclog.info("project {} is locked, skipping.".format(projname))
 
 
             #signals to queue job is done
