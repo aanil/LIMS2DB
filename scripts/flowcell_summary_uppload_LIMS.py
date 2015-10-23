@@ -68,6 +68,7 @@ def  main(flowcell, all_flowcells,days,conf,run_type):
         try:
             closed = date(*map(int, fc.date_run.split('-')))
             delta = today-closed
+            fc_udfs = dict(fc.udf.items())
             if delta.days > days:
                 continue
         except AttributeError:
@@ -82,11 +83,11 @@ def  main(flowcell, all_flowcells,days,conf,run_type):
             if not '-' in flowcell_name:
                 flowcell_name = "{}{}".format(fc_udfs['Flow Cell Position'],fc_udfs['Flow Cell ID'])
                 fc_type = "hiseq"
-                if 'HiSeq X' in fc_udfs['SBS Kit Type']:
+                if 'HiSeq X' in fc_udfs.get('SBS Kit Type',''):
                     fc_type = "hiseqx"
         except KeyError:
             continue
-        
+
         #take right database to put information, this might be not neccesary in near future
         if fc_type == "hiseqx":
             db_con = xfc_db 
@@ -104,7 +105,9 @@ def  main(flowcell, all_flowcells,days,conf,run_type):
             dbobj["lims_data"]["run_summary"] = get_sequencing_info(fc) #located in genologics.lims_utils
 #            get_run_qcs(fc, dbobj['lanes']) ## it is commented and not removed cause of uncertainity
             info = save_couchdb_obj(db_con, dbobj, add_time_log=False)
-            logging.info('flowcell {} {} : _id = {}'.format(flowcell_name, info, key))                
+            logging.info('flowcell {} {} : _id = {}'.format(flowcell_name, info, key))
+        else:
+            logging.warning('Not able to find DB entry for FC {}'.format(flowcell_name))
 
 if __name__ == '__main__':
     usage = "Usage:       python flowcell_summary_upload_LIMS.py [options]"
