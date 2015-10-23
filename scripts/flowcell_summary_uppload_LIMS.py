@@ -68,7 +68,6 @@ def  main(flowcell, all_flowcells,days,conf,run_type):
         try:
             closed = date(*map(int, fc.date_run.split('-')))
             delta = today-closed
-            fc_udfs = dict(fc.udf.items())
             if delta.days > days:
                 continue
         except AttributeError:
