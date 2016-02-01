@@ -325,6 +325,7 @@ class SampleDB():
         =================== ============    =========== ================ """ 
 
         self.obj['scilife_name'] = self.name
+        self.obj['initial_plate_id'] = self.lims_sample.artifact.location[0].id
         self.obj['well_location'] = self.lims_sample.artifact.location[1]
         self.obj['details'] = udf_dict(self.lims_sample, SAMP_UDF_EXCEPTIONS)
         self.obj.update(udf_dict(self.lims_sample, SAMP_UDF_EXCEPTIONS, False))
