@@ -25,8 +25,8 @@ from genologics.lims_utils import *
 
 import codecs
 from process_categories import *
-from statusdb.db.utils import *
 from functions import *
+from statusdb.db.utils import *
 import os
 import couchdb
 import time
