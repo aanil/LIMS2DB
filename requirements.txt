@@ -1,2 +1,5 @@
 LIMS2DB
 pyyaml=3.11
+genologics_sql
+genologics
+

@@ -8,8 +8,10 @@ from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.lims import *
 from LIMS2DB.objectsDB.functions import *
 from optparse import OptionParser
-from statusdb.db.utils import *
 from LIMS2DB.utils import formatStack
+from statusdb.db.utils import *
+from genologics_sql.utils import get_session
+from genologics_sql.queries import get_last_modified_projectids
 
 from pprint import pprint
 
@@ -125,15 +127,10 @@ def create_projects_list(options, lims, log):
         if options.all_projects:
             projects = lims.get_projects()
             if options.hours:
-                delta=datetime.timedelta(hours=options.hours)
-                #timestring for processes is different from timestring for projects. First needs Z, second needs full timezone
-                time_string_pc=(datetime.datetime.now()-delta).strftime('%Y-%m-%dT%H:%M:%SZ')
-                time_string_pj=(datetime.datetime.now()-delta).strftime('%Y-%m-%dT%H:%M:%SCET')
-                valid_projects=lims.get_projects(last_modified=time_string_pj)
-                for proj in projects:
-                    procs=lims.get_processes(last_modified=time_string_pc, projectname=proj.name)
-                    if procs:
-                        valid_projects.append(proj)
+                postgres_string="{} hours".format(options.hours)
+                db_session=get_session()
+                project_ids=get_last_modified_projectids(db_session, postgres_string)
+                valid_projects=[Project(lims, id=x) for x in project_ids]
                 log.info("project list : {0}".format(" ".join([p.id for p in valid_projects])))
                 return valid_projects
             else:
