@@ -90,6 +90,16 @@ def main(args):
                         else:
                             date_start="20"+date_start#now, the format is YYYY-MM-DD, assuming no prjects come from the 1990's or the next century...
                     completed.append({'project':p.name, 'process':pr.type.name, 'limsid':pr.id, 'start':date_start, 'end': pr.date_run, 'tech':pr.technician.first_name+" "+pr.technician.last_name,'sum':False}) 
+            #catch closed projects
+            if p.close_date and p.close_date==yesterday.strftime("%Y-%m-%d"):
+                completed.append({'project':p.name, 
+                    'action':'Has been closed',
+                    'date':p.close_date
+                    'techID':"the responsible",
+                    'sum':True})
+
+
+        
             if completed:#If we actually have stuff to mail
                 ps=lims.get_processes(projectname=p.name, type='Project Summary 1.3')
                 for oneps in ps:#there should be only one project summary per project anyway.
