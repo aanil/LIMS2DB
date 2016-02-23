@@ -17,36 +17,20 @@ def main(args):
 
     operator="denis.moreno@scilifelab.se"
     summary={}
-    email={u'Anna Konrad':'anna.konrad@scilifelab.se',
-            u'Bahram Amini':'bahram.amini@scilifelab.se',
-            u'Britta Lotstedt':'britta.lotstedt@scilifelab.se',
-            u'Carolina Bonilla':'carolina.bonilla@scilifelab.se',
-            u'Chuan Wang':'chuan.wang@scilifelab.se',
-            u'Christian Natanaelsson':'christian.natanaelsson@scilifelab.se',
-            u'Francesco Vezzi':'francesco.vezzi@scilifelab.se',
-            u'Helena Samuelsson':'helena.samuelsson@scilifelab.se',
-            u'Helena Zajac':'helena.zajac@scilifelab.se',
-            u'Joel Gruselius':'joel.gruselius@scilifelab.se',
-            u'Jun Wang':'jun.wang@scilifelab.se',
-            u'Kicki Holmberg':'kicki.holmberg@scilifelab.se',
-            u'Lina Sylwan':'lina.sylwan@scilifelab.se',
-            u'Mario Giovacchini':'mario.giovacchini@scilifelab.se',
-            u'Marianna Sjogren':'marianna.sjogren@scilifelab.se',
-            u'Nemanja Rilakovic':'nemanja.rilakovic@scilifelab.se',
-            u'Mattias Oskarsson':'mattias.oskarsson@scilifelab.se',
-            u'Par Lundin':'par.lundin@scilifelab.se',
-            u'Phil Ewels':'phil.ewels@scilifelab.se',
-            u'Remi-Andre Olsen':'remi-andre.olsen@scilifelab.se',
-            u'Senthilkumar Paneerselvam':'senthilkumar.panneerselvam@scilifelab.se',
-            u'Senthilkumar Panneerselvam':'senthilkumar.panneerselvam@scilifelab.se',
-            u'Simone Picelli':'simone.picelli@scilifelab.se',
-            u'Sverker Lundin':'sverker.lundin@scilifelab.se'
-            }
     project_types=['Bcl Conversion & Demultiplexing (Illumina SBS) 4.0','Illumina Sequencing (Illumina SBS) 4.0', 
     'MiSeq Run (MiSeq) 4.0','Cluster Generation (Illumina SBS) 4.0','Denature, Dilute and Load Sample (MiSeq) 4.0', 'Aggregate QC (DNA) 4.0','Aggregate QC (RNA) 4.0', 'Project Summary 1.3']
 
     def clean_names(name):
         return name.replace(u"\u00f6", "o").replace(u"\u00e9", "e").replace(u"\u00e4", "a")
+
+    def get_email(fullname):
+        names=fullname.split(" ")
+        try:
+            researcher=lims.get_researchers(firstname=names[0], lastname=names[1])[0]
+        except:
+            names=clean_names(fullname).split(" ")
+            researcher=lims.get_researchers(firstname=names[0], lastname=names[1])[0]
+        return researcher.email
 
     for p in pjs:
         #Assuming this will be run on the early morning, this grabs all processes from the list that have been modified the day before
@@ -94,7 +78,7 @@ def main(args):
             if p.close_date and p.close_date==yesterday.strftime("%Y-%m-%d"):
                 completed.append({'project':p.name, 
                     'action':'Has been closed',
-                    'date':p.close_date
+                    'date':p.close_date,
                     'techID':"the responsible",
                     'sum':True})
 
@@ -104,11 +88,11 @@ def main(args):
                 ps=lims.get_processes(projectname=p.name, type='Project Summary 1.3')
                 for oneps in ps:#there should be only one project summary per project anyway.
                     if 'Bioinfo responsible' in oneps.udf  :
-                        bfr=clean_names(oneps.udf['Bioinfo responsible'])
+                        bfr=oneps.udf['Bioinfo responsible']
 
                         summary[bfr]=completed
                     if 'Lab responsible' in oneps.udf:
-                        lbr=clean_names(oneps.udf['Lab responsible'])
+                        lbr=oneps.udf['Lab responsible']
                         summary[lbr]=completed
 
     control=''
@@ -130,14 +114,14 @@ def main(args):
                 plist.add(struct['project'])
                 body+='Project {} {} on {} by {}\n'.format(struct['project'], struct['action'],struct['date'],struct['techID'])
         if body!= '':
-            control+="{} : {}\n".format(email[resp], body)
+            control+="{} : {}\n".format(get_email(resp), body)
             body+='\n\n--\nThis mail is an automated mail that is generated once a day and summarizes the events of the previous days in the lims, \
     for the projects you are described as "Lab responsible" or "Bioinfo Responsible". You can send comments or suggestions to {}'.format(operator)
             msg=MIMEText(body)
             msg['Subject']='[Lims update] {}'.format(" ".join(plist))
             msg['From']='Lims_monitor'
             try:
-                msg['To'] =email[resp]
+                msg['To'] =get_email(resp)
             except KeyError:
                 msg['To'] = operator
                 msg['Subject']='[Lims update] Failed to send a mail to {}'.format(resp)
