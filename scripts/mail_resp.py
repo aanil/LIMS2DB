@@ -100,7 +100,7 @@ def main(args):
         plist=set()#no duplicates
         body=''
         for struct in summary[resp]:
-            if resp != struct['tech'] and not struct['sum']:    
+            if resp != struct.get('tech') and not struct['sum']:
                 plist.add(struct['project'])
                 body+="In project {},  {} ({})".format(struct['project'], struct['process'], struct['limsid'])
                 if struct['start'] and yesterday.strftime("%Y-%m-%d") == struct['start']:
