@@ -2,6 +2,7 @@
 import logging
 import logging.handlers
 import traceback
+import couchdb
 
 #merges d2 in d1, keeps values from d1
 def merge(d1, d2):
@@ -38,3 +39,7 @@ def formatStack(stack):
 
     return "\n".join(formatted_error)
 
+def setupServer(conf):
+    db_conf = conf['statusdb']
+    url="http://{0}:{1}@{2}:{3}".format(db_conf['username'], db_conf['password'], db_conf['url'], db_conf['port'])
+    return couchdb.Server(url)
