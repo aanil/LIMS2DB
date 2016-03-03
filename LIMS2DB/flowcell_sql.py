@@ -40,15 +40,16 @@ def get_sequencing_steps(session, interval="24 hours"):
     return get_last_modified_processes(session, [38,714,46], interval)
 
 def upload_to_couch(couch, runid, lims_data):
-    db=couch['flowcells']
-    view = db.view('info/id')
-    doc=None
-    for row in view[runid]:
-        doc=db.get(row.value)
+    for dbname in ['flowcells', 'x_flowcells']:
+        db=couch[dbname]
+        view = db.view('info/id')
+        docs=None
+        for row in view[runid]:
+            doc=db.get(row.value)
 
-    if doc:
-        doc['lims_data']=lims_data
-        db.save(doc)
+        if doc:
+            doc['lims_data']=lims_data
+            db.save(doc)
 
 
     

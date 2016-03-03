@@ -9,6 +9,8 @@ Denis Moreno, Science for Life Laboratory, Stockholm, Sweden.
 import argparse
 import os
 import yaml
+import logging
+import logging.handlers
 
 from LIMS2DB.flowcell_sql import create_lims_data_obj, get_sequencing_steps, upload_to_couch
 from LIMS2DB.utils import setupServer
@@ -21,12 +23,18 @@ from  genologics_sql.utils import get_session
 def main(args):
     db_session=get_session()
 
+    mainlog = logging.getLogger('fsullogger')
+    mainlog.setLevel(level=logging.INFO)
+    mfh = logging.handlers.RotatingFileHandler(args.logfile, maxBytes=209715200, backupCount=5)
+    mft = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    mfh.setFormatter(mft)
+    mainlog.addHandler(mfh)
+
     with open(args.conf) as conf_file:
         conf=yaml.load(conf_file)
     couch=setupServer(conf)
     interval="{} hours".format(args.hours)
     seq_steps=get_sequencing_steps(db_session, interval)
-    print seq_steps
 
 
     for step in seq_steps:
@@ -34,6 +42,7 @@ def main(args):
             if udf.udfname=="Run ID":
                 fcid=udf.udfvalue
 
+        mainlog.info("updating {}".format(fcid))
         lims_data=create_lims_data_obj(db_session, step)
         upload_to_couch(couch,fcid, lims_data)
 
@@ -51,6 +60,9 @@ if __name__=="__main__":
 
     parser.add_argument("-t", "--hours", dest="hours", default=24, type=int, 
     help="Runs older than t hours are not updated. Default is 24 hours.")
+
+    parser.add_argument("-l", "--logfile", dest = "logfile", help = ("log file",
+                      " that will be used. default is $HOME/lims2db_flowcells.log "), default=os.path.expanduser("~/lims2db_flowcells.log"))
 
     parser.add_argument("-c", "--conf", dest="conf", 
     default=os.path.join(os.environ['HOME'],'opt/config/post_process.yaml'), 
