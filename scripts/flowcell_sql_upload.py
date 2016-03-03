@@ -21,8 +21,10 @@ from  genologics_sql.utils import get_session
 
 
 def main(args):
+    #get the session with the lims db
     db_session=get_session()
 
+    #set up a log
     mainlog = logging.getLogger('fsullogger')
     mainlog.setLevel(level=logging.INFO)
     mfh = logging.handlers.RotatingFileHandler(args.logfile, maxBytes=209715200, backupCount=5)
@@ -30,10 +32,15 @@ def main(args):
     mfh.setFormatter(mft)
     mainlog.addHandler(mfh)
 
+    #read the configuration
     with open(args.conf) as conf_file:
         conf=yaml.load(conf_file)
+
+    
     couch=setupServer(conf)
     interval="{} hours".format(args.hours)
+
+    #list the right sequencing steps
     seq_steps=get_sequencing_steps(db_session, interval)
 
 
@@ -43,7 +50,9 @@ def main(args):
                 fcid=udf.udfvalue
 
         mainlog.info("updating {}".format(fcid))
+        #generate the lims_data dict key
         lims_data=create_lims_data_obj(db_session, step)
+        #update the couch right couch document
         upload_to_couch(couch,fcid, lims_data)
 
 

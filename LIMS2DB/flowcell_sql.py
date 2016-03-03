@@ -10,6 +10,7 @@ def create_lims_data_obj(session, pro):
     obj={}
     obj['step_id']=pro.luid
 
+    #which container is used in this step ?
     query= "select distinct ct.* from container ct\
             inner join containerplacement cp on cp.containerid=ct.containerid \
             inner join processiotracker piot on piot.inputartifactid=cp.processartifactid \
@@ -20,6 +21,7 @@ def create_lims_data_obj(session, pro):
     obj['container_name']=cont.name
 
 
+    #Which artifacts are updated in this step ?
     query= "select distinct art.* from artifact art\
             inner join processiotracker piot on piot.inputartifactid=art.artifactid \
             where piot.processid = {pid}::integer;".format(pid=pro.processid)
@@ -54,11 +56,3 @@ def upload_to_couch(couch, runid, lims_data):
 
     
    
-
-
-
-if __name__=="__main__":
-    session=get_session()
-    pro=session.query(Process).filter(text("processid=158216")).one()
-    data=create_lims_data_obj(pro)
-
