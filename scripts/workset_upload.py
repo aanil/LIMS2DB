@@ -55,9 +55,27 @@ def main(args):
         else:
             log.warn("more than one row with name {0} found".format(ws.obj['name']))
     else:
-        starting_date= datetime.today() - timedelta(args.days)
-        str_date= starting_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-        wsts = lims.get_processes(type=pc.WORKSET.values(),last_modified=str_date)
+        try:
+             from genologics_sql.queries import get_last_modified_processes, get_processes_in_history
+             from genologics_sql.utils import get_session
+             session=get_session()
+             #Aggregate QC, Setup workset plate, or sequencing. 
+             recent_processes=get_last_modified_processes(session,[8,204,38,714,46])
+             #Setup workset plate is 204
+             processes_to_update=[]
+             for p in recent_processes:
+                 processes_to_update.append(get_processes_in_history(session, p.processid, [204])
+
+             wsts=[]
+             for p in set(processes_to_update):
+                wsts.append(Process(lims, id=p.luid))
+                
+
+        except ImportError:
+            starting_date= datetime.today() - timedelta(args.days)
+            str_date= starting_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            wsts = lims.get_processes(type=pc.WORKSET.values(),last_modified=str_date)
+
         log.info("the following processes will be updated : {0}".format(wsts))
         lpar.masterProcess(args, wsts, lims, log)
         #see parallel.py
