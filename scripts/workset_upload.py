@@ -69,12 +69,14 @@ def main(args):
              wsts=[]
              for p in set(processes_to_update):
                 wsts.append(Process(lims, id=p.luid))
+             log.info("list compiled via the DB")
                 
 
         except ImportError:
             starting_date= datetime.today() - timedelta(args.days)
             str_date= starting_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            wsts = lims.get_processes(type=pc.WORKSET.values(),last_modified=str_date)
+            #sts = lims.get_processes(type=pc.WORKSET.values(),last_modified=str_date)
+            log.info("list compiled via the API")
 
 	
         log.info("the following processes will be updated : {0}".format(wsts))
