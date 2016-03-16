@@ -64,17 +64,22 @@ def main(args):
              #Setup workset plate is 204
              processes_to_update=[]
              for p in recent_processes:
-                 processes_to_update.extend(get_processes_in_history(session, p.processid, [204]))
+                 if p.typeid==204:
+                     processes_to_update.append(p)
+                 else:
+                     processes_to_update.extend(get_processes_in_history(session, p.processid, [204]))
 
              wsts=[]
              for p in set(processes_to_update):
                 wsts.append(Process(lims, id=p.luid))
+             log.info("list compiled via the DB")
                 
 
         except ImportError:
             starting_date= datetime.today() - timedelta(args.days)
             str_date= starting_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            wsts = lims.get_processes(type=pc.WORKSET.values(),last_modified=str_date)
+            #sts = lims.get_processes(type=pc.WORKSET.values(),last_modified=str_date)
+            log.info("list compiled via the API")
 
 	
         log.info("the following processes will be updated : {0}".format(wsts))

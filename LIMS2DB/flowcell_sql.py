@@ -45,7 +45,7 @@ def upload_to_couch(couch, runid, lims_data):
     for dbname in ['flowcells', 'x_flowcells']:
         db=couch[dbname]
         view = db.view('info/id')
-        docs=None
+        doc=None
         for row in view[runid]:
             doc=db.get(row.value)
 
