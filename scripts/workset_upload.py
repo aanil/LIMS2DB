@@ -78,7 +78,7 @@ def main(args):
         except ImportError:
             starting_date= datetime.today() - timedelta(args.days)
             str_date= starting_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            #sts = lims.get_processes(type=pc.WORKSET.values(),last_modified=str_date)
+            wsts = lims.get_processes(type=pc.WORKSET.values(),last_modified=str_date)
             log.info("list compiled via the API")
 
 	
