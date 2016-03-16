@@ -64,7 +64,10 @@ def main(args):
              #Setup workset plate is 204
              processes_to_update=[]
              for p in recent_processes:
-                 processes_to_update.extend(get_processes_in_history(session, p.processid, [204]))
+                 if p.typeid==204:
+                     processes_to_update.append(p)
+                 else:
+                     processes_to_update.extend(get_processes_in_history(session, p.processid, [204]))
 
              wsts=[]
              for p in set(processes_to_update):
