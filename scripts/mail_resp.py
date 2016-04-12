@@ -69,7 +69,7 @@ def main(args):
                     if 'Run ID' in pr.udf: #this is true for sequencing processes, and gives the actual starting date
                         date_start=pr.udf['Run ID'].split('_')[0]#format is YYMMDD
                         date_start=date_start[:2]+"-"+date_start[2:4]+"-"+date_start[4:6]
-                        if date_start==pr.date_run[4:]:
+                        if pr.date_run and date_start==pr.date_run[4:]:
                             date_start=None
                         else:
                             date_start="20"+date_start#now, the format is YYYY-MM-DD, assuming no prjects come from the 1990's or the next century...
