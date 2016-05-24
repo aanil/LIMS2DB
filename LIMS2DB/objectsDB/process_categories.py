@@ -58,6 +58,7 @@ LIBVAL = {'Description':'All processes included in the library validation protoc
     '64' : 'Quant-iT QC (Library Validation) 4.0',
     '67' : 'Qubit QC (Library Validation) 4.0',
     '20' : 'CaliperGX QC (DNA)',
+    '504' : 'Volume Measurement QC',
     '17' : 'Bioanalyzer QC (Library Validation) 4.0'}
 LIBVALFINISHEDLIB = {'Description':'',
     '62' : 'qPCR QC (Library Validation) 4.0',
