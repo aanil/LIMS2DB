@@ -11,6 +11,8 @@ from genologics.entities import Process
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.lims import *
 
+from genologics_sql.utils import *
+
 def processWSUL(options, queue, logqueue):
     mycouch = sdb.Couch()
     mycouch.set_db("worksets")
@@ -115,6 +117,73 @@ def stillRunning(processList):
             ret = True
 
     return ret
+
+def masterProcessSQL(args ,processList, logger):
+    worksetQueue = mp.JoinableQueue()
+    logQueue = mp.Queue()
+    childs = []
+    procs_nb = 1;
+    #Initial step : order worksets by date:
+    if len(wslist) < args.procs:
+        procs_nb = len(wslist)
+    else:
+        procs_nb = args.procs
+
+    #spawn a pool of processes, and pass them queue instance 
+    for i in range(procs_nb):
+        p = mp.Process(target=processWSULSQL, args=(args,worksetQueue, logQueue))
+        p.start()
+        childs.append(p)
+    #populate queue with data   
+    for ws in processList:
+        worksetQueue.put(ws.processid)
+
+    #wait on the queue until everything has been processed     
+    notDone=True
+    while notDone:
+        try:
+            log = logQueue.get(False)
+            logger.handle(log)
+        except Queue.Empty:
+            if not stillRunning(childs):
+                notDone = False
+                break
+
+def processWSULSQL(args, queue, logqueue):
+    work=True
+    session=get_session()
+    with open(args.conf) as conf_file:
+        conf=yaml.load(conf_file)
+    couch=lutils.setupServer(conf)
+    db=couch["worksets"]
+    procName = mp.current_process().name
+    proclog = logging.getLogger(procName)
+    proclog.setLevel(level=logging.INFO)
+    mfh = QueueHandler(logqueue)
+    mft = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    mfh.setFormatter(mft)
+    proclog.addHandler(mfh)
+
+    while work:
+        #grabs project from queue
+        try:
+            ws_id = queue.get(block=True, timeout=3)
+            proclog.info("Starting work on {}".format(ws_id))
+        except Queue.Empty:
+            work = False
+            proclog.info("exiting gracefully")
+            break
+        else:
+            step=session.query(Process).filter_by(processid=ws_id).one()
+            ws=lclasses.Workset_SQL(session, log, step)
+            doc={}
+            for row in db.view('worksets/lims_id')[ws.obj['id']]:
+                doc=db.get(row.id)
+            if doc:
+                final_doc=lutils.merge(ws.obj, doc)
+            db.save(final_doc)
+            proclog.warn("updating {0}".format(ws.obj['name']))
+            queue.task_done()
 
 class QueueHandler(logging.Handler):
     """
