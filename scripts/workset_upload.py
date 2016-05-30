@@ -27,7 +27,6 @@ def main(args):
             ws = lclasses.Workset(lims,lc, log)
         except NameError:
             log.error("no name found for this workset")
-        #pprint(ws.obj)
         mycouch = sdb.Couch()
         mycouch.set_db("worksets")
         mycouch.connect()
