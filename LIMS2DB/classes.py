@@ -1,5 +1,8 @@
+from genologics_sql.tables import *
+from sqlalchemy import text
+from datetime import datetime
+import LIMS2DB.objectsDB.process_categories as pc_cg
 
-import LIMS2DB.objectsDB.process_categories as pc 
 
 class Workset:
 
@@ -154,36 +157,164 @@ class LimsCrawler:
                 if o.type == "Analyte" and (self.samples.intersection(o.samples)):
                     nextsteps.update(self.lims.get_processes(inputartifactlimsid=o.id))
         for step in nextsteps:
-            if step.type.name in pc.PREPREPSTART.values():
+            if step.type.name in pc_cg.PREPREPSTART.values():
                 self.preprepstart.add(step)
-            elif step.type.name in pc.PREPSTART.values():
+            elif step.type.name in pc_cg.PREPSTART.values():
                 self.prepstart.add(step)
-            elif step.type.name in pc.PREPEND.values():
+            elif step.type.name in pc_cg.PREPEND.values():
                 self.prepend.add(step)
-            elif step.type.name in pc.LIBVAL.values():
+            elif step.type.name in pc_cg.LIBVAL.values():
                 self.libval.add(step)
-            elif step.type.name in pc.AGRLIBVAL.values():
+            elif step.type.name in pc_cg.AGRLIBVAL.values():
                 self.libaggre.add(step)
-            elif step.type.name in pc.SEQUENCING.values():
+            elif step.type.name in pc_cg.SEQUENCING.values():
                 self.seq.add(step)
-            elif step.type.name in pc.DEMULTIPLEX.values():
+            elif step.type.name in pc_cg.DEMULTIPLEX.values():
                 self.demux.add(step)
-            elif step.type.name in pc.INITALQCFINISHEDLIB.values():
+            elif step.type.name in pc_cg.INITALQCFINISHEDLIB.values():
                 self.finlibinitqc.add(step)
-            elif step.type.name in pc.INITALQC.values():
+            elif step.type.name in pc_cg.INITALQC.values():
                 self.initqc.add(step)
-            elif step.type.name in pc.AGRINITQC.values():
+            elif step.type.name in pc_cg.AGRINITQC.values():
                 self.initaggr.add(step)
-            elif step.type.name in pc.POOLING.values():
+            elif step.type.name in pc_cg.POOLING.values():
                 self.pooling.add(step)
-            elif step.type.name in pc.DILSTART.values():
+            elif step.type.name in pc_cg.DILSTART.values():
                 self.dilstart.add(step)
-            elif step.type.name in pc.SUMMARY.values():
+            elif step.type.name in pc_cg.SUMMARY.values():
                 self.projsum.add(step)
-            elif step.type.name in pc.CALIPER.values():
+            elif step.type.name in pc_cg.CALIPER.values():
                 self.caliper.add(step)
 
             #if the step has analytes as outputs
             if filter(lambda x : x.type=="Analyte", step.all_outputs()):
                 self.crawl(starting_step=step)
+
+class Workset_SQL:
+    def __init__(self, session, log, step):
+        self.log = log
+        self.start=step
+        self.name = set()
+        self.session = session
+        self.obj={}
+        self.build()
+
+    def build(self):
+        self.obj['id']=self.start.luid
+        self.obj['last_aggregate'] = None 
+        if self.start.daterun:
+            self.obj["date_run"]=self.start.daterun.strftime("%Y-%m-%d")
+        else:
+            self.obj["date_run"]=None
+
+        query="select distinct co.* from processiotracker pio \
+                inner join outputmapping om on om.trackerid=pio.trackerid \
+                inner join containerplacement cp on cp.processartifactid=om.outputartifactid \
+                inner join container co on cp.containerid=co.containerid \
+                where pio.processid = {0};".format(self.start.processid)
+        self.container=self.session.query(Container).from_statement(text(query)).one()
+        self.obj["name"]=self.container.name
+
+        query="select rs.initials from principals pr \
+                inner join researcher rs on rs.researcherid=pr.researcherid \
+                where principalid=:pid;"
+        self.obj['technician']=self.session.query(Researcher.initials).from_statement(text(query)).params(pid=self.start.ownerid).scalar()
+
+        #main part
+        self.obj['projects']={}
+        query="select art.* from artifact art \
+                inner join processiotracker piot on piot.inputartifactid=art.artifactid \
+                where piot.processid = {0}".format(self.start.processid)
+
+        input_arts=self.session.query(Artifact).from_statement(text(query)).all()
+        
+        for inp in input_arts:
+            sample=inp.samples[0]
+            project=sample.project
+            if not project:
+                continue #control samples do not have projects
+            if project.luid not in self.obj['projects']:
+                self.obj['projects'][project.luid]={'application' : project.udf_dict.get('Application'), 
+                                                    'name' : project.name, 
+                                                    'library' : project.udf_dict.get('Library construction method'), 
+                                                    'samples' : {}}
+            if sample.name not in self.obj['projects'][project.luid]['samples']:
+                self.obj['projects'][project.luid]['samples'][sample.name]={'customer_name' : sample.udf_dict.get('Customer Name'), 
+                                                                            'sequencing_status' : 'UNKNOWN', 'library_status' : 'UNKNOWN', 
+                                                                            'rec_ctrl' : {}, 'library' : {}, 'sequencing':{}}
+
+            self.obj['projects'][project.luid]['samples'][sample.name]['rec_ctrl']['status']=inp.qc_flag
+
+            query="select art.* from artifact art \
+            inner join outputmapping om on om.outputartifactid=art.artifactid \
+            inner join processiotracker piot on piot.trackerid=om.trackerid \
+            where piot.inputartifactid={inp_art} and art.artifacttypeid=2 and piot.processid={start_id};".format(inp_art=inp.artifactid, start_id=self.start.processid)
+
+            out=self.session.query(Artifact).from_statement(text(query)).one()
+            self.obj['projects'][project.luid]['samples'][sample.name]['location']=out.containerplacement.api_string
+            
+            query="select pc.* from process pc \
+                    inner join processiotracker piot on piot.processid=pc.processid \
+                    inner join artifact_ancestor_map aam on aam.artifactid=piot.inputartifactid \
+                    where pc.typeid in ({agr_qc}) and aam.ancestorartifactid={out_art} order by daterun;".format(agr_qc=",".join(pc_cg.AGRLIBVAL.keys()), out_art=out.artifactid)
+
+            aggregates=self.session.query(Process).from_statement(text(query)).all()
+
+            for agr in aggregates:
+                self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]={}
+                self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['id']=agr.luid
+                self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['name']=agr.protocolnameused
+                if agr.daterun is not None:
+                    self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['date']=agr.daterun.strftime("%Y-%m-%d")
+                    if  not self.obj['last_aggregate'] or datetime.strptime(self.obj['last_aggregate'], '%Y-%m-%d') < agr.daterun:
+                        self.obj['last_aggregate']=agr.daterun.strftime("%Y-%m-%d")
+                else:
+                    self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['date']=None
+
+
+                query="select art.* from artifact art \
+                        inner join processiotracker piot on piot.inputartifactid=art.artifactid \
+                        inner join artifact_ancestor_map aam on aam.artifactid=art.artifactid \
+                        where piot.processid={processid} and aam.ancestorartifactid={ancestorid};".format(processid=agr.processid, ancestorid=out.artifactid)
+
+                agr_inp=self.session.query(Artifact).from_statement(text(query)).one()
+                if agr.typeid==806 and agr_inp.qc_flag=="UNKNOWN":
+                    self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['status']=agr_inp.udf_dict.get("NeoPrep Machine QC")
+                    self.obj['projects'][project.luid]['samples'][sample.name]['library_status']=agr_inp.udf_dict.get("NeoPrep Machine QC")
+                else:
+                    self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['status']=agr_inp.qc_flag
+                    self.obj['projects'][project.luid]['samples'][sample.name]['library_status']=agr_inp.qc_flag
+                self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['art']=agr_inp.luid
+                if 'Molar Conc. (nM)' in agr_inp.udf_dict:
+                    self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['concentration']="{0:.2f} nM".format(agr_inp.udf_dict['Molar Conc. (nM)'])
+                elif 'Concentration' in agr_inp.udf_dict and 'Conc. Units' in agr_inp.udf_dict:
+                    self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['concentration']="{0:.2f} {1}".format(agr_inp.udf_dict['Concentration'], agr_inp.udf_dict['Conc. Units'])
+                if 'Size (bp)' in agr_inp.udf_dict:
+                    self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['size']=round(agr_inp.udf_dict['Size (bp)'],2)
+            
+            query="select pc.* from process pc \
+                    inner join processiotracker piot on piot.processid=pc.processid \
+                    inner join artifact_ancestor_map aam on aam.artifactid=piot.inputartifactid \
+                    where pc.typeid in ({seq}) and aam.ancestorartifactid={out_art} order by daterun;".format(seq=",".join(pc_cg.SEQUENCING.keys()), out_art=out.artifactid)
+
+            sequencing=self.session.query(Process).from_statement(text(query)).all()
+            for seq in sequencing:
+                if seq.daterun is not None:
+                    self.obj['projects'][project.luid]['samples'][sample.name]['sequencing'][seq.luid]={}
+                    self.obj['projects'][project.luid]['samples'][sample.name]['sequencing'][seq.luid]['date']=seq.daterun.strftime("%Y-%m-%d")
+
+                    query="select art.* from artifact art \
+                            inner join processiotracker piot on piot.inputartifactid=art.artifactid \
+                            inner join artifact_ancestor_map aam on aam.artifactid=art.artifactid \
+                            where piot.processid={processid} and aam.ancestorartifactid={ancestorid};".format(processid=seq.processid, ancestorid=out.artifactid)
+
+                    seq_inputs=self.session.query(Artifact).from_statement(text(query)).all()
+                    seq_qc_flag="UNKNOWN"
+                    for seq_inp in seq_inputs:
+                        if seq_qc_flag != 'FAILED':#failed stops sequencing update
+                            seq_qc_flag=seq_inp.qc_flag
+
+                    self.obj['projects'][project.luid]['samples'][sample.name]['sequencing'][seq.luid]['status']=seq_qc_flag
+                    #updates every time until the latest one, because of the order by in fetching sequencing processes.
+                    self.obj['projects'][project.luid]['samples'][sample.name]['sequencing_status']=seq_qc_flag
 
