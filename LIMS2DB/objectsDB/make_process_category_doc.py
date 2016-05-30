@@ -33,7 +33,7 @@ def make_doc():
     for cat in PROCESSCATEGORIES:
         print >> f, cat
         print >> f, SECTIONSTART
-        print >> f, PROCESSCATEGORIES[cat]['Description']
+        #print >> f, PROCESSCATEGORIES[cat]['Description']
         print >> f, SECTIONMIDLE
         for id, name in PROCESSCATEGORIES[cat].items():
             if not id=='Description':
