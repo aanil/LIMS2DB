@@ -33,12 +33,12 @@ def main(args):
 
     elif args.recent:
          recent_processes=get_last_modified_processes(session,[8,204,38,714,46], args.interval)
-         processes_to_update=[]
+         processes_to_update=set()
          for p in recent_processes:
              if p.typeid==204:
-                 processes_to_update.append(p)
+                 processes_to_update.add(p)
              else:
-                 processes_to_update.extend(get_processes_in_history(session, p.processid, [204]))
+                 processes_to_update.update(get_processes_in_history(session, p.processid, [204]))
          
          log.info("the following processes will be updated : {0}".format(processes_to_update))
          lpar.masterProcessSQL(args, processes_to_update, log)
