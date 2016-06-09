@@ -6,6 +6,7 @@ import LIMS2DB.utils as lutils
 import multiprocessing as mp
 import statusdb.db as sdb
 import Queue
+import genologics_sql.tables as gt
 
 from genologics.entities import Process
 from genologics.config import BASEURI, USERNAME, PASSWORD
@@ -118,12 +119,11 @@ def stillRunning(processList):
 
     return ret
 
-def masterProcessSQL(args ,processList, logger):
+def masterProcessSQL(args ,wslist, logger):
     worksetQueue = mp.JoinableQueue()
     logQueue = mp.Queue()
     childs = []
     procs_nb = 1;
-    #Initial step : order worksets by date:
     if len(wslist) < args.procs:
         procs_nb = len(wslist)
     else:
@@ -135,7 +135,7 @@ def masterProcessSQL(args ,processList, logger):
         p.start()
         childs.append(p)
     #populate queue with data   
-    for ws in processList:
+    for ws in wslist:
         worksetQueue.put(ws.processid)
 
     #wait on the queue until everything has been processed     
@@ -174,15 +174,17 @@ def processWSULSQL(args, queue, logqueue):
             proclog.info("exiting gracefully")
             break
         else:
-            step=session.query(Process).filter_by(processid=ws_id).one()
-            ws=lclasses.Workset_SQL(session, log, step)
+            step=session.query(gt.Process).filter(gt.Process.processid == int(ws_id)).one()
+            ws=lclasses.Workset_SQL(session, proclog, step)
             doc={}
             for row in db.view('worksets/lims_id')[ws.obj['id']]:
                 doc=db.get(row.id)
             if doc:
                 final_doc=lutils.merge(ws.obj, doc)
+            else:
+                final_doc=ws.obj
             db.save(final_doc)
-            proclog.warn("updating {0}".format(ws.obj['name']))
+            proclog.info("updating {0}".format(ws.obj['name']))
             queue.task_done()
 
 class QueueHandler(logging.Handler):
