@@ -238,6 +238,8 @@ class Workset_SQL:
                                                     'name' : project.name, 
                                                     'library' : project.udf_dict.get('Library construction method'), 
                                                     'samples' : {}}
+                if project.closedate:
+                    self.obj['projects'][project.luid]['close_date']=project.closedate.strftime("%Y-%m-%d")
             if sample.name not in self.obj['projects'][project.luid]['samples']:
                 self.obj['projects'][project.luid]['samples'][sample.name]={'customer_name' : sample.udf_dict.get('Customer Name'), 
                                                                             'sequencing_status' : 'UNKNOWN', 'library_status' : 'UNKNOWN', 

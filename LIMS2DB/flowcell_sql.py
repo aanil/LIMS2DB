@@ -31,6 +31,8 @@ def create_lims_data_obj(session, pro):
     for art in arts:
         #lane is a string
         lane=art.containerplacement.api_string.split(":")[0]
+        if lane.isalpha():
+            lane=str(ord(lane)-64)
         obj['run_summary'][lane]=art.udf_dict
         obj['run_summary'][lane]['qc']=art.qc_flag
         
