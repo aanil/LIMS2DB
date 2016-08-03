@@ -183,6 +183,12 @@ def processWSULSQL(args, queue, logqueue):
                 final_doc=lutils.merge(ws.obj, doc)
             else:
                 final_doc=ws.obj
+            #clean possible name duplicates
+            for row in db.view('worksets/name')[ws.obj['name']]:
+                doc=db.get(row.id)
+                if doc['id'] != ws.obj['id']:
+                    proclog.warning("Duplicate name {} for worksets {} and {}".format(doc['name'], doc['id'], final_doc['id']))
+                    db.delete(doc)
             db.save(final_doc)
             proclog.info("updating {0}".format(ws.obj['name']))
             queue.task_done()
