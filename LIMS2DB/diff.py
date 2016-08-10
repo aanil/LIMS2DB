@@ -1,11 +1,14 @@
 
 import LIMS2DB.objectsDB.objectsDB as DB
+import pprint
 
+from LIMS2DB.classes import ProjectSQL 
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.lims import Lims
 from LIMS2DB.utils import setupLog
+from genologics_sql.utils import *
 
-def diff_project_objects(pj_id, couch, logfile):
+def diff_project_objects(pj_id, couch, logfile, new=True):
 
     proj_db = couch['projects']
     samp_db = couch['samples']
@@ -26,11 +29,19 @@ def diff_project_objects(pj_id, couch, logfile):
     old_project.pop('modification_time', None)
     old_project.pop('creation_time', None)
 
-    new_project = DB.ProjectDB(lims, pj_id, samp_db, log)
+    try:
+        if new:
+            session=get_session()
+            host=get_configuration()['url']
+            new_project=ProjectSQL(session, log, pj_id, host)
+        else:
+            new_project = DB.ProjectDB(lims, pj_id, samp_db, log)
+    except:
+        return {}
 
     fediff=diff_objects(old_project, new_project.obj)
 
-    return {pj_id : fediff}
+    return fediff
 
 
     
@@ -51,11 +62,12 @@ def diff_objects(o1, o2, parent=''):
                     diffs["{} {}".format(parent, key)]=[o1[key], o2[key]]
 
         else:
-            diffs["key {}".format(key)]=[o1[key], "missing"]
+            if o1[key]:
+                diffs["key {} {}".format(parent, key)]=[o1[key], "missing"]
 
     for key in o2:
-        if key not in o1:
-            diffs["key {}".format(key)]=["missing", o2[key]]
+        if key not in o1 and o2[key]:
+            diffs["key {} {}".format(parent, key)]=["missing", o2[key]]
 
 
     return diffs
