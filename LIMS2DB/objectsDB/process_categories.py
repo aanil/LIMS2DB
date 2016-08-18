@@ -34,6 +34,9 @@ POOLING = {
     '506': "Pre-Pooling (MiSeq) 4.0",
     '508': "Applications Pre-Pooling",
     '716': 'Library Pooling (HiSeq X) 1.0'}
+PREPSTARTFINLIB = {
+    '255': "Library Pooling (Finished Libraries) 4.0"
+    }
 PREPSTART = {
     '10' : 'Aliquot Libraries for Hybridization (SS XT)',
     '47' : 'mRNA Purification, Fragmentation & cDNA synthesis (TruSeq RNA) 4.0',
