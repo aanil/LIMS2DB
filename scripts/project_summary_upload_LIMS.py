@@ -209,7 +209,7 @@ def processPSUL(options, queue, logqueue):
                 else:
                     try:
                         db_session=get_session()
-                        pj_id=db.session.query(DBProject.luid).filter(DBProject.name == projname).scalar()
+                        pj_id=db_session.query(DBProject.luid).filter(DBProject.name == projname).scalar()
                         host=get_configuration()['url']
                         P = ProjectSQL(db_session, proclog, pj_id, host, couch)
                         P.save()

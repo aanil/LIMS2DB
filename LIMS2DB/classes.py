@@ -413,7 +413,7 @@ class ProjectSQL:
                 where esc.reviewdate is NULL and sa.projectid = {pjid};".format(pjid=self.project.projectid)
         escalations=self.session.query(EscalationEvent).from_statement(text(query)).all()
         if escalations:
-            self.obj['escalations']=[esc.processid for esc in escalations]
+            self.obj['escalations']=[str(esc.processid) for esc in escalations]
 
 
     def make_normalized_dict(self, d):
@@ -447,13 +447,22 @@ class ProjectSQL:
         try:
             oldest_qc=self.session.query(Process).from_statement(text(query)).first()
             self.obj['samples'][sample.name]['initial_qc']={}
-            self.obj['samples'][sample.name]['initial_qc']['start_date']=oldest_qc.daterun.strftime('%Y-%m-%d')
-            self.obj['samples'][sample.name]['first_initial_qc_start_date']=oldest_qc.daterun.strftime('%Y-%m-%d')
+            try:
+                self.obj['samples'][sample.name]['initial_qc']['start_date']=oldest_qc.daterun.strftime('%Y-%m-%d')
+                self.obj['samples'][sample.name]['first_initial_qc_start_date']=oldest_qc.daterun.strftime('%Y-%m-%d')
+            except AttributeError:
+                self.obj['samples'][sample.name]['initial_qc']['start_date']=oldest_qc.createddate.strftime('%Y-%m-%d')
+                self.obj['samples'][sample.name]['first_initial_qc_start_date']=oldest_qc.createddate.strftime('%Y-%m-%d')
+
             try:
                 if datetime.strptime(self.obj['first_initial_qc'], '%Y-%m-%d') > oldest_qc.daterun:
                     self.obj['first_initial_qc']=oldest_qc.daterun.strftime('%Y-%m-%d')
             except KeyError:
-                self.obj['first_initial_qc']=oldest_qc.daterun.strftime('%Y-%m-%d')
+                try:
+                    self.obj['first_initial_qc']=oldest_qc.daterun.strftime('%Y-%m-%d')
+                except AttributeError:
+                    self.obj['first_initial_qc']=oldest_qc.createddate.strftime('%Y-%m-%d')
+
             #get aggregate from init qc for sample
             query="select pr.* from process pr \
                 inner join processiotracker piot on piot.processid=pr.processid \
@@ -463,7 +472,10 @@ class ProjectSQL:
                 order by pr.daterun desc;".format(sapid=sample.processid, tid=','.join(pc_cg.AGRINITQC.keys()))
             try:
                 youngest_aggregate=self.session.query(Process).from_statement(text(query)).first()
-                self.obj['samples'][sample.name]['initial_qc']['finish_date']=youngest_aggregate.daterun.strftime('%Y-%m-%d')
+                try:
+                    self.obj['samples'][sample.name]['initial_qc']['finish_date']=youngest_aggregate.daterun.strftime('%Y-%m-%d')
+                except AttributeError:
+                    self.obj['samples'][sample.name]['initial_qc']['finish_date']=youngest_aggregate.createddate.strftime('%Y-%m-%d')
                 self.obj['samples'][sample.name]['initial_qc']['initials']=youngest_aggregate.technician.researcher.initials
             except AttributeError:
                 self.log.info("Didnt find an aggregate for Initial QC of sample {}".format(sample.name))
@@ -697,7 +709,10 @@ class ProjectSQL:
                         self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]={}
                         self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_finish_date']=seq.udf_dict.get('Finish Date')
                         self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['seq_qc_flag']=art.qc_flag
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date']=seqstarts[0].daterun.strftime("%Y-%m-%d")
+                        try:
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date']=seqstarts[0].daterun.strftime("%Y-%m-%d")
+                        except AttributeError:
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date']=seqstarts[0].createdddate.strftime("%Y-%m-%d")
                         self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sample_run_metrics_id']=self.find_couch_sampleid(samp_run_met_id)
                     except:
                         self.log.info("no run id for sequencing process {}".format(seq.luid))
@@ -711,7 +726,11 @@ class ProjectSQL:
                             where pr.typeid={dem} and piot.inputartifactid={iaid};".format(dem=pc_cg.DEMULTIPLEX.keys()[0], iaid=art.artifactid)
                     try:
                         dem=self.session.query(Process).from_statement(text(query)).one()
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=dem.daterun.strftime("%Y-%m-%d")
+                        try:
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=dem.daterun.strftime("%Y-%m-%d")
+                        except AttributeError:
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=dem.createddate.strftime("%Y-%m-%d")
+
                         #get output resultfile named like the sample of a Demultiplex step
                         query="select art.* from artifact art \
                             inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
@@ -728,7 +747,11 @@ class ProjectSQL:
                         self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dem_qc_flag']=cumulated_flag
 
                     except NoResultFound:
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=seq.daterun.strftime("%Y-%m-%d")
+                        try:
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=seq.daterun.strftime("%Y-%m-%d")
+                        except AttributeError:
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=seq.createddate.strftime("%Y-%m-%d")
+
                         self.log.info("no demultiplexing found for sample {}, sequencing {}".format(sample.name, seq.processid))
 
     def extract_barcode(self, chain):
