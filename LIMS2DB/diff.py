@@ -1,8 +1,4 @@
 
-import LIMS2DB.objectsDB.objectsDB as DB
-import pprint
-
-from LIMS2DB.classes import ProjectSQL 
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.lims import Lims
 from LIMS2DB.utils import setupLog
@@ -29,19 +25,18 @@ def diff_project_objects(pj_id, couch, logfile, new=True):
     old_project.pop('modification_time', None)
     old_project.pop('creation_time', None)
 
-    try:
-        if new:
-            session=get_session()
-            host=get_configuration()['url']
-            new_project=ProjectSQL(session, log, pj_id, host)
-        else:
-            new_project = DB.ProjectDB(lims, pj_id, samp_db, log)
-    except:
-        return {}
+    if new:
+        from LIMS2DB.classes import ProjectSQL 
+        session=get_session()
+        host=get_configuration()['url']
+        new_project=ProjectSQL(session, log, pj_id, host, couch)
+    else:
+        import LIMS2DB.objectsDB.objectsDB as DB
+        new_project = DB.ProjectDB(lims, pj_id, samp_db, log)
 
     fediff=diff_objects(old_project, new_project.obj)
 
-    return fediff
+    return (fediff, old_project, new_project.obj)
 
 
     
