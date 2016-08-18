@@ -457,7 +457,7 @@ class ProjectSQL:
                 self.obj['samples'][sample.name]['first_initial_qc_start_date']=oldest_qc.createddate.strftime('%Y-%m-%d')
 
             try:
-                if datetime.strptime(self.obj['first_initial_qc'], '%Y-%m-%d') > oldest_qc.daterun:
+                if oldest_qc.daterun and datetime.strptime(self.obj['first_initial_qc'], '%Y-%m-%d') > oldest_qc.daterun:
                     self.obj['first_initial_qc']=oldest_qc.daterun.strftime('%Y-%m-%d')
             except KeyError:
                 try:
