@@ -446,6 +446,8 @@ class ProjectSQL:
                 order by pr.daterun;".format(sapid=sample.processid, tid=','.join(pc_cg.INITALQC.keys() + pc_cg.INITALQCFINISHEDLIB.keys()))
         try:
             oldest_qc=self.session.query(Process).from_statement(text(query)).first()
+            if not oldest_qc:
+                return None
             self.obj['samples'][sample.name]['initial_qc']={}
             try:
                 self.obj['samples'][sample.name]['initial_qc']['start_date']=oldest_qc.daterun.strftime('%Y-%m-%d')
