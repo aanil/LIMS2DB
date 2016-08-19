@@ -569,7 +569,6 @@ class ProjectSQL:
                 agrlibval=get_children_processes(self.session, one_libprep.processid, pc_cg.AGRLIBVAL.keys(), sample.processid)[0]
                 self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]={}
                 self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['finish_date']=agrlibval.daterun.strftime("%Y-%m-%d")
-                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation']['finish_date']=agrlibval.daterun.strftime("%Y-%m-%d")
                 self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['initials']=agrlibval.technician.researcher.initials
                 #get input artifact of a given process that belongs to sample
                 query="select art.* from artifact art \
