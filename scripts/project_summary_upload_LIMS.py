@@ -127,22 +127,32 @@ def main(options):
             pj_id=lims_db.query(DBProject.luid).filter(DBProject.name == options.project_name).scalar()
             P = ProjectSQL(lims_db, mainlog, pj_id, host, couch)
     else :
-        projects=create_projects_list(options, mainlims, mainlog)
+        projects=create_projects_list(options, lims_db, mainlims, mainlog)
+        lims_db.commit()
+        lims_db.close()
         masterProcess(options,projects, mainlims, mainlog)
 
-def create_projects_list(options, lims, log):
+def create_projects_list(options, db_session,lims, log):
         projects=[]
         if options.all_projects:
-            projects = lims.get_projects()
             if options.hours:
                 postgres_string="{} hours".format(options.hours)
-                db_session=get_session()
                 project_ids=get_last_modified_projectids(db_session, postgres_string)
-                valid_projects=[Project(lims, id=x) for x in project_ids]
-                log.info("project list : {0}".format(" ".join([p.id for p in valid_projects])))
+                if options.old:
+                    projects=lims.get_projects()
+                    valid_projects=[Project(lims, id=x) for x in project_ids]
+                    log.info("project list : {0}".format(" ".join([p.id for p in valid_projects])))
+                else:
+                    valid_projects=db_session.query(DBProject).filter(DBProject.luid in project_ids)
+                    log.info("project list : {0}".format(" ".join([p.luid for p in valid_projects])))
                 return valid_projects
             else:
-                log.info("project list : {0}".format(" ".join([p.id for p in projects])))
+                if options.old:
+                    projects=lims.get_projects()
+                    log.info("project list : {0}".format(" ".join([p.id for p in projects])))
+                else:
+                    projects = db_session.query(DBProject).all()
+                    log.info("project list : {0}".format(" ".join([p.luid for p in projects])))
                 return projects
 
         elif options.input:
@@ -163,6 +173,7 @@ def processPSUL(options, queue, logqueue):
     proj_db = couch['projects']
     samp_db = couch['samples']
     mylims = Lims(BASEURI, USERNAME, PASSWORD)
+    db_session=get_session()
     work=True
     procName=mp.current_process().name
     proclog=logging.getLogger(procName)
@@ -208,7 +219,6 @@ def processPSUL(options, queue, logqueue):
                         proclog.error("{0}:{1}\n{2}".format(error[0], error[1], formatStack(stack)))
                 else:
                     try:
-                        db_session=get_session()
                         pj_id=db_session.query(DBProject.luid).filter(DBProject.name == projname).scalar()
                         host=get_configuration()['url']
                         P = ProjectSQL(db_session, proclog, pj_id, host, couch)
@@ -228,6 +238,8 @@ def processPSUL(options, queue, logqueue):
 
             #signals to queue job is done
             queue.task_done()
+    db_session.commit()
+    db_session.close()
 
 def masterProcess(options,projectList, mainlims, logger):
     projectsQueue=mp.JoinableQueue()
