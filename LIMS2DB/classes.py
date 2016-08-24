@@ -567,7 +567,7 @@ class ProjectSQL:
                         recent=l
                 self.obj['samples'][sample.name]['library_prep'][prepname]['prep_finished_date']=recent.daterun.strftime("%Y-%m-%d")
                 self.obj['samples'][sample.name]['library_prep'][prepname]['prep_id']=recent.luid
-            except IndexError, AttributeError:
+            except (IndexError, AttributeError):
                 self.log.info("no prepend for sample {} prep {}".format(sample.name, one_libprep.processid))
             try:
                 agrlibval=get_children_processes(self.session, one_libprep.processid, pc_cg.AGRLIBVAL.keys(), sample.processid)[0]
