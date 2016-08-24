@@ -446,6 +446,8 @@ class ProjectSQL:
                 order by pr.daterun;".format(sapid=sample.processid, tid=','.join(pc_cg.INITALQC.keys() + pc_cg.INITALQCFINISHEDLIB.keys()))
         try:
             oldest_qc=self.session.query(Process).from_statement(text(query)).first()
+            if not oldest_qc:
+                return None
             self.obj['samples'][sample.name]['initial_qc']={}
             try:
                 self.obj['samples'][sample.name]['initial_qc']['start_date']=oldest_qc.daterun.strftime('%Y-%m-%d')
@@ -455,7 +457,7 @@ class ProjectSQL:
                 self.obj['samples'][sample.name]['first_initial_qc_start_date']=oldest_qc.createddate.strftime('%Y-%m-%d')
 
             try:
-                if datetime.strptime(self.obj['first_initial_qc'], '%Y-%m-%d') > oldest_qc.daterun:
+                if oldest_qc.daterun and datetime.strptime(self.obj['first_initial_qc'], '%Y-%m-%d') > oldest_qc.daterun:
                     self.obj['first_initial_qc']=oldest_qc.daterun.strftime('%Y-%m-%d')
             except KeyError:
                 try:
@@ -539,13 +541,17 @@ class ProjectSQL:
                 libp=get_children_processes(self.session, one_libprep.processid, pc_cg.PREPSTART, sample=sample.processid)
                 older=libp[0]
                 for l in libp:
-                    if older.daterun > l.daterun:
+                    if (not older.daterun and l.daterun) or (l.daterun and older.daterun > l.daterun):
                         older=l
-                self.obj['samples'][sample.name]['library_prep'][prepname]['prep_start_date']=older.daterun.strftime("%Y-%m-%d")
-                if "first_prep_start_date" not in self.obj['samples'][sample.name] or \
-                    datetime.strptime(self.obj['samples'][sample.name]['first_prep_start_date'], "%Y-%m-%d") > older.daterun:
-                    self.obj['samples'][sample.name]['first_prep_start_date']=older.daterun.strftime("%Y-%m-%d")
-                self.obj['samples'][sample.name]['library_prep'][prepname]['prep_start_date']=older.daterun.strftime("%Y-%m-%d")
+                try:
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['prep_start_date']=older.daterun.strftime("%Y-%m-%d")
+                    if "first_prep_start_date" not in self.obj['samples'][sample.name] or \
+                        datetime.strptime(self.obj['samples'][sample.name]['first_prep_start_date'], "%Y-%m-%d") > older.daterun:
+                        self.obj['samples'][sample.name]['first_prep_start_date']=older.daterun.strftime("%Y-%m-%d")
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['prep_start_date']=older.daterun.strftime("%Y-%m-%d")
+                except AttributeError:
+                    #Missing date run
+                    pass
             except IndexError:
                 self.log.info("No libstart found for sample {}".format(sample.name))
                 if one_libprep.typeid == 117:
@@ -557,17 +563,19 @@ class ProjectSQL:
             try:
                 recent=pend[0]
                 for l in pend:
-                    if recent.daterun < l.daterun:
+                    if (not recent.daterun and l.daterun) or (l.daterun and recent.daterun < l.daterun):
                         recent=l
                 self.obj['samples'][sample.name]['library_prep'][prepname]['prep_finished_date']=recent.daterun.strftime("%Y-%m-%d")
                 self.obj['samples'][sample.name]['library_prep'][prepname]['prep_id']=recent.luid
-            except IndexError:
+            except (IndexError, AttributeError):
                 self.log.info("no prepend for sample {} prep {}".format(sample.name, one_libprep.processid))
             try:
                 agrlibval=get_children_processes(self.session, one_libprep.processid, pc_cg.AGRLIBVAL.keys(), sample.processid)[0]
                 self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]={}
-                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['finish_date']=agrlibval.daterun.strftime("%Y-%m-%d")
-                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation']['finish_date']=agrlibval.daterun.strftime("%Y-%m-%d")
+                try:
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['finish_date']=agrlibval.daterun.strftime("%Y-%m-%d")
+                except AttributeError:
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['finish_date']=agrlibval.createddate.strftime("%Y-%m-%d")
                 self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['initials']=agrlibval.technician.researcher.initials
                 #get input artifact of a given process that belongs to sample
                 query="select art.* from artifact art \
@@ -594,7 +602,11 @@ class ProjectSQL:
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date']=libvals[0].daterun.strftime("%Y-%m-%d")
                     except IndexError:
                         self.log.info("no library validation steps found for sample {} prep {}".format(sample.name, agrlibval.luid))
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date']=agrlibval.daterun.strftime("%Y-%m-%d")
+                        try:
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date']=agrlibval.daterun.strftime("%Y-%m-%d")
+                        except AttributeError:
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date']=agrlibval.createddate.strftime("%Y-%m-%d")
+
                     #get GlsFile for output artifact of a Caliper process where its input is given
                     query="select gf.* from glsfile gf \
                         inner join resultfile rf on rf.glsfileid=gf.fileid \
@@ -712,47 +724,49 @@ class ProjectSQL:
                         try:
                             self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date']=seqstarts[0].daterun.strftime("%Y-%m-%d")
                         except AttributeError:
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date']=seqstarts[0].createdddate.strftime("%Y-%m-%d")
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date']=seqstarts[0].createddate.strftime("%Y-%m-%d")
                         self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sample_run_metrics_id']=self.find_couch_sampleid(samp_run_met_id)
-                    except:
-                        self.log.info("no run id for sequencing process {}".format(seq.luid))
-                    try:
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dillution_and_pooling_start_date']=dilstarts[0].daterun.strftime("%Y-%m-%d")
-                    except IndexError:
-                        self.log.info("no dilution found for sequencing {} of sample {}".format(seq.processid, sample.name))
-                    #get the associated demultiplexing step
-                    query="select pr.* from process pr \
-                            inner join processiotracker piot on piot.processid=pr.processid \
-                            where pr.typeid={dem} and piot.inputartifactid={iaid};".format(dem=pc_cg.DEMULTIPLEX.keys()[0], iaid=art.artifactid)
-                    try:
-                        dem=self.session.query(Process).from_statement(text(query)).one()
                         try:
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=dem.daterun.strftime("%Y-%m-%d")
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dillution_and_pooling_start_date']=dilstarts[0].daterun.strftime("%Y-%m-%d")
                         except AttributeError:
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=dem.createddate.strftime("%Y-%m-%d")
-
-                        #get output resultfile named like the sample of a Demultiplex step
-                        query="select art.* from artifact art \
-                            inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
-                            inner join outputmapping om on art.artifactid=om.outputartifactid \
-                            inner join processiotracker piot on piot.trackerid=om.trackerid \
-                            inner join sample sa on sa.processid=asm.processid \
-                            where art.artifacttypeid = 1 and art.name like '%{saname}%'and sa.processid = {sapid} and piot.processid = {dem}".format(saname=sample.name, sapid=sample.processid, dem=dem.processid)
-                        out_arts=self.session.query(Artifact).from_statement(text(query)).all()
-                        cumulated_flag='FAILED'
-                        for art in out_arts:
-                            if art.qc_flag == 'PASSED':
-                                cumulated_flag='PASSED'
-
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dem_qc_flag']=cumulated_flag
-
-                    except NoResultFound:
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dillution_and_pooling_start_date']=dilstarts[0].createddate.strftime("%Y-%m-%d")
+                        except IndexError:
+                            self.log.info("no dilution found for sequencing {} of sample {}".format(seq.processid, sample.name))
+                        #get the associated demultiplexing step
+                        query="select pr.* from process pr \
+                                inner join processiotracker piot on piot.processid=pr.processid \
+                                where pr.typeid={dem} and piot.inputartifactid={iaid};".format(dem=pc_cg.DEMULTIPLEX.keys()[0], iaid=art.artifactid)
                         try:
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=seq.daterun.strftime("%Y-%m-%d")
-                        except AttributeError:
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=seq.createddate.strftime("%Y-%m-%d")
+                            dem=self.session.query(Process).from_statement(text(query)).one()
+                            try:
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=dem.daterun.strftime("%Y-%m-%d")
+                            except AttributeError:
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=dem.createddate.strftime("%Y-%m-%d")
+
+                            #get output resultfile named like the sample of a Demultiplex step
+                            query="select art.* from artifact art \
+                                inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
+                                inner join outputmapping om on art.artifactid=om.outputartifactid \
+                                inner join processiotracker piot on piot.trackerid=om.trackerid \
+                                inner join sample sa on sa.processid=asm.processid \
+                                where art.artifacttypeid = 1 and art.name like '%{saname}%'and sa.processid = {sapid} and piot.processid = {dem}".format(saname=sample.name, sapid=sample.processid, dem=dem.processid)
+                            out_arts=self.session.query(Artifact).from_statement(text(query)).all()
+                            cumulated_flag='FAILED'
+                            for art in out_arts:
+                                if art.qc_flag == 'PASSED':
+                                    cumulated_flag='PASSED'
+
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dem_qc_flag']=cumulated_flag
+
+                        except NoResultFound:
+                            try:
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=seq.daterun.strftime("%Y-%m-%d")
+                            except AttributeError:
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=seq.createddate.strftime("%Y-%m-%d")
 
                         self.log.info("no demultiplexing found for sample {}, sequencing {}".format(sample.name, seq.processid))
+                    except:
+                        self.log.info("no run id for sequencing process {}".format(seq.luid))
 
     def extract_barcode(self, chain):
         bcp=re.compile("[ATCG\-]{4,}")
