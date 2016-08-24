@@ -129,10 +129,9 @@ def main(options):
             P.save()
     else :
         projects=create_projects_list(options, lims_db, mainlims, mainlog)
+        masterProcess(options,projects, mainlims, mainlog)
         lims_db.commit()
         lims_db.close()
-        print(projects)
-        masterProcess(options,projects, mainlims, mainlog)
 
 def create_projects_list(options, db_session,lims, log):
         projects=[]
@@ -145,7 +144,7 @@ def create_projects_list(options, db_session,lims, log):
                     valid_projects=[Project(lims, id=x) for x in project_ids]
                     log.info("project list : {0}".format(" ".join([p.id for p in valid_projects])))
                 else:
-                    valid_projects=db_session.query(DBProject).filter(DBProject.luid in project_ids).all()
+                    valid_projects=db_session.query(DBProject).filter(DBProject.luid.in_(project_ids)).all()
                     log.info("project list : {0}".format(" ".join([p.luid for p in valid_projects])))
                 return valid_projects
             else:
