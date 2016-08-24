@@ -541,13 +541,17 @@ class ProjectSQL:
                 libp=get_children_processes(self.session, one_libprep.processid, pc_cg.PREPSTART, sample=sample.processid)
                 older=libp[0]
                 for l in libp:
-                    if older.daterun > l.daterun:
+                    if (not older.daterun and l.daterun) or (l.daterun and older.daterun > l.daterun):
                         older=l
-                self.obj['samples'][sample.name]['library_prep'][prepname]['prep_start_date']=older.daterun.strftime("%Y-%m-%d")
-                if "first_prep_start_date" not in self.obj['samples'][sample.name] or \
-                    datetime.strptime(self.obj['samples'][sample.name]['first_prep_start_date'], "%Y-%m-%d") > older.daterun:
-                    self.obj['samples'][sample.name]['first_prep_start_date']=older.daterun.strftime("%Y-%m-%d")
-                self.obj['samples'][sample.name]['library_prep'][prepname]['prep_start_date']=older.daterun.strftime("%Y-%m-%d")
+                try:
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['prep_start_date']=older.daterun.strftime("%Y-%m-%d")
+                    if "first_prep_start_date" not in self.obj['samples'][sample.name] or \
+                        datetime.strptime(self.obj['samples'][sample.name]['first_prep_start_date'], "%Y-%m-%d") > older.daterun:
+                        self.obj['samples'][sample.name]['first_prep_start_date']=older.daterun.strftime("%Y-%m-%d")
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['prep_start_date']=older.daterun.strftime("%Y-%m-%d")
+                except AttributeError:
+                    #Missing date run
+                    pass
             except IndexError:
                 self.log.info("No libstart found for sample {}".format(sample.name))
                 if one_libprep.typeid == 117:
@@ -559,16 +563,19 @@ class ProjectSQL:
             try:
                 recent=pend[0]
                 for l in pend:
-                    if recent.daterun < l.daterun:
+                    if (not recent.daterun and l.daterun) or (l.daterun and recent.daterun < l.daterun):
                         recent=l
                 self.obj['samples'][sample.name]['library_prep'][prepname]['prep_finished_date']=recent.daterun.strftime("%Y-%m-%d")
                 self.obj['samples'][sample.name]['library_prep'][prepname]['prep_id']=recent.luid
-            except IndexError:
+            except IndexError, AttributeError:
                 self.log.info("no prepend for sample {} prep {}".format(sample.name, one_libprep.processid))
             try:
                 agrlibval=get_children_processes(self.session, one_libprep.processid, pc_cg.AGRLIBVAL.keys(), sample.processid)[0]
                 self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]={}
-                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['finish_date']=agrlibval.daterun.strftime("%Y-%m-%d")
+                try:
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['finish_date']=agrlibval.daterun.strftime("%Y-%m-%d")
+                except AttributeError:
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['finish_date']=agrlibval.createddate.strftime("%Y-%m-%d")
                 self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['initials']=agrlibval.technician.researcher.initials
                 #get input artifact of a given process that belongs to sample
                 query="select art.* from artifact art \
@@ -595,7 +602,11 @@ class ProjectSQL:
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date']=libvals[0].daterun.strftime("%Y-%m-%d")
                     except IndexError:
                         self.log.info("no library validation steps found for sample {} prep {}".format(sample.name, agrlibval.luid))
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date']=agrlibval.daterun.strftime("%Y-%m-%d")
+                        try:
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date']=agrlibval.daterun.strftime("%Y-%m-%d")
+                        except AttributeError:
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date']=agrlibval.createddate.strftime("%Y-%m-%d")
+
                     #get GlsFile for output artifact of a Caliper process where its input is given
                     query="select gf.* from glsfile gf \
                         inner join resultfile rf on rf.glsfileid=gf.fileid \
@@ -713,10 +724,12 @@ class ProjectSQL:
                         try:
                             self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date']=seqstarts[0].daterun.strftime("%Y-%m-%d")
                         except AttributeError:
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date']=seqstarts[0].createdddate.strftime("%Y-%m-%d")
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date']=seqstarts[0].createddate.strftime("%Y-%m-%d")
                         self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sample_run_metrics_id']=self.find_couch_sampleid(samp_run_met_id)
                         try:
                             self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dillution_and_pooling_start_date']=dilstarts[0].daterun.strftime("%Y-%m-%d")
+                        except AttributeError:
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dillution_and_pooling_start_date']=dilstarts[0].createddate.strftime("%Y-%m-%d")
                         except IndexError:
                             self.log.info("no dilution found for sequencing {} of sample {}".format(seq.processid, sample.name))
                         #get the associated demultiplexing step
