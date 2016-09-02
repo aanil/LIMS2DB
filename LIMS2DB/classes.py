@@ -569,8 +569,28 @@ class ProjectSQL:
                 self.obj['samples'][sample.name]['library_prep'][prepname]['prep_id']=recent.luid
             except (IndexError, AttributeError):
                 self.log.info("no prepend for sample {} prep {}".format(sample.name, one_libprep.processid))
+
             try:
-                agrlibval=get_children_processes(self.session, one_libprep.processid, pc_cg.AGRLIBVAL.keys(), sample.processid)[0]
+                agrlibvals=get_children_processes(self.session, one_libprep.processid, pc_cg.AGRLIBVAL.keys(), sample.processid, 'daterun desc')
+                for agrlv in agrlibvals:
+                    #for small rna (and maybe others), there is more than one agrlibval, and I should not get the latest one, 
+                    #but the latest one that ran at sample level, not a pool level.
+                    #get input artifact of a given process that belongs to sample
+                    query="select art.* from artifact art \
+                        inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
+                        inner join processiotracker piot on piot.inputartifactid=art.artifactid \
+                        inner join sample sa on sa.processid=asm.processid \
+                        where sa.processid = {sapid} and piot.processid = {agrid}".format(sapid=sample.processid, agrid=agrlv.processid)
+                    try:
+                        inp_artifact=self.session.query(Artifact).from_statement(text(query)).one()
+                        if len(inp_artifact.samples)>1:
+                            continue
+                        else:
+                            agrlibval=agrlv
+                            break
+                    except NoResultFound:
+                        pass
+                    
                 self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]={}
                 try:
                     self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['finish_date']=agrlibval.daterun.strftime("%Y-%m-%d")
