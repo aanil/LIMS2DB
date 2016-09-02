@@ -572,6 +572,7 @@ class ProjectSQL:
 
             try:
                 agrlibvals=get_children_processes(self.session, one_libprep.processid, pc_cg.AGRLIBVAL.keys(), sample.processid, 'daterun desc')
+                agrlibval=None
                 for agrlv in agrlibvals:
                     #for small rna (and maybe others), there is more than one agrlibval, and I should not get the latest one, 
                     #but the latest one that ran at sample level, not a pool level.
@@ -590,7 +591,21 @@ class ProjectSQL:
                             break
                     except NoResultFound:
                         pass
-                    
+                #Get barcode for finlib
+                if not agrlibval and 'By user' in self.obj['details']['library_construction_method']:
+                    #Get initial artifact for given sample
+                    query="select art.* from artifact art \
+                        inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
+                        inner join sample sa on sa.processid=asm.processid \
+                        where sa.processid = {sapid} and art.isoriginal=True".format(sapid=sample.processid)
+                    try:
+                        initial_artifact=self.session.query(Artifact).from_statement(text(query)).one()
+                        self.obj['samples'][sample.name]['library_prep'][prepname]['reagent_label']=initial_artifact.reagentlabels[0].name
+                    except:
+                        pass
+
+
+                #raises AttributeError on no aggregate
                 self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]={}
                 try:
                     self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['finish_date']=agrlibval.daterun.strftime("%Y-%m-%d")
@@ -669,7 +684,7 @@ class ProjectSQL:
 
                     except NoResultFound:
                         self.log.info("Did not find the output resultfile of the Neoprep step for sample {}".format(sample.name))
-            except IndexError:
+            except AttributeError:
                 self.log.info("No aggregate for sample {} prep {}".format(sample.name, one_libprep.luid))
             #get output analyte of a given process that belongs to sample
             query="select art.* from artifact art \
