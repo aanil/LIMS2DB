@@ -584,7 +584,7 @@ class ProjectSQL:
                         where sa.processid = {sapid} and piot.processid = {agrid}".format(sapid=sample.processid, agrid=agrlv.processid)
                     try:
                         inp_artifact=self.session.query(Artifact).from_statement(text(query)).one()
-                        if len(inp_artifact.samples)>1:
+                        if len(inp_artifact.samples)>1 and 'By user' not in self.obj['details']['library_construction_method']:
                             continue
                         else:
                             agrlibval=agrlv
