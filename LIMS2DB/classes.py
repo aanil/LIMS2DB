@@ -591,8 +591,9 @@ class ProjectSQL:
                             break
                     except NoResultFound:
                         pass
+
                 #Get barcode for finlib
-                if not agrlibval and 'By user' in self.obj['details']['library_construction_method']:
+                if 'By user' in self.obj['details']['library_construction_method']:
                     #Get initial artifact for given sample
                     query="select art.* from artifact art \
                         inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
@@ -601,9 +602,9 @@ class ProjectSQL:
                     try:
                         initial_artifact=self.session.query(Artifact).from_statement(text(query)).one()
                         self.obj['samples'][sample.name]['library_prep'][prepname]['reagent_label']=initial_artifact.reagentlabels[0].name
+                        self.obj['samples'][sample.name]['library_prep'][prepname]['barcode']=self.extract_barcode(initial_artifact.reagentlabels[0].name)
                     except:
                         pass
-
 
                 #raises AttributeError on no aggregate
                 self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]={}
@@ -625,8 +626,10 @@ class ProjectSQL:
                     self.obj['samples'][sample.name]['library_prep'][prepname]['prep_status']=inp_artifact.qc_flag
                     self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['well_location']=inp_artifact.containerplacement.api_string
                     self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['reagent_labels']=[rg.name for rg in inp_artifact.reagentlabels]
-                    self.obj['samples'][sample.name]['library_prep'][prepname]['reagent_label']=inp_artifact.reagentlabels[0].name
-                    self.obj['samples'][sample.name]['library_prep'][prepname]['barcode']=self.extract_barcode(inp_artifact.reagentlabels[0].name)
+                    if not 'By user' in self.obj['details']['library_construction_method']:
+                        #if finlib, these are already computed
+                        self.obj['samples'][sample.name]['library_prep'][prepname]['reagent_label']=inp_artifact.reagentlabels[0].name
+                        self.obj['samples'][sample.name]['library_prep'][prepname]['barcode']=self.extract_barcode(inp_artifact.reagentlabels[0].name)
                     #get libval steps from the same input art
                     query="select pr.* from process pr \
                         inner join processiotracker piot on piot.processid=pr.processid \
