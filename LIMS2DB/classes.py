@@ -2,12 +2,11 @@ from genologics_sql.tables import *
 from genologics_sql.queries import *
 from LIMS2DB.diff import diff_objects
 from sqlalchemy import text
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from sqlalchemy.orm.exc import NoResultFound
 from datetime import datetime
 
 import LIMS2DB.objectsDB.process_categories as pc_cg
 import re
-
 
 
 class Workset:
@@ -26,7 +25,7 @@ class Workset:
                 except:
                     self.log.warn("no name found for workset {}".format(out.id))
 
-        try:      
+        try:
             self.obj['name'] = self.name.pop()
         except:
             self.log.error("No name found for current workset {}, might be an ongoing step.".format(crawler.starting_proc.id))
