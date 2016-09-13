@@ -2,7 +2,7 @@ from genologics_sql.tables import *
 from genologics_sql.queries import *
 from LIMS2DB.diff import diff_objects
 from sqlalchemy import text
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from datetime import datetime
 
 import LIMS2DB.objectsDB.process_categories as pc_cg
@@ -391,8 +391,7 @@ class ProjectSQL:
         self.obj['details']=self.make_normalized_dict(self.project.udf_dict)
 
     def get_project_summary(self):
-        
-        #get project summaries from project 
+        #get project summaries from project
         query="select distinct pr.* from process pr \
             inner join processiotracker piot on piot.processid=pr.processid \
             inner join artifact_sample_map asm on piot.inputartifactid=asm.artifactid \
@@ -526,285 +525,317 @@ class ProjectSQL:
         for one_libprep in lp_starts:
             if 'library_prep' not in self.obj['samples'][sample.name]:
                 self.obj['samples'][sample.name]['library_prep']={}
-            prepid+=1
-            prepname=chr(prepid)
 
-            self.obj['samples'][sample.name]['library_prep'][prepname]={}
-            self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation']={}
-            self.obj['samples'][sample.name]['library_prep'][prepname]['workset_setup']=one_libprep.luid
+            #get all the output  artifacts of the libprep that match our sample
+            query="select art.* from artifact art \
+            inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
+            inner join outputmapping om  on om.outputartifactid=art.artifactid \
+            inner join processiotracker piot on piot.trackerid=om.trackerid \
+            inner join sample sa on sa.processid=asm.processid \
+            where sa.processid = {sapid} and piot.processid = {libid} and art.artifacttypeid = 2".format(sapid=sample.processid, libid=one_libprep.processid)
+            lp_out_arts=self.session.query(Artifact).from_statement(text(query)).all()
+            for one_libprep_art in lp_out_arts:
+                prepid+=1
+                prepname=chr(prepid)
 
-            if str(one_libprep.typeid) in pc_cg.PREPSTARTFINLIB:
-                self.obj['isFinishedLib']=True
 
-            #get a list of all libprep start steps
-            try:
-                libp=get_children_processes(self.session, one_libprep.processid, pc_cg.PREPSTART, sample=sample.processid)
-                older=libp[0]
-                for l in libp:
-                    if (not older.daterun and l.daterun) or (l.daterun and older.daterun > l.daterun):
-                        older=l
+
+                self.obj['samples'][sample.name]['library_prep'][prepname]={}
+                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation']={}
+                self.obj['samples'][sample.name]['library_prep'][prepname]['workset_setup']=one_libprep.luid
+
+                if str(one_libprep.typeid) in pc_cg.PREPSTARTFINLIB:
+                    self.obj['isFinishedLib']=True
+
+                #get a list of all libprep start steps
                 try:
-                    self.obj['samples'][sample.name]['library_prep'][prepname]['prep_start_date']=older.daterun.strftime("%Y-%m-%d")
-                    if "first_prep_start_date" not in self.obj['samples'][sample.name] or \
-                        datetime.strptime(self.obj['samples'][sample.name]['first_prep_start_date'], "%Y-%m-%d") > older.daterun:
-                        self.obj['samples'][sample.name]['first_prep_start_date']=older.daterun.strftime("%Y-%m-%d")
-                    self.obj['samples'][sample.name]['library_prep'][prepname]['prep_start_date']=older.daterun.strftime("%Y-%m-%d")
-                except AttributeError:
-                    #Missing date run
-                    pass
-            except IndexError:
-                self.log.info("No libstart found for sample {}".format(sample.name))
-                if one_libprep.typeid == 117:
-                    if "first_prep_start_date" not in self.obj['samples'][sample.name] or \
-                        datetime.strptime(self.obj['samples'][sample.name]['first_prep_start_date'], "%Y-%m-%d") > one_libprep.daterun:
-                        self.obj['samples'][sample.name]['first_prep_start_date']=one_libprep.daterun.strftime("%Y-%m-%d")
-                    self.obj['samples'][sample.name]['library_prep'][prepname]['prep_start_date']=one_libprep.daterun.strftime("%Y-%m-%d")
-            pend=get_children_processes(self.session, one_libprep.processid, pc_cg.PREPEND, sample=sample.processid)
-            try:
-                recent=pend[0]
-                for l in pend:
-                    if (not recent.daterun and l.daterun) or (l.daterun and recent.daterun < l.daterun):
-                        recent=l
-                self.obj['samples'][sample.name]['library_prep'][prepname]['prep_finished_date']=recent.daterun.strftime("%Y-%m-%d")
-                self.obj['samples'][sample.name]['library_prep'][prepname]['prep_id']=recent.luid
-            except (IndexError, AttributeError):
-                self.log.info("no prepend for sample {} prep {}".format(sample.name, one_libprep.processid))
+                    libp=get_children_processes(self.session, one_libprep.processid, pc_cg.PREPSTART, sample=sample.processid)
+                    older=libp[0]
+                    for l in libp:
+                        if (not older.daterun and l.daterun) or (l.daterun and older.daterun > l.daterun):
+                            older=l
+                    try:
+                        self.obj['samples'][sample.name]['library_prep'][prepname]['prep_start_date']=older.daterun.strftime("%Y-%m-%d")
+                        if "first_prep_start_date" not in self.obj['samples'][sample.name] or \
+                            datetime.strptime(self.obj['samples'][sample.name]['first_prep_start_date'], "%Y-%m-%d") > older.daterun:
+                            self.obj['samples'][sample.name]['first_prep_start_date']=older.daterun.strftime("%Y-%m-%d")
+                        self.obj['samples'][sample.name]['library_prep'][prepname]['prep_start_date']=older.daterun.strftime("%Y-%m-%d")
+                    except AttributeError:
+                        #Missing date run
+                        pass
+                except IndexError:
+                    self.log.info("No libstart found for sample {}".format(sample.name))
+                    if one_libprep.typeid == 117:
+                        if "first_prep_start_date" not in self.obj['samples'][sample.name] or \
+                            datetime.strptime(self.obj['samples'][sample.name]['first_prep_start_date'], "%Y-%m-%d") > one_libprep.daterun:
+                            self.obj['samples'][sample.name]['first_prep_start_date']=one_libprep.daterun.strftime("%Y-%m-%d")
+                        self.obj['samples'][sample.name]['library_prep'][prepname]['prep_start_date']=one_libprep.daterun.strftime("%Y-%m-%d")
+                pend=get_children_processes(self.session, one_libprep.processid, pc_cg.PREPEND, sample=sample.processid)
+                try:
+                    recent=pend[0]
+                    for l in pend:
+                        if (not recent.daterun and l.daterun) or (l.daterun and recent.daterun < l.daterun):
+                            recent=l
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['prep_finished_date']=recent.daterun.strftime("%Y-%m-%d")
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['prep_id']=recent.luid
+                except (IndexError, AttributeError):
+                    self.log.info("no prepend for sample {} prep {}".format(sample.name, one_libprep.processid))
 
-            try:
-                agrlibvals=get_children_processes(self.session, one_libprep.processid, pc_cg.AGRLIBVAL.keys(), sample.processid, 'daterun desc')
-                agrlibval=None
-                for agrlv in agrlibvals:
-                    #for small rna (and maybe others), there is more than one agrlibval, and I should not get the latest one, 
-                    #but the latest one that ran at sample level, not a pool level.
-                    #get input artifact of a given process that belongs to sample
+                try:
+                    agrlibvals=get_children_processes(self.session, one_libprep.processid, pc_cg.AGRLIBVAL.keys(), sample.processid, 'daterun desc')
+                    agrlibval=None
+                    for agrlv in agrlibvals:
+                        #for small rna (and maybe others), there is more than one agrlibval, and I should not get the latest one, 
+                        #but the latest one that ran at sample level, not a pool level.
+                        #get input artifact of a given process that belongs to sample
+                        query="select art.* from artifact art \
+                            inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
+                            inner join processiotracker piot on piot.inputartifactid=art.artifactid \
+                            inner join sample sa on sa.processid=asm.processid \
+                            where sa.processid = {sapid} and piot.processid = {agrid}".format(sapid=sample.processid, agrid=agrlv.processid)
+                        try:
+                            inp_artifact=self.session.query(Artifact).from_statement(text(query)).first()
+
+                            if len(inp_artifact.samples)>1 and 'By user' not in self.obj['details']['library_construction_method']:
+                                continue
+                            else:
+                                agrlibval=agrlv
+                                break
+                        except NoResultFound:
+                            pass
+
+                    #Get barcode for finlib
+                    if 'By user' in self.obj['details']['library_construction_method']:
+                        #Get initial artifact for given sample
+                        query="select art.* from artifact art \
+                            inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
+                            inner join sample sa on sa.processid=asm.processid \
+                            where sa.processid = {sapid} and art.isoriginal=True".format(sapid=sample.processid)
+                        try:
+                            initial_artifact=self.session.query(Artifact).from_statement(text(query)).one()
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['reagent_label']=initial_artifact.reagentlabels[0].name
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['barcode']=self.extract_barcode(initial_artifact.reagentlabels[0].name)
+                        except:
+                            pass
+
+                    #raises AttributeError on no aggregate
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]={}
+                    try:
+                        self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['finish_date']=agrlibval.daterun.strftime("%Y-%m-%d")
+                    except AttributeError:
+                        self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['finish_date']=agrlibval.createddate.strftime("%Y-%m-%d")
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['initials']=agrlibval.technician.researcher.initials
+                    #get input artifact of a given process that belongs to sample and descends from one_lp_art
                     query="select art.* from artifact art \
                         inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
                         inner join processiotracker piot on piot.inputartifactid=art.artifactid \
                         inner join sample sa on sa.processid=asm.processid \
-                        where sa.processid = {sapid} and piot.processid = {agrid}".format(sapid=sample.processid, agrid=agrlv.processid)
+                        inner join artifact_ancestor_map aam on art.artifactid=aam.artifactid \
+                        where sa.processid = {sapid} \
+                        and piot.processid = {agrid} \
+                        and aam.ancestorartifactid={lp_art}".format(sapid=sample.processid, agrid=agrlibval.processid, lp_art=one_libprep_art.artifactid)
                     try:
                         inp_artifact=self.session.query(Artifact).from_statement(text(query)).one()
-                        if len(inp_artifact.samples)>1 and 'By user' not in self.obj['details']['library_construction_method']:
-                            continue
-                        else:
-                            agrlibval=agrlv
-                            break
-                    except NoResultFound:
-                        pass
-
-                #Get barcode for finlib
-                if 'By user' in self.obj['details']['library_construction_method']:
-                    #Get initial artifact for given sample
-                    query="select art.* from artifact art \
-                        inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
-                        inner join sample sa on sa.processid=asm.processid \
-                        where sa.processid = {sapid} and art.isoriginal=True".format(sapid=sample.processid)
-                    try:
-                        initial_artifact=self.session.query(Artifact).from_statement(text(query)).one()
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['reagent_label']=initial_artifact.reagentlabels[0].name
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['barcode']=self.extract_barcode(initial_artifact.reagentlabels[0].name)
-                    except:
-                        pass
-
-                #raises AttributeError on no aggregate
-                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]={}
-                try:
-                    self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['finish_date']=agrlibval.daterun.strftime("%Y-%m-%d")
-                except AttributeError:
-                    self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['finish_date']=agrlibval.createddate.strftime("%Y-%m-%d")
-                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['initials']=agrlibval.technician.researcher.initials
-                #get input artifact of a given process that belongs to sample
-                query="select art.* from artifact art \
-                    inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
-                    inner join processiotracker piot on piot.inputartifactid=art.artifactid \
-                    inner join sample sa on sa.processid=asm.processid \
-                    where sa.processid = {sapid} and piot.processid = {agrid}".format(sapid=sample.processid, agrid=agrlibval.processid)
-                try:
-                    inp_artifact=self.session.query(Artifact).from_statement(text(query)).one()
-                    self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid].update(self.make_normalized_dict(inp_artifact.udf_dict))
-                    self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['prep_status']=inp_artifact.qc_flag
-                    self.obj['samples'][sample.name]['library_prep'][prepname]['prep_status']=inp_artifact.qc_flag
-                    self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['well_location']=inp_artifact.containerplacement.api_string
-                    self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['reagent_labels']=[rg.name for rg in inp_artifact.reagentlabels]
-                    if not 'By user' in self.obj['details']['library_construction_method']:
-                        #if finlib, these are already computed
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['reagent_label']=inp_artifact.reagentlabels[0].name
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['barcode']=self.extract_barcode(inp_artifact.reagentlabels[0].name)
-                    #get libval steps from the same input art
-                    query="select pr.* from process pr \
-                        inner join processiotracker piot on piot.processid=pr.processid \
-                        where pr.typeid in ({dem}) and piot.inputartifactid={iaid} \
-                        order by pr.daterun;".format(dem=",".join(pc_cg.LIBVAL.keys()), iaid=inp_artifact.artifactid)
-                    libvals=self.session.query(Process).from_statement(text(query)).all()
-                    try:
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date']=libvals[0].daterun.strftime("%Y-%m-%d")
-                    except IndexError:
-                        self.log.info("no library validation steps found for sample {} prep {}".format(sample.name, agrlibval.luid))
-                        try:
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date']=agrlibval.daterun.strftime("%Y-%m-%d")
-                        except AttributeError:
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date']=agrlibval.createddate.strftime("%Y-%m-%d")
-
-                    #get GlsFile for output artifact of a Caliper process where its input is given
-                    query="select gf.* from glsfile gf \
-                        inner join resultfile rf on rf.glsfileid=gf.fileid \
-                        inner join artifact art on rf.artifactid=art.artifactid \
-                        inner join outputmapping om on art.artifactid=om.outputartifactid \
-                        inner join processiotracker piot on piot.trackerid=om.trackerid \
-                        inner join artifact art2 on piot.inputartifactid=art2.artifactid \
-                        inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
-                        inner join process pr on piot.processid=pr.processid \
-                        inner join sample sa on sa.processid=asm.processid \
-                        where sa.processid = {sapid} and pr.typeid in ({tid}) and art2.artifactid={inpid} and art.name like '%CaliperGX%{sname}' \
-                        order by pr.daterun desc;".format(sapid=sample.processid, inpid=inp_artifact.artifactid,tid=','.join(pc_cg.CALIPER.keys()), sname=sample.name)
-                    try:
-                        caliper_file=self.session.query(GlsFile).from_statement(text(query)).one()
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['caliper_image']="sftp://{host}/home/glsftp/{uri}".format(host=self.host,uri=caliper_file.contenturi)
-                    except NoResultFound:
-                       self.log.info("Did not find a libprep caliper image for sample {}".format(sample.name)) 
-                except NoResultFound:
-                    self.log.info("Did not find the input artifact of the Lib aggregate {} of sample {}".format(aggregate.luid, sample.name))
-                #cleaning up
-                if "size_(bp)" in self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]:
-                    self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]["average_size_bp"]= \
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['size_(bp)']
-                #handling neoprep
-                if "NeoPrep" in agrlibval.type.displayname:
-                    self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['conc_units']="nM" 
-                    self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['concentration']=inp_artifact.udf_dict['Normalized conc. (nM)']
-                    #get output resultfile named like the sample of a Neoprep QC 
-                    query="select art.* from artifact art \
-                        inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
-                        inner join outputmapping om on art.artifactid=om.outputartifactid \
-                        inner join processiotracker piot on piot.trackerid=om.trackerid \
-                        inner join sample sa on sa.processid=asm.processid \
-                        where art.artifacttypeid = 1 and art.name like '%{saname}%'and sa.processid = {sapid} and piot.processid = {agrid}".format(saname=sample.name, sapid=sample.processid, agrid=agrlibval.processid)
-                    try:
-                        out_art=self.session.query(Artifact).from_statement(text(query)).one()
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['prep_status']=out_art.qc_flag
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['prep_status']=out_art.qc_flag
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['reagent_labels']=[rg.name for rg in out_art.reagentlabels]
-
-                    except NoResultFound:
-                        self.log.info("Did not find the output resultfile of the Neoprep step for sample {}".format(sample.name))
-            except AttributeError:
-                self.log.info("No aggregate for sample {} prep {}".format(sample.name, one_libprep.luid))
-            #get output analyte of a given process that belongs to sample
-            query="select art.* from artifact art \
-                inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
-                inner join outputmapping om on art.artifactid=om.outputartifactid \
-                inner join processiotracker piot on piot.trackerid=om.trackerid \
-                inner join sample sa on sa.processid=asm.processid \
-                where art.artifacttypeid = 2 and sa.processid = {sapid} and piot.processid = {agrid}".format(sapid=sample.processid, agrid=one_libprep.processid)
-            try:
-                out_artifact=self.session.query(Artifact).from_statement(text(query)).one()
-                self.obj['samples'][sample.name]['library_prep'][prepname]['workset_name']=out_artifact.containerplacement.container.name
-                self.obj['samples'][sample.name]['library_prep'][prepname]['amount_taken_(ng)']=out_artifact.udf_dict.get("Amount taken (ng)")
-                self.obj['samples'][sample.name]['library_prep'][prepname]['volume_(ul)']=out_artifact.udf_dict.get("Total Volume (uL)")
-                #Legacy nextera special case
-                if not out_artifact.udf_dict.get("Amount taken (ng)"):
-                    #get the output art of the tagmentation step
-                    query="select art.* from artifact art \
-                            inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
-                            inner join outputmapping om on om.outputartifactid=art.artifactid \
-                            inner join processiotracker piot on piot.trackerid=om.trackerid \
-                            inner join process pr on pr.processid=piot.processid \
-                            inner join artifact_ancestor_map aam on aam.artifactid=art.artifactid \
-                            where asm.processid={sid} and pr.typeid=605 and aam.ancestorartifactid={out_art}".format(sid=sample.processid, out_art=out_artifact.artifactid)
-                    tag_out_art=self.session.query(Artifact).from_statement(text(query)).one()
-                    self.obj['samples'][sample.name]['library_prep'][prepname]['amount_taken_(ng)']=tag_out_art.udf_dict.get("Amount taken (ng)")
-
-            except NoResultFound:
-                self.log.info("Did not find the output the Setup Workset Plate for sample {}".format(sample.name))
-            #preprep
-            query="select pr.* from process pr \
-                inner join processiotracker piot on piot.processid=pr.processid \
-                inner join artifact_sample_map asm on piot.inputartifactid=asm.artifactid \
-                inner join sample sa on sa.processid=asm.processid \
-                where sa.processid = {sapid} and pr.typeid in ({tid}) \
-                order by pr.daterun;".format(sapid=sample.processid, tid=','.join(pc_cg.PREPREPSTART.keys()))
-            try:
-                preprep=self.session.query(Process).from_statement(text(query)).first()
-                self.obj['samples'][sample.name]['library_prep'][prepname]['pre_prep_start_date']=preprep.daterun.strftime("%Y-%m-%d")
-            except AttributeError:
-               self.log.info("Did not find a preprep for sample {}".format(sample.name)) 
-
-            #get seqruns
-            seqs=get_children_processes(self.session, one_libprep.processid, pc_cg.SEQUENCING.keys(), sample=sample.processid)
-            for seq in seqs:
-                if 'sample_run_metrics' not in self.obj['samples'][sample.name]['library_prep'][prepname]:
-                    self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics']={}
-                seqstarts=get_processes_in_history(self.session, seq.processid, pc_cg.SEQSTART.keys(), sample=sample.processid)
-                dilstarts=get_processes_in_history(self.session, seq.processid, pc_cg.DILSTART.keys(), sample=sample.processid)
-                #get all the input artifacts of the seqrun that match oue sample
-                query="select art.* from artifact art \
-                inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
-                inner join processiotracker piot on piot.inputartifactid=art.artifactid \
-                inner join sample sa on sa.processid=asm.processid \
-                where sa.processid = {sapid} and piot.processid = {seqid}".format(sapid=sample.processid, seqid=seq.processid)
-                inp_arts=self.session.query(Artifact).from_statement(text(query)).all()
-                for art in inp_arts:
-                    if seq.typeid == 46:
-                        #miseq
-                        lane=art.containerplacement.api_string.split(":")[1]
-                    else:
-                        lane=art.containerplacement.api_string.split(":")[0]
-                    self.obj['sequencing_finished']=seq.udf_dict.get('Finish Date')
-                    try:
-                        run_id=seq.udf_dict["Run ID"]
-                        date = run_id.split('_')[0]
-                        fcid = run_id.split('_')[3]
-                        seqrun_barcode=self.obj['samples'][sample.name]['library_prep'][prepname]['barcode']
-                        samp_run_met_id = '_'.join([lane, date, fcid, seqrun_barcode])
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]={}
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_finish_date']=seq.udf_dict.get('Finish Date')
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['seq_qc_flag']=art.qc_flag
-                        try:
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date']=seqstarts[0].daterun.strftime("%Y-%m-%d")
-                        except AttributeError:
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date']=seqstarts[0].createddate.strftime("%Y-%m-%d")
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sample_run_metrics_id']=self.find_couch_sampleid(samp_run_met_id)
-                        try:
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dillution_and_pooling_start_date']=dilstarts[0].daterun.strftime("%Y-%m-%d")
-                        except AttributeError:
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dillution_and_pooling_start_date']=dilstarts[0].createddate.strftime("%Y-%m-%d")
-                        except IndexError:
-                            self.log.info("no dilution found for sequencing {} of sample {}".format(seq.processid, sample.name))
-                        #get the associated demultiplexing step
+                        self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid].update(self.make_normalized_dict(inp_artifact.udf_dict))
+                        self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['prep_status']=inp_artifact.qc_flag
+                        self.obj['samples'][sample.name]['library_prep'][prepname]['prep_status']=inp_artifact.qc_flag
+                        self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['well_location']=inp_artifact.containerplacement.api_string
+                        self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['reagent_labels']=[rg.name for rg in inp_artifact.reagentlabels]
+                        if not 'By user' in self.obj['details']['library_construction_method']:
+                            #if finlib, these are already computed
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['reagent_label']=inp_artifact.reagentlabels[0].name
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['barcode']=self.extract_barcode(inp_artifact.reagentlabels[0].name)
+                        #get libval steps from the same input art
                         query="select pr.* from process pr \
-                                inner join processiotracker piot on piot.processid=pr.processid \
-                                where pr.typeid={dem} and piot.inputartifactid={iaid};".format(dem=pc_cg.DEMULTIPLEX.keys()[0], iaid=art.artifactid)
+                            inner join processiotracker piot on piot.processid=pr.processid \
+                            where pr.typeid in ({dem}) and piot.inputartifactid={iaid} \
+                            order by pr.daterun;".format(dem=",".join(pc_cg.LIBVAL.keys()), iaid=inp_artifact.artifactid)
+                        libvals=self.session.query(Process).from_statement(text(query)).all()
                         try:
-                            dem=self.session.query(Process).from_statement(text(query)).one()
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date']=libvals[0].daterun.strftime("%Y-%m-%d")
+                        except IndexError:
+                            self.log.info("no library validation steps found for sample {} prep {}".format(sample.name, agrlibval.luid))
                             try:
-                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=dem.daterun.strftime("%Y-%m-%d")
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date']=agrlibval.daterun.strftime("%Y-%m-%d")
                             except AttributeError:
-                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=dem.createddate.strftime("%Y-%m-%d")
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date']=agrlibval.createddate.strftime("%Y-%m-%d")
 
-                            #get output resultfile named like the sample of a Demultiplex step
+                        #get GlsFile for output artifact of a Caliper process where its input is given
+                        query="select gf.* from glsfile gf \
+                            inner join resultfile rf on rf.glsfileid=gf.fileid \
+                            inner join artifact art on rf.artifactid=art.artifactid \
+                            inner join outputmapping om on art.artifactid=om.outputartifactid \
+                            inner join processiotracker piot on piot.trackerid=om.trackerid \
+                            inner join artifact art2 on piot.inputartifactid=art2.artifactid \
+                            inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
+                            inner join process pr on piot.processid=pr.processid \
+                            inner join sample sa on sa.processid=asm.processid \
+                            where sa.processid = {sapid} and pr.typeid in ({tid}) and art2.artifactid={inpid} and art.name like '%CaliperGX%{sname}' \
+                            order by pr.daterun desc;".format(sapid=sample.processid, inpid=inp_artifact.artifactid,tid=','.join(pc_cg.CALIPER.keys()), sname=sample.name)
+                        try:
+                            caliper_file=self.session.query(GlsFile).from_statement(text(query)).one()
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['caliper_image']="sftp://{host}/home/glsftp/{uri}".format(host=self.host,uri=caliper_file.contenturi)
+                        except NoResultFound:
+                           self.log.info("Did not find a libprep caliper image for sample {}".format(sample.name)) 
+                    #handling neoprep
+                        if "NeoPrep" in agrlibval.type.displayname:
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['conc_units']="nM" 
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['concentration']=inp_artifact.udf_dict['Normalized conc. (nM)']
+                            #get output resultfile named like the sample of a Neoprep QC 
                             query="select art.* from artifact art \
                                 inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
                                 inner join outputmapping om on art.artifactid=om.outputartifactid \
                                 inner join processiotracker piot on piot.trackerid=om.trackerid \
                                 inner join sample sa on sa.processid=asm.processid \
-                                where art.artifacttypeid = 1 and art.name like '%{saname}%'and sa.processid = {sapid} and piot.processid = {dem}".format(saname=sample.name, sapid=sample.processid, dem=dem.processid)
-                            out_arts=self.session.query(Artifact).from_statement(text(query)).all()
-                            cumulated_flag='FAILED'
-                            for art in out_arts:
-                                if art.qc_flag == 'PASSED':
-                                    cumulated_flag='PASSED'
-
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dem_qc_flag']=cumulated_flag
-
-                        except NoResultFound:
+                                where art.artifacttypeid = 1 \
+                                and art.name like '%{saname}%' \
+                                and sa.processid = {sapid}\
+                                and piot.processid = {agrid} \
+                                and piot.inputartifactid = {inpid}".format(saname=sample.name, sapid=sample.processid, agrid=agrlibval.processid, inpid=inp_artifact.artifactid)
                             try:
-                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=seq.daterun.strftime("%Y-%m-%d")
-                            except AttributeError:
-                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=seq.createddate.strftime("%Y-%m-%d")
+                                out_art=self.session.query(Artifact).from_statement(text(query)).one()
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['prep_status']=out_art.qc_flag
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['prep_status']=out_art.qc_flag
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['reagent_labels']=[rg.name for rg in out_art.reagentlabels]
 
-                        self.log.info("no demultiplexing found for sample {}, sequencing {}".format(sample.name, seq.processid))
-                    except:
-                        self.log.info("no run id for sequencing process {}".format(seq.luid))
+                            except NoResultFound:
+                                self.log.info("Did not find the output resultfile of the Neoprep step for sample {}".format(sample.name))
+                    except NoResultFound:
+                        pass
+                    #cleaning up
+                    if "size_(bp)" in self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]:
+                        self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]["average_size_bp"]= \
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['size_(bp)']
+                except AttributeError:
+                    self.log.info("No aggregate for sample {} prep {}".format(sample.name, one_libprep.luid))
+                #get output analyte of a given process that belongs to sample and has one_libprep_art as ancestor
+                query="select art.* from artifact art \
+                    inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
+                    inner join outputmapping om on art.artifactid=om.outputartifactid \
+                    inner join processiotracker piot on piot.trackerid=om.trackerid \
+                    inner join sample sa on sa.processid=asm.processid \
+                    inner join artifact_ancestor_map aam on art.artifactid=aam.artifactid \
+                    where art.artifacttypeid = 2 \
+                    and sa.processid = {sapid} \
+                    and piot.processid = {agrid} \
+                    and aam.ancestorartifactid = {libartid}".format(sapid=sample.processid, agrid=one_libprep.processid, libartid=one_libprep_art.artifactid)
+                try:
+                    out_artifact=self.session.query(Artifact).from_statement(text(query)).one()
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['workset_name']=out_artifact.containerplacement.container.name
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['amount_taken_(ng)']=out_artifact.udf_dict.get("Amount taken (ng)")
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['volume_(ul)']=out_artifact.udf_dict.get("Total Volume (uL)")
+                    #Legacy nextera special case
+                    if not out_artifact.udf_dict.get("Amount taken (ng)"):
+                        #get the output art of the tagmentation step
+                        query="select art.* from artifact art \
+                                inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
+                                inner join outputmapping om on om.outputartifactid=art.artifactid \
+                                inner join processiotracker piot on piot.trackerid=om.trackerid \
+                                inner join process pr on pr.processid=piot.processid \
+                                inner join artifact_ancestor_map aam on aam.artifactid=art.artifactid \
+                                where asm.processid={sid} and pr.typeid=605 and aam.ancestorartifactid={out_art}".format(sid=sample.processid, out_art=out_artifact.artifactid)
+                        tag_out_art=self.session.query(Artifact).from_statement(text(query)).one()
+                        self.obj['samples'][sample.name]['library_prep'][prepname]['amount_taken_(ng)']=tag_out_art.udf_dict.get("Amount taken (ng)")
+
+                except NoResultFound:
+                    self.log.info("Did not find the output the Setup Workset Plate for sample {}".format(sample.name))
+                #preprep
+                query="select pr.* from process pr \
+                    inner join processiotracker piot on piot.processid=pr.processid \
+                    inner join artifact_sample_map asm on piot.inputartifactid=asm.artifactid \
+                    inner join sample sa on sa.processid=asm.processid \
+                    where sa.processid = {sapid} and pr.typeid in ({tid}) \
+                    order by pr.daterun;".format(sapid=sample.processid, tid=','.join(pc_cg.PREPREPSTART.keys()))
+                try:
+                    preprep=self.session.query(Process).from_statement(text(query)).first()
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['pre_prep_start_date']=preprep.daterun.strftime("%Y-%m-%d")
+                except AttributeError:
+                   self.log.info("Did not find a preprep for sample {}".format(sample.name)) 
+
+                #get seqruns
+                seqs=get_children_processes(self.session, one_libprep.processid, pc_cg.SEQUENCING.keys(), sample=sample.processid)
+                for seq in seqs:
+                    if 'sample_run_metrics' not in self.obj['samples'][sample.name]['library_prep'][prepname]:
+                        self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics']={}
+                    seqstarts=get_processes_in_history(self.session, seq.processid, pc_cg.SEQSTART.keys(), sample=sample.processid)
+                    dilstarts=get_processes_in_history(self.session, seq.processid, pc_cg.DILSTART.keys(), sample=sample.processid)
+                    #get all the input artifacts of the seqrun that match our sample and our libprep
+                    query="select art.* from artifact art \
+                    inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
+                    inner join processiotracker piot on piot.inputartifactid=art.artifactid \
+                    inner join sample sa on sa.processid=asm.processid \
+                    inner join artifact_ancestor_map aam on aam.artifactid=art.artifactid \
+                    where sa.processid = {sapid} \
+                    and piot.processid = {seqid} \
+                    and aam.ancestorartifactid = {libpartid}".format(sapid=sample.processid, seqid=seq.processid, libpartid=one_libprep_art.artifactid)
+                    inp_arts=self.session.query(Artifact).from_statement(text(query)).all()
+                    for art in inp_arts:
+                        if seq.typeid == 46:
+                            #miseq
+                            lane=art.containerplacement.api_string.split(":")[1]
+                        else:
+                            lane=art.containerplacement.api_string.split(":")[0]
+                        self.obj['sequencing_finished']=seq.udf_dict.get('Finish Date')
+                        try:
+                            run_id=seq.udf_dict["Run ID"]
+                            date = run_id.split('_')[0]
+                            fcid = run_id.split('_')[3]
+                            seqrun_barcode=self.obj['samples'][sample.name]['library_prep'][prepname]['barcode']
+                            samp_run_met_id = '_'.join([lane, date, fcid, seqrun_barcode])
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]={}
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_finish_date']=seq.udf_dict.get('Finish Date')
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['seq_qc_flag']=art.qc_flag
+                            try:
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date']=seqstarts[0].daterun.strftime("%Y-%m-%d")
+                            except AttributeError:
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date']=seqstarts[0].createddate.strftime("%Y-%m-%d")
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sample_run_metrics_id']=self.find_couch_sampleid(samp_run_met_id)
+                            try:
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dillution_and_pooling_start_date']=dilstarts[0].daterun.strftime("%Y-%m-%d")
+                            except AttributeError:
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dillution_and_pooling_start_date']=dilstarts[0].createddate.strftime("%Y-%m-%d")
+                            except IndexError:
+                                self.log.info("no dilution found for sequencing {} of sample {}".format(seq.processid, sample.name))
+                            #get the associated demultiplexing step
+                            query="select pr.* from process pr \
+                                    inner join processiotracker piot on piot.processid=pr.processid \
+                                    where pr.typeid={dem} and piot.inputartifactid={iaid};".format(dem=pc_cg.DEMULTIPLEX.keys()[0], iaid=art.artifactid)
+                            try:
+                                dem=self.session.query(Process).from_statement(text(query)).one()
+                                try:
+                                    self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=dem.daterun.strftime("%Y-%m-%d")
+                                except AttributeError:
+                                    self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=dem.createddate.strftime("%Y-%m-%d")
+
+                                #get output resultfile named like the sample of a Demultiplex step
+                                query="select art.* from artifact art \
+                                    inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
+                                    inner join outputmapping om on art.artifactid=om.outputartifactid \
+                                    inner join processiotracker piot on piot.trackerid=om.trackerid \
+                                    inner join sample sa on sa.processid=asm.processid \
+                                    inner join artifact_ancestor_map aam on art.artifactid= aam.artifactid \
+                                    where art.artifacttypeid = 1 \
+                                    and art.name like '%{saname}%' \
+                                    and sa.processid = {sapid} \
+                                    and piot.processid = {dem}\
+                                    and aam.ancestorartifactid = {artid};".format(saname=sample.name, sapid=sample.processid, dem=dem.processid, artid=art.artifactid)
+                                out_arts=self.session.query(Artifact).from_statement(text(query)).all()
+                                cumulated_flag='FAILED'
+                                for art in out_arts:
+                                    if art.qc_flag == 'PASSED':
+                                        cumulated_flag='PASSED'
+
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dem_qc_flag']=cumulated_flag
+
+                            except NoResultFound:
+                                try:
+                                    self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=seq.daterun.strftime("%Y-%m-%d")
+                                except AttributeError:
+                                    self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished']=seq.createddate.strftime("%Y-%m-%d")
+
+                            self.log.info("no demultiplexing found for sample {}, sequencing {}".format(sample.name, seq.processid))
+                        except:
+                            self.log.info("no run id for sequencing process {}".format(seq.luid))
 
     def extract_barcode(self, chain):
         bcp=re.compile("[ATCG\-]{4,}")
@@ -822,18 +853,13 @@ class ProjectSQL:
             if matches:
                 barcode=matches.group(0)
         return barcode
-        
+
 
     def find_couch_sampleid(self, sample_run):
         db=self.couch['samples']
         view =db.view('names/name_to_id')
         for row in view[sample_run]:
             return row.id
-        
-
-
-        
-        
 
 
 
