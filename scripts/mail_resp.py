@@ -24,7 +24,9 @@ def main(args):
         return name.replace(u"\u00f6", "o").replace(u"\u00e9", "e").replace(u"\u00e4", "a")
 
     def get_email(fullname):
+        #shotgun
         names=fullname.split(" ")
+        rsl=lims.get_researchers(firstname=names[0], lastname=names[1]) + lims.get_researchers(lastname=names[1]) + lims.get_researchers(lastname=clean_names(names[1]))
         try:
             researcher=lims.get_researchers(firstname=names[0], lastname=names[1])[0]
         except:
