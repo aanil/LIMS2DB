@@ -10,8 +10,10 @@ from LIMS2DB.objectsDB.functions import *
 from optparse import OptionParser
 from LIMS2DB.utils import formatStack
 from statusdb.db.utils import *
-from genologics_sql.utils import get_session
 from genologics_sql.queries import get_last_modified_projectids
+from genologics_sql.utils import *
+from genologics_sql.tables import Project as DBProject
+from LIMS2DB.classes import ProjectSQL
 
 from pprint import pprint
 
@@ -103,6 +105,8 @@ def main(options):
     proj_db = couch['projects']
     samp_db = couch['samples']
     mainlims = Lims(BASEURI, USERNAME, PASSWORD)
+    lims_db = get_session()
+
     mainlog = logging.getLogger('psullogger')
     mainlog.setLevel(level=logging.INFO)
     mfh = logging.handlers.RotatingFileHandler(options.logfile, maxBytes=209715200, backupCount=5)
@@ -111,30 +115,45 @@ def main(options):
     mainlog.addHandler(mfh)
 
     if options.project_name:
-        proj = mainlims.get_projects(name = options.project_name)
-        if not proj:
-            mainlog.warn('No project named {man_name} in Lims'.format(
-                        man_name = options.project_name))
-        else:
+        if options.old:
+            proj = mainlims.get_projects(name = options.project_name)
+            if not proj:
+                mainlog.warn('No project named {man_name} in Lims'.format(
+                            man_name = options.project_name))
             P = PSUL(proj[0], samp_db, proj_db, options.upload, options.project_name, output_f, mainlog)
             P.handle_project()
+        else:
+            host=get_configuration()['url']
+            pj_id=lims_db.query(DBProject.luid).filter(DBProject.name == options.project_name).scalar()
+            P = ProjectSQL(lims_db, mainlog, pj_id, host, couch)
+            P.save()
     else :
-        projects=create_projects_list(options, mainlims, mainlog)
+        projects=create_projects_list(options, lims_db, mainlims, mainlog)
         masterProcess(options,projects, mainlims, mainlog)
+        lims_db.commit()
+        lims_db.close()
 
-def create_projects_list(options, lims, log):
+def create_projects_list(options, db_session,lims, log):
         projects=[]
         if options.all_projects:
-            projects = lims.get_projects()
             if options.hours:
                 postgres_string="{} hours".format(options.hours)
-                db_session=get_session()
                 project_ids=get_last_modified_projectids(db_session, postgres_string)
-                valid_projects=[Project(lims, id=x) for x in project_ids]
-                log.info("project list : {0}".format(" ".join([p.id for p in valid_projects])))
+                if options.old:
+                    projects=lims.get_projects()
+                    valid_projects=[Project(lims, id=x) for x in project_ids]
+                    log.info("project list : {0}".format(" ".join([p.id for p in valid_projects])))
+                else:
+                    valid_projects=db_session.query(DBProject).filter(DBProject.luid.in_(project_ids)).all()
+                    log.info("project list : {0}".format(" ".join([p.luid for p in valid_projects])))
                 return valid_projects
             else:
-                log.info("project list : {0}".format(" ".join([p.id for p in projects])))
+                if options.old:
+                    projects=lims.get_projects()
+                    log.info("project list : {0}".format(" ".join([p.id for p in projects])))
+                else:
+                    projects = db_session.query(DBProject).all()
+                    log.info("project list : {0}".format(" ".join([p.luid for p in projects])))
                 return projects
 
         elif options.input:
@@ -155,6 +174,7 @@ def processPSUL(options, queue, logqueue):
     proj_db = couch['projects']
     samp_db = couch['samples']
     mylims = Lims(BASEURI, USERNAME, PASSWORD)
+    db_session=get_session()
     work=True
     procName=mp.current_process().name
     proclog=logging.getLogger(procName)
@@ -189,14 +209,25 @@ def processPSUL(options, queue, logqueue):
                     open(lockfile,'w').close()
                 except:
                     proclog.error("cannot create lockfile {}".format(lockfile))
-                try:
-                    proj=mylims.get_projects(name=projname)[0]
-                    P = PSUL(proj, samp_db, proj_db, options.upload, options.project_name, options.output_f, proclog)
-                    P.handle_project()
-                except :
-                    error=sys.exc_info()
-                    stack=traceback.extract_tb(error[2])
-                    proclog.error("{0}:{1}\n{2}".format(error[0], error[1], formatStack(stack)))
+                if options.old:
+                    try:
+                        proj=mylims.get_projects(name=projname)[0]
+                        P = PSUL(proj, samp_db, proj_db, options.upload, options.project_name, options.output_f, proclog)
+                        P.handle_project()
+                    except :
+                        error=sys.exc_info()
+                        stack=traceback.extract_tb(error[2])
+                        proclog.error("{0}:{1}\n{2}".format(error[0], error[1], formatStack(stack)))
+                else:
+                    try:
+                        pj_id=db_session.query(DBProject.luid).filter(DBProject.name == projname).scalar()
+                        host=get_configuration()['url']
+                        P = ProjectSQL(db_session, proclog, pj_id, host, couch)
+                        P.save()
+                    except :
+                        error=sys.exc_info()
+                        stack=traceback.extract_tb(error[2])
+                        proclog.error("{0}:{1}\n{2}".format(error[0], error[1], formatStack(stack)))
 
                 try:
                     os.remove(lockfile)
@@ -208,6 +239,8 @@ def processPSUL(options, queue, logqueue):
 
             #signals to queue job is done
             queue.task_done()
+    db_session.commit()
+    db_session.close()
 
 def masterProcess(options,projectList, mainlims, logger):
     projectsQueue=mp.JoinableQueue()
@@ -335,6 +368,7 @@ if __name__ == '__main__':
     parser.add_option("-j", "--hours", dest = "hours",type='int', help = ("only handle projects modified in the last X hours"), default=None)
     parser.add_option("-k", "--control", dest = "control", action="store_true", help = ("only perform a dry-run"), default=False)
     parser.add_option("-i", "--input", dest = "input", help = ("path to the input file containing projects to update"), default=None)
+    parser.add_option("--old", dest = "old", help = ("use the old version of psul, via the API"), action="store_true", default=False)
 
     (options, args) = parser.parse_args()
     main(options)

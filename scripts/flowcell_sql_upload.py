@@ -12,10 +12,14 @@ import yaml
 import logging
 import logging.handlers
 
+import LIMS2DB.objectsDB.process_categories as pc_cg
+
 from LIMS2DB.flowcell_sql import create_lims_data_obj, get_sequencing_steps, upload_to_couch
 from LIMS2DB.utils import setupServer
+from LIMS2DB.classes import Process
 
 from  genologics_sql.utils import get_session 
+from sqlalchemy import text
 
 
 
@@ -41,7 +45,15 @@ def main(args):
     interval="{} hours".format(args.hours)
 
     #list the right sequencing steps
-    seq_steps=get_sequencing_steps(db_session, interval)
+    if args.flowcell:
+        query="select distinct pro.* from container ct \
+                inner join containerplacement cp on ct.containerid=cp.containerid \
+                inner join processiotracker piot on piot.inputartifactid=cp.processartifactid \
+                inner join process pro on pro.processid=piot.processid \
+                where pro.typeid in ({seq_type_ids}) and ct.name='{ct_name}';".format(seq_type_ids=",".join(pc_cg.SEQUENCING.keys()),ct_name=args.flowcell)
+        seq_steps=db_session.query(Process).from_statement(text(query)).all()
+    else:
+        seq_steps=get_sequencing_steps(db_session, interval)
 
 
     for step in seq_steps:
@@ -69,6 +81,9 @@ if __name__=="__main__":
 
     parser.add_argument("-t", "--hours", dest="hours", default=24, type=int, 
     help="Runs older than t hours are not updated. Default is 24 hours.")
+
+    parser.add_argument("-f", "--flowcell", dest="flowcell", default=None,  
+    help="Name of the flowcell WITHOUT the position")
 
     parser.add_argument("-l", "--logfile", dest = "logfile", help = ("log file",
                       " that will be used. default is $HOME/lims2db_flowcells.log "), default=os.path.expanduser("~/lims2db_flowcells.log"))
