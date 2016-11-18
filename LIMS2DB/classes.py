@@ -1,5 +1,5 @@
-from genologics_sql.tables import *
-from genologics_sql.queries import *
+from genologics_sql.tables import Artifact, Container, EscalationEvent, GlsFile, Process, Project, Researcher, ReagentType
+from genologics_sql.queries import get_children_processes, get_processes_in_history
 from LIMS2DB.diff import diff_objects
 from sqlalchemy import text
 from sqlalchemy.orm.exc import NoResultFound
@@ -69,7 +69,7 @@ class Workset:
                     for i in crawler.starting_proc.all_inputs():
                         if sample in i.samples:
                             pjs[p.id]['samples'][sample.name]['rec_ctrl']['status'] = i.qc_flag
-                       
+
                     for output in crawler.starting_proc.all_outputs():
                         if output.type == "Analyte" and sample in output.samples:
                             pjs[p.id]['samples'][sample.name]['location'] = output.location[1]
@@ -86,7 +86,7 @@ class Workset:
                                 if 'Concentration' in inp.udf and 'Conc. Units' in inp.udf:
                                     onelib['concentration'] = "{0} {1}".format(round(inp.udf['Concentration'], 2), inp.udf['Conc. Units'])
                                 if 'Molar Conc. (nM)' in inp.udf:
-                                    onelib['concentration'] = "{0} nM".format(round(inp.udf['Molar Conc. (nM)'], 2)) 
+                                    onelib['concentration'] = "{0} nM".format(round(inp.udf['Molar Conc. (nM)'], 2))
                                 if 'Size (bp)' in inp.udf:
                                     onelib['size'] = round(inp.udf['Size (bp)'], 2)
                                 if 'NeoPrep Machine QC' in inp.udf and onelib['status'] == 'UNKNOWN':
@@ -106,10 +106,10 @@ class Workset:
                                     pjs[p.id]['samples'][sample.name]['sequencing_status'] = inp.qc_flag
 
         self.obj['projects'] = pjs
-                    
+
 
 class LimsCrawler:
-    
+
     def __init__(self, lims, starting_proc=None, starting_inputs=None):
         self.lims = lims
         self.starting_proc = starting_proc
@@ -205,7 +205,7 @@ class Workset_SQL:
 
     def build(self):
         self.obj['id'] = self.start.luid
-        self.obj['last_aggregate'] = None 
+        self.obj['last_aggregate'] = None
         if self.start.daterun:
             self.obj["date_run"] = self.start.daterun.strftime("%Y-%m-%d")
         else:
@@ -231,23 +231,23 @@ class Workset_SQL:
                 where piot.processid = {0}".format(self.start.processid)
 
         input_arts = self.session.query(Artifact).from_statement(text(query)).all()
-        
+
         for inp in input_arts:
             sample = inp.samples[0]
             project = sample.project
             if not project:
                 continue  # control samples do not have projects
             if project.luid not in self.obj['projects']:
-                self.obj['projects'][project.luid] = {'application': project.udf_dict.get('Application'), 
-                                                    'name': project.name, 
-                                                    'library': project.udf_dict.get('Library construction method'), 
-                                                    'samples': {}}
+                self.obj['projects'][project.luid] = {'application': project.udf_dict.get('Application'),
+                                                      'name': project.name,
+                                                      'library': project.udf_dict.get('Library construction method'),
+                                                      'samples': {}}
                 if project.closedate:
                     self.obj['projects'][project.luid]['close_date'] = project.closedate.strftime("%Y-%m-%d")
             if sample.name not in self.obj['projects'][project.luid]['samples']:
-                self.obj['projects'][project.luid]['samples'][sample.name] = {'customer_name': sample.udf_dict.get('Customer Name'), 
-                                                                            'sequencing_status': 'UNKNOWN', 'library_status': 'UNKNOWN', 
-                                                                            'rec_ctrl': {}, 'library': {}, 'sequencing': {}}
+                self.obj['projects'][project.luid]['samples'][sample.name] = {'customer_name': sample.udf_dict.get('Customer Name'),
+                                                                              'sequencing_status': 'UNKNOWN', 'library_status': 'UNKNOWN',
+                                                                              'rec_ctrl': {}, 'library': {}, 'sequencing': {}}
 
             self.obj['projects'][project.luid]['samples'][sample.name]['rec_ctrl']['status'] = inp.qc_flag
 
@@ -258,7 +258,7 @@ class Workset_SQL:
 
             out = self.session.query(Artifact).from_statement(text(query)).one()
             self.obj['projects'][project.luid]['samples'][sample.name]['location'] = out.containerplacement.api_string
-            
+
             query = "select pc.* from process pc \
                     inner join processiotracker piot on piot.processid=pc.processid \
                     inner join artifact_ancestor_map aam on aam.artifactid=piot.inputartifactid \
@@ -296,7 +296,7 @@ class Workset_SQL:
                     self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['concentration'] = "{0:.2f} {1}".format(agr_inp.udf_dict['Concentration'], agr_inp.udf_dict['Conc. Units'])
                 if 'Size (bp)' in agr_inp.udf_dict:
                     self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['size'] = round(agr_inp.udf_dict['Size (bp)'], 2)
-            
+
             query = "select pc.* from process pc \
                     inner join processiotracker piot on piot.processid=pc.processid \
                     inner join artifact_ancestor_map aam on aam.artifactid=piot.inputartifactid \
@@ -355,7 +355,7 @@ class ProjectSQL:
             my_mod = doc.pop('modification_time', None)
             my_crea = doc.pop('creation_time', None)
             diffs = diff_objects(doc, self.obj)
-            if diffs: 
+            if diffs:
                 self.obj['_id'] = my_id
                 self.obj['_rev'] = my_rev
                 self.obj['creation_time'] = my_crea
@@ -578,7 +578,7 @@ class ProjectSQL:
                     agrlibvals = get_children_processes(self.session, one_libprep.processid, pc_cg.AGRLIBVAL.keys(), sample.processid, 'daterun desc')
                     agrlibval = None
                     for agrlv in agrlibvals:
-                        # for small rna (and maybe others), there is more than one agrlibval, and I should not get the latest one, 
+                        # for small rna (and maybe others), there is more than one agrlibval, and I should not get the latest one,
                         # but the latest one that ran at sample level, not a pool level.
                         # get input artifact of a given process that belongs to sample
                         query = "select art.* from artifact art \
@@ -634,7 +634,7 @@ class ProjectSQL:
                         self.obj['samples'][sample.name]['library_prep'][prepname]['prep_status'] = inp_artifact.qc_flag
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['well_location'] = inp_artifact.containerplacement.api_string
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['reagent_labels'] = [rg.name for rg in inp_artifact.reagentlabels]
-                        if not 'By user' in self.obj['details']['library_construction_method']:
+                        if 'By user' not in self.obj['details']['library_construction_method']:
                             # if finlib, these are already computed
                             self.obj['samples'][sample.name]['library_prep'][prepname]['reagent_label'] = inp_artifact.reagentlabels[0].name
                             self.obj['samples'][sample.name]['library_prep'][prepname]['barcode'] = self.extract_barcode(inp_artifact.reagentlabels[0].name)
@@ -669,12 +669,12 @@ class ProjectSQL:
                             caliper_file = self.session.query(GlsFile).from_statement(text(query)).one()
                             self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['caliper_image'] = "sftp://{host}/home/glsftp/{uri}".format(host=self.host, uri=caliper_file.contenturi)
                         except NoResultFound:
-                           self.log.info("Did not find a libprep caliper image for sample {}".format(sample.name)) 
+                            self.log.info("Did not find a libprep caliper image for sample {}".format(sample.name))
                     # handling neoprep
                         if "NeoPrep" in agrlibval.type.displayname:
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['conc_units'] = "nM" 
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['conc_units'] = "nM"
                             self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['concentration'] = inp_artifact.udf_dict['Normalized conc. (nM)']
-                            # get output resultfile named like the sample of a Neoprep QC 
+                            # get output resultfile named like the sample of a Neoprep QC
                             query = "select art.* from artifact art \
                                 inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
                                 inner join outputmapping om on art.artifactid=om.outputartifactid \
@@ -743,7 +743,7 @@ class ProjectSQL:
                     preprep = self.session.query(Process).from_statement(text(query)).first()
                     self.obj['samples'][sample.name]['library_prep'][prepname]['pre_prep_start_date'] = preprep.daterun.strftime("%Y-%m-%d")
                 except AttributeError:
-                   self.log.info("Did not find a preprep for sample {}".format(sample.name)) 
+                    self.log.info("Did not find a preprep for sample {}".format(sample.name))
 
                 # get seqruns
                 seqs = get_children_processes(self.session, one_libprep.processid, pc_cg.SEQUENCING.keys(), sample=sample.processid)
@@ -832,6 +832,8 @@ class ProjectSQL:
 
     def extract_barcode(self, chain):
         bcp = re.compile("[ATCG\-]{4,}")
+        if "NoIndex" in chain:
+            return chain
         if '(' not in chain:
             barcode = chain
         else:
@@ -852,11 +854,3 @@ class ProjectSQL:
         view = db.view('names/name_to_id')
         for row in view[sample_run]:
             return row.id
-
-
-
-
-
-
-
-
