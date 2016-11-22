@@ -666,7 +666,7 @@ class ProjectSQL:
                             where sa.processid = {sapid} and pr.typeid in ({tid}) and art2.artifactid={inpid} and art.name like '%CaliperGX%{sname}' \
                             order by pr.daterun desc;".format(sapid=sample.processid, inpid=inp_artifact.artifactid, tid=','.join(pc_cg.CALIPER.keys()), sname=sample.name)
                         try:
-                            caliper_file = self.session.query(GlsFile).from_statement(text(query)).one()
+                            caliper_file = self.session.query(GlsFile).from_statement(text(query)).first()
                             self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['caliper_image'] = "sftp://{host}/home/glsftp/{uri}".format(host=self.host, uri=caliper_file.contenturi)
                         except NoResultFound:
                             self.log.info("Did not find a libprep caliper image for sample {}".format(sample.name))
