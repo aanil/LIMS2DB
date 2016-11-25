@@ -644,6 +644,7 @@ class ProjectSQL:
                             where pr.typeid in ({dem}) and piot.inputartifactid={iaid} \
                             order by pr.daterun;".format(dem=",".join(pc_cg.LIBVAL.keys()), iaid=inp_artifact.artifactid)
                         libvals = self.session.query(Process).from_statement(text(query)).all()
+                        import pdb;pdb.set_trace()
                         try:
                             self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date'] = libvals[0].daterun.strftime("%Y-%m-%d")
                         except IndexError:
@@ -668,7 +669,7 @@ class ProjectSQL:
                         try:
                             caliper_file = self.session.query(GlsFile).from_statement(text(query)).first()
                             self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['caliper_image'] = "sftp://{host}/home/glsftp/{uri}".format(host=self.host, uri=caliper_file.contenturi)
-                        except NoResultFound:
+                        except AttributeError:
                             self.log.info("Did not find a libprep caliper image for sample {}".format(sample.name))
                     # handling neoprep
                         if "NeoPrep" in agrlibval.type.displayname:
