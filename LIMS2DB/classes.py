@@ -644,7 +644,6 @@ class ProjectSQL:
                             where pr.typeid in ({dem}) and piot.inputartifactid={iaid} \
                             order by pr.daterun;".format(dem=",".join(pc_cg.LIBVAL.keys()), iaid=inp_artifact.artifactid)
                         libvals = self.session.query(Process).from_statement(text(query)).all()
-                        import pdb;pdb.set_trace()
                         try:
                             self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date'] = libvals[0].daterun.strftime("%Y-%m-%d")
                         except IndexError:

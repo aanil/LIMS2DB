@@ -125,6 +125,8 @@ def main(options):
         else:
             host=get_configuration()['url']
             pj_id=lims_db.query(DBProject.luid).filter(DBProject.name == options.project_name).scalar()
+            if not pj_id:
+                pj_id=options.project_name
             P = ProjectSQL(lims_db, mainlog, pj_id, host, couch)
             if options.upload:
                 P.save()
