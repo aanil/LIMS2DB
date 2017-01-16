@@ -392,7 +392,7 @@ class ProjectSQL:
             inner join processiotracker piot on piot.processid=pr.processid \
             inner join artifact_sample_map asm on piot.inputartifactid=asm.artifactid \
             inner join sample sa on sa.processid=asm.processid \
-            where sa.projectid = {pjid} and pr.typeid={tid} limit 1;".format(pjid=self.project.projectid, tid=pc_cg.SUMMARY.keys()[0])
+            where sa.projectid = {pjid} and pr.typeid={tid} order by createddate desc limit 1;".format(pjid=self.project.projectid, tid=pc_cg.SUMMARY.keys()[0])
         try:
             pjs = self.session.query(Process).from_statement(text(query)).one()
             self.obj['project_summary'] = self.make_normalized_dict(pjs.udf_dict)
