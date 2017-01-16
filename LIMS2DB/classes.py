@@ -392,7 +392,7 @@ class ProjectSQL:
             inner join processiotracker piot on piot.processid=pr.processid \
             inner join artifact_sample_map asm on piot.inputartifactid=asm.artifactid \
             inner join sample sa on sa.processid=asm.processid \
-            where sa.projectid = {pjid} and pr.typeid={tid} limit 1;".format(pjid=self.project.projectid, tid=pc_cg.SUMMARY.keys()[0])
+            where sa.projectid = {pjid} and pr.typeid={tid} order by createddate desc limit 1;".format(pjid=self.project.projectid, tid=pc_cg.SUMMARY.keys()[0])
         try:
             pjs = self.session.query(Process).from_statement(text(query)).one()
             self.obj['project_summary'] = self.make_normalized_dict(pjs.udf_dict)
@@ -666,9 +666,9 @@ class ProjectSQL:
                             where sa.processid = {sapid} and pr.typeid in ({tid}) and art2.artifactid={inpid} and art.name like '%CaliperGX%{sname}' \
                             order by pr.daterun desc;".format(sapid=sample.processid, inpid=inp_artifact.artifactid, tid=','.join(pc_cg.CALIPER.keys()), sname=sample.name)
                         try:
-                            caliper_file = self.session.query(GlsFile).from_statement(text(query)).one()
+                            caliper_file = self.session.query(GlsFile).from_statement(text(query)).first()
                             self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['caliper_image'] = "sftp://{host}/home/glsftp/{uri}".format(host=self.host, uri=caliper_file.contenturi)
-                        except NoResultFound:
+                        except AttributeError:
                             self.log.info("Did not find a libprep caliper image for sample {}".format(sample.name))
                     # handling neoprep
                         if "NeoPrep" in agrlibval.type.displayname:
