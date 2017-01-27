@@ -204,6 +204,7 @@ class Workset_SQL:
         self.build()
 
     def extract_barcode(self, chain):
+        barcode=''
         bcp = re.compile("[ATCG\-]{4,}")
         if "NoIndex" in chain:
             return chain
@@ -326,6 +327,7 @@ class Workset_SQL:
                     artifacts = self.session.query(Artifact).from_statement(text(query)).all()
                     for art in artifacts:
                             if art.reagentlabels is not None and len(art.reagentlabels) == 1:
+                                #If there are more than one reagent label, then I can't guess which one is the right one : the artifact is probably a pool
                                 self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['index']=self.extract_barcode(art.reagentlabels[0].name)
                 except AssertionError:
                     pass
@@ -864,6 +866,7 @@ class ProjectSQL:
                             self.log.info("no run id for sequencing process {}".format(seq.luid))
 
     def extract_barcode(self, chain):
+        barcode=''
         bcp = re.compile("[ATCG\-]{4,}")
         if "NoIndex" in chain:
             return chain
