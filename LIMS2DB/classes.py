@@ -203,6 +203,26 @@ class Workset_SQL:
         self.obj = {}
         self.build()
 
+    def extract_barcode(self, chain):
+        barcode=''
+        bcp = re.compile("[ATCG\-]{4,}")
+        if "NoIndex" in chain:
+            return chain
+        if '(' not in chain:
+            barcode = chain
+        else:
+            pattern = re.compile("\(([A-Z\-]+)\)")
+            matches = pattern.search(chain)
+            if matches.group(1):
+                barcode = matches.group(1)
+        matches = bcp.match(barcode)
+        if not matches:
+            meta = self.session.query(ReagentType.meta_data).filter(ReagentType.name.like('%{}%'.format(barcode))).scalar()
+            matches = bcp.search(meta)
+            if matches:
+                barcode = matches.group(0)
+        return barcode
+
     def build(self):
         self.obj['id'] = self.start.luid
         self.obj['last_aggregate'] = None
@@ -296,6 +316,21 @@ class Workset_SQL:
                     self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['concentration'] = "{0:.2f} {1}".format(agr_inp.udf_dict['Concentration'], agr_inp.udf_dict['Conc. Units'])
                 if 'Size (bp)' in agr_inp.udf_dict:
                     self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['size'] = round(agr_inp.udf_dict['Size (bp)'], 2)
+
+                #Grabbing indexes
+                # Get all artifacts for given sample
+                query = "select art.* from artifact art \
+                    inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
+                    inner join sample sa on sa.processid=asm.processid \
+                    where sa.processid = {sapid};".format(sapid=sample.processid)
+                try:
+                    artifacts = self.session.query(Artifact).from_statement(text(query)).all()
+                    for art in artifacts:
+                            if art.reagentlabels is not None and len(art.reagentlabels) == 1:
+                                #If there are more than one reagent label, then I can't guess which one is the right one : the artifact is probably a pool
+                                self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['index']=self.extract_barcode(art.reagentlabels[0].name)
+                except AssertionError:
+                    pass
 
             query = "select pc.* from process pc \
                     inner join processiotracker piot on piot.processid=pc.processid \
@@ -831,6 +866,7 @@ class ProjectSQL:
                             self.log.info("no run id for sequencing process {}".format(seq.luid))
 
     def extract_barcode(self, chain):
+        barcode=''
         bcp = re.compile("[ATCG\-]{4,}")
         if "NoIndex" in chain:
             return chain
