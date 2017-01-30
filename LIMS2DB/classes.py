@@ -707,8 +707,14 @@ class ProjectSQL:
                             self.log.info("Did not find a libprep caliper image for sample {}".format(sample.name))
                     # handling neoprep
                         if "NeoPrep" in agrlibval.type.displayname:
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['conc_units'] = "nM"
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['concentration'] = inp_artifact.udf_dict['Normalized conc. (nM)']
+                            try:
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['concentration'] = inp_artifact.udf_dict['Normalized conc. (nM)']
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['conc_units'] = "nM"
+                            except KeyError:
+                                #The first neoprep projects did not go that well and have no concentration.
+                                pass
+
+
                             # get output resultfile named like the sample of a Neoprep QC
                             query = "select art.* from artifact art \
                                 inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
