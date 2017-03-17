@@ -783,6 +783,9 @@ class ProjectSQL:
                 try:
                     preprep = self.session.query(Process).from_statement(text(query)).first()
                     self.obj['samples'][sample.name]['library_prep'][prepname]['pre_prep_start_date'] = preprep.daterun.strftime("%Y-%m-%d")
+                    if "first_prep_start_date" not in self.obj['samples'][sample.name] or \
+                            datetime.strptime(self.obj['samples'][sample.name]['first_prep_start_date'], "%Y-%m-%d") > preprep.daterun:
+                        self.obj['samples'][sample.name]['first_prep_start_date'] = preprep.daterun.strftime("%Y-%m-%d")
                 except AttributeError:
                     self.log.info("Did not find a preprep for sample {}".format(sample.name))
 
