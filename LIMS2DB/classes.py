@@ -876,22 +876,22 @@ class ProjectSQL:
 
     def extract_barcode(self, chain):
         barcode=''
-        bcp = re.compile("[ATCG\-]{4,}")
+        bcp = re.compile("[ATCG\-\_]{4,}")
         if "NoIndex" in chain:
             return chain
         if '(' not in chain:
             barcode = chain
         else:
-            pattern = re.compile("\(([A-Z\-]+)\)")
+            pattern = re.compile("\(([A-Z\-\_]+)\)")
             matches = pattern.search(chain)
             if matches.group(1):
-                barcode = matches.group(1)
+                barcode = matches.group(1).replace('_','-')
         matches = bcp.match(barcode)
         if not matches:
             meta = self.session.query(ReagentType.meta_data).filter(ReagentType.name.like('%{}%'.format(barcode))).scalar()
             matches = bcp.search(meta)
             if matches:
-                barcode = matches.group(0)
+                barcode = matches.group(0).replace('_','-')
         return barcode
 
     def find_couch_sampleid(self, sample_run):
