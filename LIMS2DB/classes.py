@@ -783,6 +783,9 @@ class ProjectSQL:
                 try:
                     preprep = self.session.query(Process).from_statement(text(query)).first()
                     self.obj['samples'][sample.name]['library_prep'][prepname]['pre_prep_start_date'] = preprep.daterun.strftime("%Y-%m-%d")
+                    if "first_prep_start_date" not in self.obj['samples'][sample.name] or \
+                            datetime.strptime(self.obj['samples'][sample.name]['first_prep_start_date'], "%Y-%m-%d") > preprep.daterun:
+                        self.obj['samples'][sample.name]['first_prep_start_date'] = preprep.daterun.strftime("%Y-%m-%d")
                 except AttributeError:
                     self.log.info("Did not find a preprep for sample {}".format(sample.name))
 
@@ -873,22 +876,22 @@ class ProjectSQL:
 
     def extract_barcode(self, chain):
         barcode=''
-        bcp = re.compile("[ATCG\-]{4,}")
+        bcp = re.compile("[ATCG\-\_]{4,}")
         if "NoIndex" in chain:
             return chain
         if '(' not in chain:
             barcode = chain
         else:
-            pattern = re.compile("\(([A-Z\-]+)\)")
+            pattern = re.compile("\(([A-Z\-\_]+)\)")
             matches = pattern.search(chain)
             if matches.group(1):
-                barcode = matches.group(1)
+                barcode = matches.group(1).replace('_','-')
         matches = bcp.match(barcode)
         if not matches:
             meta = self.session.query(ReagentType.meta_data).filter(ReagentType.name.like('%{}%'.format(barcode))).scalar()
             matches = bcp.search(meta)
             if matches:
-                barcode = matches.group(0)
+                barcode = matches.group(0).replace('_','-')
         return barcode
 
     def find_couch_sampleid(self, sample_run):

@@ -20,7 +20,7 @@ AGRINITQC = {
     '7' : 'Aggregate QC (DNA) 4.0',
     '9' : 'Aggregate QC (RNA) 4.0'}
 PREPREPSTART = {
-    '304' : "Ligate 3' adapters (TruSeq small RNA) 1.0",
+    '304' : "Adapter ligation and reverse transcription (TruSeq small RNA) 1.0",
     '74' : 'Shear DNA (SS XT) 4.0'}
 POOLING = {
     '42': "Library Pooling (Illumina SBS) 4.0",
