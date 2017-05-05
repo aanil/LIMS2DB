@@ -537,7 +537,7 @@ class ProjectSQL:
             where sa.processid = {sapid} and pr.typeid in ({tid}) and art2.isoriginal=True and art.name like '%CaliperGX%{sname}' \
             order by pr.daterun desc;".format(sapid=sample.processid, tid=','.join(pc_cg.CALIPER.keys()), sname=sample.name)
         try:
-            caliper_file = self.session.query(GlsFile).from_statement(text(query)).one()
+            caliper_file = self.session.query(GlsFile).from_statement(text(query)).first()
             self.obj['samples'][sample.name]['initial_qc']['caliper_image'] = "sftp://{host}/home/glsftp/{uri}".format(host=self.host, uri=caliper_file.contenturi)
         except NoResultFound:
             self.log.info("Did not find an initial QC Caliper for sample {}".format(sample.name))
