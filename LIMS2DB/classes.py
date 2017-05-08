@@ -536,10 +536,10 @@ class ProjectSQL:
             inner join sample sa on sa.processid=asm.processid \
             where sa.processid = {sapid} and pr.typeid in ({tid}) and art2.isoriginal=True and art.name like '%CaliperGX%{sname}' \
             order by pr.daterun desc;".format(sapid=sample.processid, tid=','.join(pc_cg.CALIPER.keys()), sname=sample.name)
-        try:
-            caliper_file = self.session.query(GlsFile).from_statement(text(query)).first()
+        caliper_file = self.session.query(GlsFile).from_statement(text(query)).first()
+        if caliper_file:
             self.obj['samples'][sample.name]['initial_qc']['caliper_image'] = "sftp://{host}/home/glsftp/{uri}".format(host=self.host, uri=caliper_file.contenturi)
-        except NoResultFound:
+        else:
             self.log.info("Did not find an initial QC Caliper for sample {}".format(sample.name))
 
     def get_library_preps(self, sample):
