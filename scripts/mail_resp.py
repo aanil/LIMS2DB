@@ -128,7 +128,7 @@ def main(args):
                 msg['To'] = operator
                 msg['Subject']='[Lims update] Failed to send a mail to {}'.format(resp)
 
-            s = smtplib.SMTP('smtp.ki.se')
+            s = smtplib.SMTP('localhost')
             s.sendmail('genologics-lims@scilifelab.se', msg['To'], msg.as_string())
             s.quit()
 
