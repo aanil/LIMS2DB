@@ -35,7 +35,7 @@ def main(args):
          recent_processes=get_last_modified_processes(session,[8,204,38,714,46], args.interval)
          processes_to_update=set()
          for p in recent_processes:
-             if p.typeid==204:
+             if p.typeid==204 and p.daterun:#will only catch finished setup workset plate
                  processes_to_update.add(p)
              else:
                  processes_to_update.update(get_processes_in_history(session, p.processid, [204]))
