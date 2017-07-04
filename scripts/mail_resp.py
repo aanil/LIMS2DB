@@ -137,7 +137,7 @@ def main(args):
     ctrlmsg['Subject']='[Lims update] Control'
     ctrlmsg['From']='Lims_monitor'
     ctrlmsg['To'] = operator
-    s = smtplib.SMTP('smtp.ki.se')
+    s = smtplib.SMTP('localhost')
     s.sendmail('genologics-lims@scilifelab.se', ctrlmsg['To'], ctrlmsg.as_string())
     s.quit()
 
