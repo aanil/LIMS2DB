@@ -669,7 +669,7 @@ class ProjectSQL:
                         self.obj['samples'][sample.name]['library_prep'][prepname]['prep_status'] = inp_artifact.qc_flag
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['well_location'] = inp_artifact.containerplacement.api_string
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['reagent_labels'] = [rg.name for rg in inp_artifact.reagentlabels]
-                        if 'By user' not in self.obj['details']['library_construction_method']:
+                        if 'By user' not in self.obj['details']['library_construction_method'] and inp_artifact.reagentlabels:
                             # if finlib, these are already computed
                             self.obj['samples'][sample.name]['library_prep'][prepname]['reagent_label'] = inp_artifact.reagentlabels[0].name
                             self.obj['samples'][sample.name]['library_prep'][prepname]['barcode'] = self.extract_barcode(inp_artifact.reagentlabels[0].name)
