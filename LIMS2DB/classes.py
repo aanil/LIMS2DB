@@ -677,6 +677,9 @@ class ProjectSQL:
                                         if not date_routed or action.lastmodifieddate > date_routed:
                                             inp_artifact = art
                                             date_routed = action.lastmodifieddate
+                            if not inp_artifact:
+                                self.log.error("Multiple copies of the same sample {0} found in step {0},  None of them is routed. Skipping the libprep ".format(sample.name, agrlibval.luid))
+                                continue
 
 
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid].update(self.make_normalized_dict(inp_artifact.udf_dict))
