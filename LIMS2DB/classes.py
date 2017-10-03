@@ -2,7 +2,7 @@ from genologics_sql.tables import Artifact, Container, EscalationEvent, GlsFile,
 from genologics_sql.queries import get_children_processes, get_processes_in_history
 from LIMS2DB.diff import diff_objects
 from sqlalchemy import text
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from datetime import datetime
 
 import LIMS2DB.objectsDB.process_categories as pc_cg
@@ -663,7 +663,22 @@ class ProjectSQL:
                         and piot.processid = {agrid} \
                         and aam.ancestorartifactid={lp_art}".format(sapid=sample.processid, agrid=agrlibval.processid, lp_art=one_libprep_art.artifactid)
                     try:
-                        inp_artifact = self.session.query(Artifact).from_statement(text(query)).one()
+                        try:
+                            inp_artifact = self.session.query(Artifact).from_statement(text(query)).one()
+                        except MultipleResultsFound:
+                            #this might happen when samples have been requeued and end up in the same aggragate QC as the originals.
+                            #Select the artifact that has been routed to the next step. If there is more than one, take the most recent one.
+                            artifacts = self.session.query(Artifact).from_statement(text(query)).all()
+                            inp_artifact = None
+                            date_routed = None
+                            for art in artifacts:
+                                for action in art.routes:
+                                    if action.actiontype == "ADVANCE":
+                                        if not date_routed or action.lastmodifieddate > date_routed:
+                                            inp_artifact = art
+                                            date_routed = action.lastmodifieddate
+
+
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid].update(self.make_normalized_dict(inp_artifact.udf_dict))
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['prep_status'] = inp_artifact.qc_flag
                         self.obj['samples'][sample.name]['library_prep'][prepname]['prep_status'] = inp_artifact.qc_flag
