@@ -15,6 +15,7 @@ INITALQC ={
     '16' : 'Bioanalyzer QC (DNA) 4.0',
     '18' : 'Bioanalyzer QC (RNA) 4.0',
     '116' : 'CaliperGX QC (RNA)',
+    '1354' : 'Fragment Analyzer QC (RNA) 4.0',
     '504' : 'Volume Measurement QC'}
 AGRINITQC = {
     '7' : 'Aggregate QC (DNA) 4.0',

@@ -534,13 +534,13 @@ class ProjectSQL:
             inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
             inner join process pr on piot.processid=pr.processid \
             inner join sample sa on sa.processid=asm.processid \
-            where sa.processid = {sapid} and pr.typeid in ({tid}) and art2.isoriginal=True and art.name like '%CaliperGX%{sname}' \
+            where sa.processid = {sapid} and pr.typeid in ({tid}) and art2.isoriginal=True and art.name like '%Fragment Analyzer%{sname}' \
             order by pr.daterun desc;".format(sapid=sample.processid, tid=','.join(pc_cg.FRAGMENT_ANALYZER.keys()), sname=sample.name)
         frag_an_file = self.session.query(GlsFile).from_statement(text(query)).first()
         if frag_an_file:
             self.obj['samples'][sample.name]['initial_qc']['frag_an_image'] = "https://{host}/api/v2/files/40-{sid}".format(host=self.host, sid=frag_an_file.fileid)
         else:
-            self.log.info("Did not find an initial QC Caliper for sample {}".format(sample.name))
+            self.log.info("Did not find an initial QC Fragment Analyzer for sample {}".format(sample.name))
         # get GlsFile for output artifact of a Caliper process where its input is the initial artifact of a given sample
         query = "select gf.* from glsfile gf \
             inner join resultfile rf on rf.glsfileid=gf.fileid \
