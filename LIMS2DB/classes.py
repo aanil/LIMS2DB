@@ -524,6 +524,23 @@ class ProjectSQL:
             self.obj['samples'][sample.name]['initial_qc'].update(self.make_normalized_dict(initial_artifact.udf_dict))
         except NoResultFound:
             self.log.info("did not find the initial artifact of sample {}".format(sample.name))
+        # get GlsFile for output artifact of a Fragment Analyzer process where its input is the initial artifact of a given sample
+        query = "select gf.* from glsfile gf \
+            inner join resultfile rf on rf.glsfileid=gf.fileid \
+            inner join artifact art on rf.artifactid=art.artifactid \
+            inner join outputmapping om on art.artifactid=om.outputartifactid \
+            inner join processiotracker piot on piot.trackerid=om.trackerid \
+            inner join artifact art2 on piot.inputartifactid=art2.artifactid \
+            inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
+            inner join process pr on piot.processid=pr.processid \
+            inner join sample sa on sa.processid=asm.processid \
+            where sa.processid = {sapid} and pr.typeid in ({tid}) and art2.isoriginal=True and art.name like '%CaliperGX%{sname}' \
+            order by pr.daterun desc;".format(sapid=sample.processid, tid=','.join(pc_cg.FRAGMENT_ANALYZER.keys()), sname=sample.name)
+        frag_an_file = self.session.query(GlsFile).from_statement(text(query)).first()
+        if frag_an_file:
+            self.obj['samples'][sample.name]['initial_qc']['frag_an_image'] = "https://{host}/api/v2/files/40-{sid}".format(host=self.host, sid=frag_an_file.fileid)
+        else:
+            self.log.info("Did not find an initial QC Caliper for sample {}".format(sample.name))
         # get GlsFile for output artifact of a Caliper process where its input is the initial artifact of a given sample
         query = "select gf.* from glsfile gf \
             inner join resultfile rf on rf.glsfileid=gf.fileid \

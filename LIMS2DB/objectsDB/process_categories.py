@@ -94,6 +94,9 @@ DEMULTIPLEX={
 CALIPER = {
     '20' : 'CaliperGX QC (DNA)',
     '116' : 'CaliperGX QC (RNA)'}
+FRAGMENT_ANALYZER = {
+    '1354' : 'Fragment Analyzer QC (RNA) 4.0'
+        }
 
 
 
