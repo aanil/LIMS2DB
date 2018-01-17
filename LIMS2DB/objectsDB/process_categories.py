@@ -47,7 +47,8 @@ PREPSTART = {
     '454' : 'ThruPlex template preparation and synthesis',
     '405' : 'RiboZero depletion',
     '612' : 'Fragmentation & cDNA synthesis (TruSeq RNA) 4.0',#sometimes, the earlier steps are skipped.
-    '605' : 'Tagmentation, Strand displacement and AMPure purification'}
+    '605' : 'Tagmentation, Strand displacement and AMPure purification',
+    '1404' : 'Fragmentation & cDNA synthesis (SMARTer Pico) 4.0'}
 PREPEND = {
     '157': 'Applications Finish Prep',
     '109' : 'CA Purification',
@@ -55,7 +56,8 @@ PREPEND = {
     '111' : 'Amplify Captured Libraries to Add Index Tags (SS XT) 4.0',
     '406' : 'End repair, size selection, A-tailing and adapter ligation (TruSeq PCR-free DNA) 4.0',
     '805' : 'NeoPrep Library Prep v1.0',
-    '311': 'Sample Placement (Size Selection)'}
+    '311' : 'Sample Placement (Size Selection)',
+    '1406' : 'Ribosomal cDNA Depletion and 2nd Amplification (SMARTer Pico) 4.0'}
 LIBVAL = {
     '62' : 'qPCR QC (Library Validation) 4.0',
     '64' : 'Quant-iT QC (Library Validation) 4.0',
@@ -104,7 +106,7 @@ SAMP_UDF_EXCEPTIONS = ['customer_name','reads_requested_(millions)','min_reads',
 
 
 
-PROCESSCATEGORIES = {'INITALQCFINISHEDLIB' : INITALQCFINISHEDLIB, 
+PROCESSCATEGORIES = {'INITALQCFINISHEDLIB' : INITALQCFINISHEDLIB,
                      'INITALQC':INITALQC,
                      'AGRINITQC':AGRINITQC,
                      'PREPREPSTART':PREPREPSTART,
