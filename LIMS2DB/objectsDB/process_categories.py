@@ -20,22 +20,24 @@ AGRINITQC = {
     '7' : 'Aggregate QC (DNA) 4.0',
     '9' : 'Aggregate QC (RNA) 4.0'}
 PREPREPSTART = {
-    '304' : "Adapter ligation and reverse transcription (TruSeq small RNA) 1.0",
+    '304' : 'Adapter ligation and reverse transcription (TruSeq small RNA) 1.0',
     '74' : 'Shear DNA (SS XT) 4.0'}
 POOLING = {
-    '42': "Library Pooling (Illumina SBS) 4.0",
-    '43': "Library Pooling (MiSeq) 4.0",
-    '44': "Library Pooling (TruSeq Amplicon) 4.0",
-    '45': "Library Pooling (TruSeq Exome) 4.0",
-    '58': "Pooling For Multiplexed Sequencing (SS XT) 4.0",
-    '255': "Library Pooling (Finished Libraries) 4.0",
-    '308': "Library Pooling (TruSeq Small RNA) 1.0",
-    '404': "Pre-Pooling (Illumina SBS) 4.0",
-    '506': "Pre-Pooling (MiSeq) 4.0",
-    '508': "Applications Pre-Pooling",
-    '716': 'Library Pooling (HiSeq X) 1.0'}
+    '42': 'Library Pooling (Illumina SBS) 4.0',
+    '43': 'Library Pooling (MiSeq) 4.0',
+    '44': 'Library Pooling (TruSeq Amplicon) 4.0',
+    '45': 'Library Pooling (TruSeq Exome) 4.0',
+    '58': 'Pooling For Multiplexed Sequencing (SS XT) 4.0',
+    '255': 'Library Pooling (Finished Libraries) 4.0',
+    '308': 'Library Pooling (TruSeq Small RNA) 1.0',
+    '404': 'Pre-Pooling (Illumina SBS) 4.0',
+    '506': 'Pre-Pooling (MiSeq) 4.0',
+    '508': 'Applications Pre-Pooling',
+    '716': 'Library Pooling (HiSeq X) 1.0',
+    '1506': 'Pre-Pooling (NovaSeq) v2.0',
+    '1507': 'Library Pooling (NovaSeq) v2.0'}
 PREPSTARTFINLIB = {
-    '255': "Library Pooling (Finished Libraries) 4.0"
+    '255': 'Library Pooling (Finished Libraries) 4.0'
     }
 PREPSTART = {
     '10' : 'Aliquot Libraries for Hybridization (SS XT)',
@@ -78,15 +80,19 @@ AGRLIBVAL = {
 SEQSTART = {
     '23':'Cluster Generation (Illumina SBS) 4.0',
     '26':'Denature, Dilute and Load Sample (MiSeq) 4.0',
-    '710':'Cluster Generation (HiSeq X) 1.0'}
+    '710':'Cluster Generation (HiSeq X) 1.0',
+    '1456': 'Dilute and Denature (NovaSeq 6000 v2.0)',
+    '1457': 'Dilute, Denature & ExAmp (NovaSeq 6000 v2.0)'}
 DILSTART = {
     '40' : 'Library Normalization (MiSeq) 4.0',
     '39' : 'Library Normalization (Illumina SBS) 4.0',
-    '715': 'Library Normalization (HiSeq X) 1.0'}
+    '715': 'Library Normalization (HiSeq X) 1.0',
+    '1505': 'Library Normalization (NovaSeq) v2.0'}
 SEQUENCING = {
     '38' : 'Illumina Sequencing (Illumina SBS) 4.0',
     '46' : 'MiSeq Run (MiSeq) 4.0',
-    '714': 'Illumina Sequencing (HiSeq X) 1.0'}
+    '714': 'Illumina Sequencing (HiSeq X) 1.0',
+    '1454': 'AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)'}
 WORKSET = {
     '204' : 'Setup Workset/Plate'}
 SUMMARY = {
