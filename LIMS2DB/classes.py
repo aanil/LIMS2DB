@@ -1,6 +1,7 @@
 from genologics_sql.tables import Artifact, Container, EscalationEvent, GlsFile, Process, Project, Researcher, ReagentType
 from genologics_sql.queries import get_children_processes, get_processes_in_history
 from LIMS2DB.diff import diff_objects
+from requests import get as rget
 from sqlalchemy import text
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from datetime import datetime
@@ -361,13 +362,14 @@ class Workset_SQL:
 
 class ProjectSQL:
 
-    def __init__(self, session, log, pid, host='genologics.scilifelab.se', couch=None):
+    def __init__(self, session, log, pid, host='genologics.scilifelab.se', couch=None, oconf=None):
         self.log = log
         self.pid = pid
         self.host = host
         self.name = set()
         self.session = session
         self.couch = couch
+        self.oconf = oconf
         self.obj = {}
         self.project = self.session.query(Project).filter(Project.luid == self.pid).one()
         self.build()
@@ -420,6 +422,7 @@ class ProjectSQL:
         if self.project.udf_dict.get("Reference genome"):
             self.obj['reference_genome'] = self.project.udf_dict.get("Reference genome")
         self.obj['details'] = self.make_normalized_dict(self.project.udf_dict)
+        self.obj['order_details'] = self.get_project_order()
 
     def get_project_summary(self):
         # get project summaries from project
@@ -451,6 +454,32 @@ class ProjectSQL:
             key = kv[0].lower().replace(" ", "_").replace('.', '')
             ret[key] = kv[1]
         return ret
+    
+    def get_project_order(self):
+        # get project order details from orderportal
+        proj_order_info = {}
+        if self.oconf:
+            try:
+                proj_order_url = "{}/{}".format(self.oconf['api_get_order_url'].rstrip('/'), self.obj['details']['portal_id'])
+                api_header = {'X-OrderPortal-API-key': self.oconf['api_token']}
+                full_order_info = rget(proj_order_url, headers=api_header).json()
+                filter_keys = ['created', 'modified', 'site', 'title', 'identifier', {'owner': ['name', 'email'],
+                               'fields':['seq_readlength_hiseqx', 'library_readymade', 'bx_exp', 'seq_instrument',
+                               'project_lab_email', 'project_bx_email', 'project_lab_name', 'bx_data_delivery',
+                               'sample_no', 'bioinformatics', 'sequencing', 'project_pi_name', 'bx_bp',
+                               'project_desc', 'project_pi_email']}]
+                for fk in filter_keys:
+                    if isinstance(fk, dict):
+                        for k,vals in fk.iteritems():
+                            if k not in proj_order_info:
+                                proj_order_info[k] = {}
+                            for vk in vals:
+                                proj_order_info[k][vk] = full_order_info.get(k, {}).get(vk)
+                    else:
+                        proj_order_info[fk] = full_order_info.get(fk)
+            except Exception as e:
+                self.log.warn("Not able to get update order info for project {}".format(self.project.name))
+        return proj_order_info
 
     def get_samples(self):
         self.obj["no_of_samples"] = len(self.project.samples)
