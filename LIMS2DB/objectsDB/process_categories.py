@@ -60,7 +60,8 @@ PREPEND = {
     '406' : 'End repair, size selection, A-tailing and adapter ligation (TruSeq PCR-free DNA) 4.0',
     '805' : 'NeoPrep Library Prep v1.0',
     '311' : 'Sample Placement (Size Selection)',
-    '1406' : 'Ribosomal cDNA Depletion and 2nd Amplification (SMARTer Pico) 4.0'}
+    '1406' : 'Ribosomal cDNA Depletion and 2nd Amplification (SMARTer Pico) 4.0',
+    '1554' : 'Purification'}
 LIBVAL = {
     '62' : 'qPCR QC (Library Validation) 4.0',
     '64' : 'Quant-iT QC (Library Validation) 4.0',
