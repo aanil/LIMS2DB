@@ -391,12 +391,15 @@ class ProjectSQL:
             my_rev = doc.pop('_rev', None)
             my_mod = doc.pop('modification_time', None)
             my_crea = doc.pop('creation_time', None)
+            my_staged_files = doc.pop('staged_files', None)
             diffs = diff_objects(doc, self.obj)
             if diffs:
                 self.obj['_id'] = my_id
                 self.obj['_rev'] = my_rev
                 self.obj['creation_time'] = my_crea
                 self.obj['modification_time'] = datetime.now().isoformat()
+                if my_staged_files:
+                    self.obj['staged_files'] = my_staged_files
                 self.log.info("Trying to save new doc for project {}".format(self.pid))
                 db.save(self.obj)
 
