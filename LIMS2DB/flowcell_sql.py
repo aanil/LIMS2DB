@@ -12,6 +12,16 @@ def create_lims_data_obj(session, pro):
     obj={}
     obj['step_id']=pro.luid
 
+    #which container is used in this step ?
+    query = "select distinct ct.* from container ct\
+             inner join containerplacement cp on cp.containerid=ct.containerid \
+             inner join processiotracker piot on piot.inputartifactid=cp.processartifactid \
+             where piot.processid = {pid}::integer;".format(pid=pro.processid)
+    
+    cont=session.query(Container).from_statement(text(query)).first()
+    obj['container_id']=cont.luid
+    obj['container_name']=cont.name
+
     if pc_cg.SEQUENCING.get(str(pro.typeid), '') == 'AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)':
         #NovaSeq flowcell have the individual stats as output artifact
         query = "select art.* from artifact art \
@@ -19,21 +29,10 @@ def create_lims_data_obj(session, pro):
                  inner join processiotracker piot on piot.trackerid=omap.trackerid \
                  where art.name LIKE 'Lane%' and piot.processid = {pid}::integer;".format(pid=pro.processid)
     else:
-        #which container is used in this step ?
-        query = "select distinct ct.* from container ct\
-                 inner join containerplacement cp on cp.containerid=ct.containerid \
-                 inner join processiotracker piot on piot.inputartifactid=cp.processartifactid \
+        #Which artifacts are updated in this step ?
+        query = "select distinct art.* from artifact art\
+                 inner join processiotracker piot on piot.inputartifactid=art.artifactid \
                  where piot.processid = {pid}::integer;".format(pid=pro.processid)
-    
-    cont=session.query(Container).from_statement(text(query)).first()
-    obj['container_id']=cont.luid
-    obj['container_name']=cont.name
-
-
-    #Which artifacts are updated in this step ?
-    query= "select distinct art.* from artifact art\
-            inner join processiotracker piot on piot.inputartifactid=art.artifactid \
-            where piot.processid = {pid}::integer;".format(pid=pro.processid)
 
     obj['run_summary']={}
     arts=session.query(Artifact).from_statement(text(query)).all()
