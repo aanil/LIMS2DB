@@ -2,7 +2,7 @@
 What is a Process Category?
 ============================
 
-In the project-statusdb context, lims processes are categorised into groups that define, or are used to define a certain type of status-db key in a project database. The categories are specified here. 
+In the project-statusdb context, lims processes are categorised into groups that define, or are used to define a certain type of status-db key in a project database. The categories are specified here.
 
 
 Adding a work flow.
@@ -20,8 +20,10 @@ ID  process Name
 26	Denature, Dilute and Load Sample (MiSeq) 4.0
 710	Cluster Generation (HiSeq X) 1.0
 23	Cluster Generation (Illumina SBS) 4.0
+1456	Dilute and Denature (NovaSeq 6000 v2.0)
+1457	Dilute, Denature & ExAmp (NovaSeq 6000 v2.0)
 === =======================================
-    
+
 
 LIBVALFINISHEDLIB
 ===============================
@@ -36,8 +38,11 @@ ID  process Name
 62	qPCR QC (Library Validation) 4.0
 64	Quant-iT QC (Library Validation) 4.0
 67	Qubit QC (Library Validation) 4.0
+504	Volume Measurement QC
+904	Automated Quant-iT QC (Library Validation) 4.0
+1154	Fragment Analyzer QC (Library Validation) 4.0
 === =======================================
-    
+
 
 PREPREPSTART
 ===============================
@@ -49,7 +54,7 @@ ID  process Name
 74	Shear DNA (SS XT) 4.0
 304	Ligate 3' adapters (TruSeq small RNA) 1.0
 === =======================================
-    
+
 
 INITALQCFINISHEDLIB
 ===============================
@@ -64,8 +69,10 @@ ID  process Name
 62	qPCR QC (Library Validation) 4.0
 64	Quant-iT QC (Library Validation) 4.0
 67	Qubit QC (Library Validation) 4.0
+904	Automated Quant-iT QC (Library Validation) 4.0
+1154	Fragment Analyzer QC (Library Validation) 4.0
 === =======================================
-    
+
 
 AGRINITQC
 ===============================
@@ -77,7 +84,7 @@ ID  process Name
 9	Aggregate QC (RNA) 4.0
 7	Aggregate QC (DNA) 4.0
 === =======================================
-    
+
 
 POOLING
 ===============================
@@ -97,8 +104,10 @@ ID  process Name
 404	Pre-Pooling (Illumina SBS) 4.0
 508	Applications Pre-Pooling
 506	Pre-Pooling (MiSeq) 4.0
+1506	Pre-Pooling (NovaSeq) v2.0
+1507	Library Pooling (NovaSeq) v2.0
 === =======================================
-    
+
 
 CALIPER
 ===============================
@@ -110,7 +119,7 @@ ID  process Name
 116	CaliperGX QC (RNA)
 20	CaliperGX QC (DNA)
 === =======================================
-    
+
 
 WORKSET
 ===============================
@@ -121,7 +130,7 @@ ID  process Name
 === =======================================
 204	Setup Workset/Plate
 === =======================================
-    
+
 
 PREPEND
 ===============================
@@ -137,8 +146,10 @@ ID  process Name
 109	CA Purification
 111	Amplify Captured Libraries to Add Index Tags (SS XT) 4.0
 805	NeoPrep Library Prep v1.0
+1406	Ribosomal cDNA Depletion and 2nd Amplification (SMARTer Pico) 4.0
+1554	Purification
 === =======================================
-    
+
 
 DILSTART
 ===============================
@@ -150,8 +161,9 @@ ID  process Name
 39	Library Normalization (Illumina SBS) 4.0
 715	Library Normalization (HiSeq X) 1.0
 40	Library Normalization (MiSeq) 4.0
+1505	Library Normalization (NovaSeq) v2.0
 === =======================================
-    
+
 
 INITALQC
 ===============================
@@ -170,8 +182,12 @@ ID  process Name
 18	Bioanalyzer QC (RNA) 4.0
 504	Volume Measurement QC
 116	CaliperGX QC (RNA)
+954	Automated Quant-iT QC (DNA) 4.0
+1054	Automated Quant-iT QC (RNA) 4.0
+1157	Fragment Analyzer QC (DNA) 4.0
+1354	Fragment Analyzer QC (RNA) 4.0
 === =======================================
-    
+
 
 SUMMARY
 ===============================
@@ -182,7 +198,7 @@ ID  process Name
 === =======================================
 356	Project Summary 1.3
 === =======================================
-    
+
 
 LIBVAL
 ===============================
@@ -197,8 +213,10 @@ ID  process Name
 64	Quant-iT QC (Library Validation) 4.0
 67	Qubit QC (Library Validation) 4.0
 504	Volume Measurement QC
+904	Automated Quant-iT QC (Library Validation) 4.0
+1154	Fragment Analyzer QC (Library Validation) 4.0
 === =======================================
-    
+
 
 SEQUENCING
 ===============================
@@ -210,8 +228,9 @@ ID  process Name
 46	MiSeq Run (MiSeq) 4.0
 714	Illumina Sequencing (HiSeq X) 1.0
 38	Illumina Sequencing (Illumina SBS) 4.0
+1454	AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)
 === =======================================
-    
+
 
 DEMULTIPLEX
 ===============================
@@ -222,7 +241,7 @@ ID  process Name
 === =======================================
 13	Bcl Conversion & Demultiplexing (Illumina SBS) 4.0
 === =======================================
-    
+
 
 PREPSTART
 ===============================
@@ -241,8 +260,9 @@ ID  process Name
 308	Library Pooling (TruSeq Small RNA) 1.0
 405	RiboZero depletion
 605	Tagmentation, Strand displacement and AMPure purification
+1404	Fragmentation & cDNA synthesis (SMARTer Pico) 4.0
 === =======================================
-    
+
 
 AGRLIBVAL
 ===============================
@@ -254,5 +274,3 @@ ID  process Name
 8	Aggregate QC (Library Validation) 4.0
 806	NeoPrep Library QC v1.0
 === =======================================
-    
-

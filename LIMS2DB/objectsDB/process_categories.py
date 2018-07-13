@@ -4,7 +4,9 @@ INITALQCFINISHEDLIB = {
     '64' : 'Quant-iT QC (Library Validation) 4.0',
     '67' : 'Qubit QC (Library Validation) 4.0',
     '20' : 'CaliperGX QC (DNA)',
-    '17' : 'Bioanalyzer QC (Library Validation) 4.0'}
+    '17' : 'Bioanalyzer QC (Library Validation) 4.0',
+    '904' : 'Automated Quant-iT QC (Library Validation) 4.0',
+    '1154' : 'Fragment Analyzer QC (Library Validation) 4.0'}
 INITALQC ={
     '63' : 'Quant-iT QC (DNA) 4.0',
     '65' : 'Quant-iT QC (RNA) 4.0',
@@ -15,8 +17,11 @@ INITALQC ={
     '16' : 'Bioanalyzer QC (DNA) 4.0',
     '18' : 'Bioanalyzer QC (RNA) 4.0',
     '116' : 'CaliperGX QC (RNA)',
-    '1354' : 'Fragment Analyzer QC (RNA) 4.0',
-    '504' : 'Volume Measurement QC'}
+    '504' : 'Volume Measurement QC',
+    '954' : 'Automated Quant-iT QC (DNA) 4.0',
+    '1054' : 'Automated Quant-iT QC (RNA) 4.0',
+    '1157' : 'Fragment Analyzer QC (DNA) 4.0',
+    '1354' : 'Fragment Analyzer QC (RNA) 4.0'}
 AGRINITQC = {
     '7' : 'Aggregate QC (DNA) 4.0',
     '9' : 'Aggregate QC (RNA) 4.0'}
@@ -68,14 +73,19 @@ LIBVAL = {
     '67' : 'Qubit QC (Library Validation) 4.0',
     '20' : 'CaliperGX QC (DNA)',
     '504' : 'Volume Measurement QC',
-    '17' : 'Bioanalyzer QC (Library Validation) 4.0'}
+    '17' : 'Bioanalyzer QC (Library Validation) 4.0',
+    '904' : 'Automated Quant-iT QC (Library Validation) 4.0',
+    '1154' : 'Fragment Analyzer QC (Library Validation) 4.0'}
 LIBVALFINISHEDLIB = {
     '62' : 'qPCR QC (Library Validation) 4.0',
     '64' : 'Quant-iT QC (Library Validation) 4.0',
     '67' : 'Qubit QC (Library Validation) 4.0',
     '20' : 'CaliperGX QC (DNA)',
     '17' : 'Bioanalyzer QC (Library Validation) 4.0',
-    '24' : 'Customer Gel QC'}
+    '24' : 'Customer Gel QC',
+    '504' : 'Volume Measurement QC',
+    '904' : 'Automated Quant-iT QC (Library Validation) 4.0',
+    '1154' : 'Fragment Analyzer QC (Library Validation) 4.0'}
 AGRLIBVAL = {
     '8': 'Aggregate QC (Library Validation) 4.0',
     '806': 'NeoPrep Library QC v1.0'}
