@@ -114,6 +114,16 @@ def main(options):
     mfh.setFormatter(mft)
     mainlog.addHandler(mfh)
 
+    # try getting orderportal config
+    oconf = None
+    if not options.old:
+        try:
+            with open(options.oconf, 'r') as ocf:
+                oconf = yaml.load(ocf)['order_portal']
+        except Exception as e:
+            mainlog.warn("Loading orderportal config {} failed due to {}, so order information "\
+                         "for project will not be updated".format(options.oconf, e))
+
     if options.project_name:
         if options.old:
             proj = mainlims.get_projects(name = options.project_name)
@@ -127,14 +137,14 @@ def main(options):
             pj_id=lims_db.query(DBProject.luid).filter(DBProject.name == options.project_name).scalar()
             if not pj_id:
                 pj_id=options.project_name
-            P = ProjectSQL(lims_db, mainlog, pj_id, host, couch)
+            P = ProjectSQL(lims_db, mainlog, pj_id, host, couch, oconf)
             if options.upload:
                 P.save()
             else:
                 pprint(P.obj)
     else :
         projects=create_projects_list(options, lims_db, mainlims, mainlog)
-        masterProcess(options,projects, mainlims, mainlog)
+        masterProcess(options,projects, mainlims, mainlog, oconf)
         lims_db.commit()
         lims_db.close()
 
@@ -174,7 +184,7 @@ def create_projects_list(options, db_session,lims, log):
 
 
 
-def processPSUL(options, queue, logqueue):
+def processPSUL(options, queue, logqueue, oconf=None):
     couch = load_couch_server(options.conf)
     proj_db = couch['projects']
     samp_db = couch['samples']
@@ -227,7 +237,7 @@ def processPSUL(options, queue, logqueue):
                     try:
                         pj_id=db_session.query(DBProject.luid).filter(DBProject.name == projname).scalar()
                         host=get_configuration()['url']
-                        P = ProjectSQL(db_session, proclog, pj_id, host, couch)
+                        P = ProjectSQL(db_session, proclog, pj_id, host, couch, oconf)
                         P.save()
                     except :
                         error=sys.exc_info()
@@ -247,7 +257,7 @@ def processPSUL(options, queue, logqueue):
     db_session.commit()
     db_session.close()
 
-def masterProcess(options,projectList, mainlims, logger):
+def masterProcess(options,projectList, mainlims, logger, oconf=None):
     projectsQueue=mp.JoinableQueue()
     logQueue=mp.Queue()
     childs=[]
@@ -257,7 +267,7 @@ def masterProcess(options,projectList, mainlims, logger):
     logger.info("done ordering the project list")
     #spawn a pool of processes, and pass them queue instance 
     for i in range(options.processes):
-        p = mp.Process(target=processPSUL, args=(options,projectsQueue, logQueue))
+        p = mp.Process(target=processPSUL, args=(options,projectsQueue, logQueue, oconf))
         p.start()
         childs.append(p)
     #populate queue with data   
@@ -358,6 +368,9 @@ if __name__ == '__main__':
     parser.add_option("-c", "--conf", dest = "conf", default = os.path.join(
                       os.environ['HOME'],'opt/config/post_process.yaml'), help =
                       "Config file.  Default: ~/opt/config/post_process.yaml")
+    parser.add_option("--oconf", dest = "oconf", default = os.path.join(
+                      os.environ['HOME'],'.ngi_config/orderportal_cred.yaml'),
+                      help = "Orderportal config file. Default: ~/.ngi_config/orderportal_cred.yaml")
     parser.add_option("--no_upload", dest = "upload", default = True, action = 
                       "store_false", help = ("Use this tag if project objects ",
                       "should not be uploaded, but printed to output_f, or to ",

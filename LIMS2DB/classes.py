@@ -1,6 +1,7 @@
 from genologics_sql.tables import Artifact, Container, EscalationEvent, GlsFile, Process, Project, Researcher, ReagentType
 from genologics_sql.queries import get_children_processes, get_processes_in_history
 from LIMS2DB.diff import diff_objects
+from requests import get as rget
 from sqlalchemy import text
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from datetime import datetime
@@ -361,13 +362,14 @@ class Workset_SQL:
 
 class ProjectSQL:
 
-    def __init__(self, session, log, pid, host='genologics.scilifelab.se', couch=None):
+    def __init__(self, session, log, pid, host='genologics.scilifelab.se', couch=None, oconf=None):
         self.log = log
         self.pid = pid
         self.host = host
         self.name = set()
         self.session = session
         self.couch = couch
+        self.oconf = oconf
         self.obj = {}
         self.project = self.session.query(Project).filter(Project.luid == self.pid).one()
         self.build()
@@ -389,12 +391,15 @@ class ProjectSQL:
             my_rev = doc.pop('_rev', None)
             my_mod = doc.pop('modification_time', None)
             my_crea = doc.pop('creation_time', None)
+            my_staged_files = doc.pop('staged_files', None)
             diffs = diff_objects(doc, self.obj)
             if diffs:
                 self.obj['_id'] = my_id
                 self.obj['_rev'] = my_rev
                 self.obj['creation_time'] = my_crea
                 self.obj['modification_time'] = datetime.now().isoformat()
+                if my_staged_files:
+                    self.obj['staged_files'] = my_staged_files
                 self.log.info("Trying to save new doc for project {}".format(self.pid))
                 db.save(self.obj)
 
@@ -420,6 +425,7 @@ class ProjectSQL:
         if self.project.udf_dict.get("Reference genome"):
             self.obj['reference_genome'] = self.project.udf_dict.get("Reference genome")
         self.obj['details'] = self.make_normalized_dict(self.project.udf_dict)
+        self.obj['order_details'] = self.get_project_order()
 
     def get_project_summary(self):
         # get project summaries from project
@@ -451,6 +457,32 @@ class ProjectSQL:
             key = kv[0].lower().replace(" ", "_").replace('.', '')
             ret[key] = kv[1]
         return ret
+    
+    def get_project_order(self):
+        # get project order details from orderportal
+        proj_order_info = {}
+        if self.oconf:
+            try:
+                proj_order_url = "{}/{}".format(self.oconf['api_get_order_url'].rstrip('/'), self.obj['details']['portal_id'])
+                api_header = {'X-OrderPortal-API-key': self.oconf['api_token']}
+                full_order_info = rget(proj_order_url, headers=api_header).json()
+                filter_keys = ['created', 'modified', 'site', 'title', 'identifier', {'owner': ['name', 'email'],
+                               'fields':['seq_readlength_hiseqx', 'library_readymade', 'bx_exp', 'seq_instrument',
+                               'project_lab_email', 'project_bx_email', 'project_lab_name', 'bx_data_delivery',
+                               'sample_no', 'bioinformatics', 'sequencing', 'project_pi_name', 'bx_bp',
+                               'project_desc', 'project_pi_email']}]
+                for fk in filter_keys:
+                    if isinstance(fk, dict):
+                        for k,vals in fk.iteritems():
+                            if k not in proj_order_info:
+                                proj_order_info[k] = {}
+                            for vk in vals:
+                                proj_order_info[k][vk] = full_order_info.get(k, {}).get(vk)
+                    else:
+                        proj_order_info[fk] = full_order_info.get(fk)
+            except Exception as e:
+                self.log.warn("Not able to get update order info for project {}".format(self.project.name))
+        return proj_order_info
 
     def get_samples(self):
         self.obj["no_of_samples"] = len(self.project.samples)
@@ -524,6 +556,23 @@ class ProjectSQL:
             self.obj['samples'][sample.name]['initial_qc'].update(self.make_normalized_dict(initial_artifact.udf_dict))
         except NoResultFound:
             self.log.info("did not find the initial artifact of sample {}".format(sample.name))
+        # get GlsFile for output artifact of a Fragment Analyzer process where its input is the initial artifact of a given sample
+        query = "select gf.* from glsfile gf \
+            inner join resultfile rf on rf.glsfileid=gf.fileid \
+            inner join artifact art on rf.artifactid=art.artifactid \
+            inner join outputmapping om on art.artifactid=om.outputartifactid \
+            inner join processiotracker piot on piot.trackerid=om.trackerid \
+            inner join artifact art2 on piot.inputartifactid=art2.artifactid \
+            inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
+            inner join process pr on piot.processid=pr.processid \
+            inner join sample sa on sa.processid=asm.processid \
+            where sa.processid = {sapid} and pr.typeid in ({tid}) and art2.isoriginal=True and art.name like '%Fragment Analyzer%{sname}' \
+            order by pr.daterun desc;".format(sapid=sample.processid, tid=','.join(pc_cg.FRAGMENT_ANALYZER.keys()), sname=sample.name)
+        frag_an_file = self.session.query(GlsFile).from_statement(text(query)).first()
+        if frag_an_file:
+            self.obj['samples'][sample.name]['initial_qc']['frag_an_image'] = "https://{host}/api/v2/files/40-{sid}".format(host=self.host, sid=frag_an_file.fileid)
+        else:
+            self.log.info("Did not find an initial QC Fragment Analyzer for sample {}".format(sample.name))
         # get GlsFile for output artifact of a Caliper process where its input is the initial artifact of a given sample
         query = "select gf.* from glsfile gf \
             inner join resultfile rf on rf.glsfileid=gf.fileid \
@@ -677,6 +726,9 @@ class ProjectSQL:
                                         if not date_routed or action.lastmodifieddate > date_routed:
                                             inp_artifact = art
                                             date_routed = action.lastmodifieddate
+                            if not inp_artifact:
+                                self.log.error("Multiple copies of the same sample {0} found in step {0},  None of them is routed. Skipping the libprep ".format(sample.name, agrlibval.luid))
+                                continue
 
 
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid].update(self.make_normalized_dict(inp_artifact.udf_dict))
