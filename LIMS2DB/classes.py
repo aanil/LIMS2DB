@@ -54,6 +54,10 @@ class Workset:
                 pjs[p.id]['application'] = p.udf['Application']
             except KeyError:
                 pjs[p.id]['application'] = None
+            try:
+                pjs[p.id]['sequencing_setup'] = "{} {}".format(p.udf['Sequencing platform'], p.udf['Sequencing setup'])
+            except KeyError:
+                pjs[p.id]['sequencing_setup'] = None
 
             pjs[p.id]['samples'] = {}
             for sample in crawler.samples:
@@ -262,6 +266,7 @@ class Workset_SQL:
                 self.obj['projects'][project.luid] = {'application': project.udf_dict.get('Application'),
                                                       'name': project.name,
                                                       'library': project.udf_dict.get('Library construction method'),
+                                                      'sequencing_setup': "{} {}".format(project.udf_dict.get('Sequencing platform'), project.udf_dict.get('Sequencing setup')),
                                                       'samples': {}}
                 if project.closedate:
                     self.obj['projects'][project.luid]['close_date'] = project.closedate.strftime("%Y-%m-%d")
