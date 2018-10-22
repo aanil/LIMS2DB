@@ -17,10 +17,14 @@ def create_lims_data_obj(session, pro):
              inner join containerplacement cp on cp.containerid=ct.containerid \
              inner join processiotracker piot on piot.inputartifactid=cp.processartifactid \
              where piot.processid = {pid}::integer;".format(pid=pro.processid)
-    
+
     cont=session.query(Container).from_statement(text(query)).first()
     obj['container_id']=cont.luid
     obj['container_name']=cont.name
+    try:
+        obj['container_running_notes']=cont.udfs[0].udfvalue
+    except:
+        continue
 
     if pc_cg.SEQUENCING.get(str(pro.typeid), '') == 'AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)':
         #NovaSeq flowcell have the individual stats as output artifact
@@ -46,7 +50,7 @@ def create_lims_data_obj(session, pro):
             lane=str(ord(lane)-64)
         obj['run_summary'][lane]=art.udf_dict
         obj['run_summary'][lane]['qc']=art.qc_flag
-        
+
 
     return obj
 
@@ -65,7 +69,3 @@ def upload_to_couch(couch, runid, lims_data):
         if doc:
             doc['lims_data']=lims_data
             db.save(doc)
-
-
-    
-   
