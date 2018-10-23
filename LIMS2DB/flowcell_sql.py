@@ -1,4 +1,5 @@
 import couchdb
+import logging
 
 from  genologics_sql.tables import *
 from  genologics_sql.utils import *
@@ -17,10 +18,23 @@ def create_lims_data_obj(session, pro):
              inner join containerplacement cp on cp.containerid=ct.containerid \
              inner join processiotracker piot on piot.inputartifactid=cp.processartifactid \
              where piot.processid = {pid}::integer;".format(pid=pro.processid)
-    
+
     cont=session.query(Container).from_statement(text(query)).first()
     obj['container_id']=cont.luid
     obj['container_name']=cont.name
+
+    # Update container running notes
+    try:
+        cont_note = {}
+        for cudf in cont.udfs:
+            if cudf.udfname == "Notes":
+                cont_note.update(cudf.udfvalue)
+        if  cont_note:
+            obj['container_running_notes'] = cont_note
+    except TypeError as e:
+        logging.exception(e)
+        pass
+
 
     if pc_cg.SEQUENCING.get(str(pro.typeid), '') == 'AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)':
         #NovaSeq flowcell have the individual stats as output artifact
@@ -46,7 +60,7 @@ def create_lims_data_obj(session, pro):
             lane=str(ord(lane)-64)
         obj['run_summary'][lane]=art.udf_dict
         obj['run_summary'][lane]['qc']=art.qc_flag
-        
+
 
     return obj
 
@@ -65,7 +79,3 @@ def upload_to_couch(couch, runid, lims_data):
         if doc:
             doc['lims_data']=lims_data
             db.save(doc)
-
-
-    
-   
