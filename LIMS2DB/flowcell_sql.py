@@ -1,4 +1,5 @@
 import couchdb
+import logging
 
 from  genologics_sql.tables import *
 from  genologics_sql.utils import *
@@ -21,10 +22,19 @@ def create_lims_data_obj(session, pro):
     cont=session.query(Container).from_statement(text(query)).first()
     obj['container_id']=cont.luid
     obj['container_name']=cont.name
+
+    # Update container running notes
     try:
-        obj['container_running_notes']=cont.udfs[0].udfvalue
-    except:
-        continue
+        cont_note = {}
+        for cudf in cont.udfs:
+            if cudf.udfname == "Notes":
+                cont_note.update(cudf.udfvalue)
+        if  cont_note:
+            obj['container_running_notes'] = cont_note
+    except TypeError as e:
+        logging.exception(e)
+        pass
+
 
     if pc_cg.SEQUENCING.get(str(pro.typeid), '') == 'AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)':
         #NovaSeq flowcell have the individual stats as output artifact
