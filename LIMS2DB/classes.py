@@ -9,7 +9,6 @@ from datetime import datetime
 import LIMS2DB.objectsDB.process_categories as pc_cg
 import re
 
-
 class Workset:
 
     def __init__(self, lims, crawler, log):
@@ -462,7 +461,7 @@ class ProjectSQL:
             key = kv[0].lower().replace(" ", "_").replace('.', '')
             ret[key] = kv[1]
         return ret
-    
+
     def get_project_order(self):
         # get project order details from orderportal
         proj_order_info = {}
@@ -624,6 +623,7 @@ class ProjectSQL:
 
                 self.obj['samples'][sample.name]['library_prep'][prepname] = {}
                 self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'] = {}
+                self.obj['samples'][sample.name]['library_prep'][prepname]['sequenced_fc'] = []
                 self.obj['samples'][sample.name]['library_prep'][prepname]['workset_setup'] = one_libprep.luid
 
                 if str(one_libprep.typeid) in pc_cg.PREPSTARTFINLIB:
@@ -665,7 +665,7 @@ class ProjectSQL:
 
                 try:
                     agrlibvals = get_children_processes(self.session, one_libprep.processid, pc_cg.AGRLIBVAL.keys(), sample.processid, 'daterun desc')
-                    agrlibval = None
+                    agrlibval, agrlibval_art = (None, None)
                     for agrlv in agrlibvals:
                         # for small rna (and maybe others), there is more than one agrlibval, and I should not get the latest one,
                         # but the latest one that ran at sample level, not a pool level.
@@ -678,6 +678,10 @@ class ProjectSQL:
                         try:
                             inp_artifact = self.session.query(Artifact).from_statement(text(query)).first()
 
+                            # get appropriate artifact to fetch the seqruns
+                            if len(inp_artifact.samples) == 1 or str(one_libprep.typeid) in pc_cg.PREPSTARTFINLIB:
+                                agrlibval_art = inp_artifact
+
                             if len(inp_artifact.samples) > 1 and 'By user' not in self.obj['details']['library_construction_method']:
                                 continue
                             else:
@@ -685,6 +689,22 @@ class ProjectSQL:
                                 break
                         except NoResultFound:
                             pass
+
+                    # try and get seqruns for this library, this should work for most of the cases
+                    # but not entirely sure if it would work for edgy cases
+                    try:
+                        query = "select distinct pro.* from process pro \
+                                 inner join processiotracker piot on piot.processid = pro.processid \
+                                 inner join artifact_ancestor_map aam on piot.inputartifactid = aam.artifactid \
+                                 where pro.typeid in (38,46,714,1454) and aam.ancestorartifactid = {lib_art}".format(lib_art=agrlibval_art.artifactid)
+                        seq_fcs = self.session.query(Process).from_statement(text(query)).all()
+                        for seq in seq_fcs:
+                            seq_fc_id = seq.udf_dict.get("Run ID")
+                            if seq_fc_id:
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['sequenced_fc'].append(seq_fc_id)
+                    except Exception as e:
+                        self.log.warn("Problem finding sequenced fc for sample {} - prep with artifact id {}".format(sample.name, inp_artifact.artifactid))
+                        pass
 
                     # Get barcode for finlib
                     if 'By user' in self.obj['details']['library_construction_method']:
@@ -734,7 +754,6 @@ class ProjectSQL:
                             if not inp_artifact:
                                 self.log.error("Multiple copies of the same sample {0} found in step {0},  None of them is routed. Skipping the libprep ".format(sample.name, agrlibval.luid))
                                 continue
-
 
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid].update(self.make_normalized_dict(inp_artifact.udf_dict))
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['prep_status'] = inp_artifact.qc_flag
