@@ -1,5 +1,6 @@
 import couchdb
 import logging
+import ast
 
 from  genologics_sql.tables import *
 from  genologics_sql.utils import *
@@ -28,7 +29,7 @@ def create_lims_data_obj(session, pro):
         cont_note = {}
         for cudf in cont.udfs:
             if cudf.udfname == "Notes":
-                cont_note.update(cudf.udfvalue)
+                cont_note.update(ast.literal_eval(cudf.udfvalue))
         if  cont_note:
             obj['container_running_notes'] = cont_note
     except TypeError as e:
