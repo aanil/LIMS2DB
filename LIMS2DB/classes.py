@@ -424,8 +424,8 @@ class ProjectSQL:
             self.obj['close_date'] = self.project.closedate.strftime("%Y-%m-%d")
         if self.project.researcher.lab.udf_dict.get("Affiliation"):
             self.obj['affiliation'] = self.project.researcher.lab.udf_dict.get("Affiliation")
-        if self.project.udf_dict.get("Uppnex ID"):
-            self.obj['uppnex_id'] = self.project.udf_dict.get("Uppnex ID")
+        if self.project.udf_dict.get("Delivery type"):
+            self.obj['delivery_type'] = self.project.udf_dict.get("Delivery type")
         if self.project.udf_dict.get("Reference genome"):
             self.obj['reference_genome'] = self.project.udf_dict.get("Reference genome")
         self.obj['details'] = self.make_normalized_dict(self.project.udf_dict)
