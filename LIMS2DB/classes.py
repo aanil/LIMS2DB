@@ -703,7 +703,7 @@ class ProjectSQL:
                             if seq_fc_id:
                                 self.obj['samples'][sample.name]['library_prep'][prepname]['sequenced_fc'].append(seq_fc_id)
                     except Exception as e:
-                        self.log.warn("Problem finding sequenced fc for sample {} - prep with artifact id {}".format(sample.name, inp_artifact.artifactid))
+                        self.log.warn("Problem finding sequenced fc for sample {}".format(sample.name))
                         pass
 
                     # Get barcode for finlib
