@@ -15,7 +15,7 @@ def main(args):
     yesterday=date.today()-timedelta(days=1)
     pjs=lims.get_projects(open_date=sixMonthsAgo.strftime("%Y-%m-%d"))
 
-    operator="denis.moreno@scilifelab.se"
+    operator="par.lundin@scilifelab.se"
     summary={}
     project_types=['Bcl Conversion & Demultiplexing (Illumina SBS) 4.0','Illumina Sequencing (Illumina SBS) 4.0', 
     'MiSeq Run (MiSeq) 4.0','Cluster Generation (Illumina SBS) 4.0','Denature, Dilute and Load Sample (MiSeq) 4.0', 'Aggregate QC (DNA) 4.0','Aggregate QC (RNA) 4.0', 'Project Summary 1.3']
