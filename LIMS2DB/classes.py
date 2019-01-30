@@ -763,10 +763,7 @@ class ProjectSQL:
                                 inner join processiotracker piot on piot.inputartifactid=art.artifactid \
                                 inner join sample sa on sa.processid=asm.processid \
                                 where sa.processid = {sapid} and piot.processid = {agrid}".format(sapid=sample.processid, agrid=agrlv.processid)
-                            try:
-                                inp_artifact = self.session.query(Artifact).from_statement(text(query)).first()
-                            except:
-                                pass
+                            inp_artifact = self.session.query(Artifact).from_statement(text(query)).first()
 
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid].update(self.make_normalized_dict(inp_artifact.udf_dict))
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['prep_status'] = inp_artifact.qc_flag
