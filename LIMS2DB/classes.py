@@ -682,7 +682,9 @@ class ProjectSQL:
                             if len(inp_artifact.samples) == 1 or str(one_libprep.typeid) in pc_cg.PREPSTARTFINLIB:
                                 agrlibval_art = inp_artifact
 
-                            if len(inp_artifact.samples) > 1 and 'By user' not in self.obj['details']['library_construction_method']:
+                            # Only skip the TruSeq small RNA protocol because we want the QC results of individual sample, not library pool
+                            # For other protocols sample QC results should just copy the one of library pool
+                            if len(inp_artifact.samples) > 1 and 'By user' not in self.obj['details']['library_construction_method'] and 'TruSeq small RNA' in self.obj['details']['library_construction_method']:
                                 continue
                             else:
                                 agrlibval = agrlv
@@ -754,6 +756,14 @@ class ProjectSQL:
                             if not inp_artifact:
                                 self.log.error("Multiple copies of the same sample {0} found in step {0},  None of them is routed. Skipping the libprep ".format(sample.name, agrlibval.luid))
                                 continue
+                        except NoResultFound:
+                            #for the case of finished Libraries
+                            query = "select art.* from artifact art \
+                                inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
+                                inner join processiotracker piot on piot.inputartifactid=art.artifactid \
+                                inner join sample sa on sa.processid=asm.processid \
+                                where sa.processid = {sapid} and piot.processid = {agrid}".format(sapid=sample.processid, agrid=agrlv.processid)
+                            inp_artifact = self.session.query(Artifact).from_statement(text(query)).first()
 
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid].update(self.make_normalized_dict(inp_artifact.udf_dict))
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['prep_status'] = inp_artifact.qc_flag
