@@ -24,12 +24,10 @@ def main(args):
         return name.replace(u"\u00f6", "o").replace(u"\u00e9", "e").replace(u"\u00e4", "a")
 
     def hasNGIRole(roles):
-        flag=False
         for role in roles:
             if role.name in ['Facility Administrator', 'Researcher', 'System Administrator']:
-                flag=True
-                break
-        return flag
+                return True
+        return False
 
     def get_email(fullname):
         #shotgun
