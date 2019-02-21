@@ -23,6 +23,14 @@ def main(args):
     def clean_names(name):
         return name.replace(u"\u00f6", "o").replace(u"\u00e9", "e").replace(u"\u00e4", "a")
 
+    def hasNGIRole(roles):
+        flag=False
+        for role in roles:
+            if role.name in ['Facility Administrator', 'Researcher', 'System Administrator']:
+                flag=True
+                break
+        return flag
+
     def get_email(fullname):
         #shotgun
         #In multipart names, the first token is taken as first name and the rest taken as surname
@@ -35,9 +43,10 @@ def main(args):
         email=''
         for r in researchers:
             try:
-                if not r.account_locked:
+                if not r.account_locked and hasNGIRole(r.roles):
                     email=r.email
                     break
+            #older Contacts would not have the account_locked field which would throw an AttributeError
             except AttributeError:
                 continue
 
