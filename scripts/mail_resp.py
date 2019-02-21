@@ -23,16 +23,32 @@ def main(args):
     def clean_names(name):
         return name.replace(u"\u00f6", "o").replace(u"\u00e9", "e").replace(u"\u00e4", "a")
 
+    def hasNGIRole(roles):
+        for role in roles:
+            if role.name in ['Facility Administrator', 'Researcher', 'System Administrator']:
+                return True
+        return False
+
     def get_email(fullname):
         #shotgun
         #In multipart names, the first token is taken as first name and the rest taken as surname
         names=fullname.split(" ", 1)
         try:
-            researcher=lims.get_researchers(firstname=names[0], lastname=names[1])[0]
+            researchers=lims.get_researchers(firstname=names[0], lastname=names[1])
         except:
             names=clean_names(fullname).split(" ", 1)
-            researcher=lims.get_researchers(firstname=names[0], lastname=names[1])[0]
-        return researcher.email
+            researchers=lims.get_researchers(firstname=names[0], lastname=names[1])
+        email=''
+        for r in researchers:
+            try:
+                if not r.account_locked and hasNGIRole(r.roles):
+                    email=r.email
+                    break
+            #older Contacts would not have the account_locked field which would throw an AttributeError
+            except AttributeError:
+                continue
+
+        return email
 
     for p in pjs:
         #Assuming this will be run on the early morning, this grabs all processes from the list that have been modified the day before
@@ -103,36 +119,38 @@ def main(args):
     for resp in summary:
         plist=set()#no duplicates
         body=''
-        for struct in summary[resp]:
-            if resp != struct.get('tech') and not struct['sum']:
-                plist.add(struct['project'])
-                body+="In project {},  {} ({})".format(struct['project'], struct['process'], struct['limsid'])
-                if struct['start'] and yesterday.strftime("%Y-%m-%d") == struct['start']:
-                    body+="started on {}, ".format(struct['start'])
-                elif struct['end']:
-                    body+="ended on {}, ".format(struct['end'])
-                else:
-                    body+="has been updated yesterday, "
-                body+="Done by {}\n".format(struct['tech'])
-            elif struct['sum']:
-                plist.add(struct['project'])
-                body+='Project {} {} on {} by {}\n'.format(struct['project'], struct['action'],struct['date'],struct['techID'])
-        if body!= '':
-            control+="{} : {}\n".format(get_email(resp), body)
-            body+='\n\n--\nThis mail is an automated mail that is generated once a day and summarizes the events of the previous days in the lims, \
+        resp_email=get_email(resp)
+        if resp_email:
+            for struct in summary[resp]:
+                if resp != struct.get('tech') and not struct['sum']:
+                    plist.add(struct['project'])
+                    body+="In project {},  {} ({})".format(struct['project'], struct['process'], struct['limsid'])
+                    if struct['start'] and yesterday.strftime("%Y-%m-%d") == struct['start']:
+                        body+="started on {}, ".format(struct['start'])
+                    elif struct['end']:
+                        body+="ended on {}, ".format(struct['end'])
+                    else:
+                        body+="has been updated yesterday, "
+                    body+="Done by {}\n".format(struct['tech'])
+                elif struct['sum']:
+                    plist.add(struct['project'])
+                    body+='Project {} {} on {} by {}\n'.format(struct['project'], struct['action'],struct['date'],struct['techID'])
+            if body!= '':
+                control+="{} : {}\n".format(resp_email, body)
+                body+='\n\n--\nThis mail is an automated mail that is generated once a day and summarizes the events of the previous days in the lims, \
 for the projects you are described as "Lab responsible", "Bioinfo Responsible" or "Project coordinator". You can send comments or suggestions to {}'.format(operator)
-            msg=MIMEText(body)
-            msg['Subject']='[Lims update] {}'.format(" ".join(plist))
-            msg['From']='Lims_monitor'
-            try:
-                msg['To'] =get_email(resp)
-            except KeyError:
-                msg['To'] = operator
-                msg['Subject']='[Lims update] Failed to send a mail to {}'.format(resp)
+                msg=MIMEText(body)
+                msg['Subject']='[Lims update] {}'.format(" ".join(plist))
+                msg['From']='Lims_monitor'
+                try:
+                    msg['To'] = resp_email
+                except KeyError:
+                    msg['To'] = operator
+                    msg['Subject']='[Lims update] Failed to send a mail to {}'.format(resp)
 
-            s = smtplib.SMTP('localhost')
-            s.sendmail('genologics-lims@scilifelab.se', msg['To'], msg.as_string())
-            s.quit()
+                s = smtplib.SMTP('localhost')
+                s.sendmail('genologics-lims@scilifelab.se', msg['To'], msg.as_string())
+                s.quit()
 
 
     ctrlmsg= MIMEText(control)
