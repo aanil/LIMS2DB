@@ -1,13 +1,12 @@
-
+""" Script to update NGI project names and ids from LIMS
+    to corresponding orders in Order Portal."""
 from genologics.lims import *
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from datetime import *
 import json
 import argparse
-# Third-party package: http://docs.python-requests.org/en/master/
 import requests
 
-# Variables whose values must be changed for your site:
 def main(args):
     with open(args.config) as config_file:
         creds = json.load(config_file)
@@ -34,8 +33,8 @@ def main(args):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Update fields in Order Portal')
-    parser.add_argument('config', metavar="Link to config file", help='Link to config file with URL and API key in JSON format.')
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('config', metavar="Path to config file", help='Path to config file with URL and API key in JSON format.')
     args = parser.parse_args()
 
 
