@@ -16,7 +16,7 @@ def main(args):
 
     lims = Lims(BASEURI, USERNAME, PASSWORD)
     yesterday=date.today()-timedelta(days=1)
-    pjs=lims.get_projects(open_date=yesterdays.strftime("%Y-%m-%d"))
+    pjs=lims.get_projects(open_date=yesterday.strftime("%Y-%m-%d"))
     for project in pjs:
         if project.open_date:
             project_ngi_identifier=project.id
