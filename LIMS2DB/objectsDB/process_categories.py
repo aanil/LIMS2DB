@@ -103,8 +103,7 @@ SEQSTART = {
     '26' :'Denature, Dilute and Load Sample (MiSeq) 4.0',
     '710' :'Cluster Generation (HiSeq X) 1.0',
     '1306' : 'Load Sample and Sequencing (MinION) 1.0',
-    '1456' : 'Dilute and Denature (NovaSeq 6000 v2.0)',
-    '1457' : 'Dilute, Denature & ExAmp (NovaSeq 6000 v2.0)'}
+    '1458' : 'Load to Flowcell (NovaSeq 6000 v2.0)'}
 DILSTART = {
     '39' : 'Library Normalization (Illumina SBS) 4.0',
     '40' : 'Library Normalization (MiSeq) 4.0',
