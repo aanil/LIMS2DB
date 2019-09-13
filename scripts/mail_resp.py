@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from genologics.lims import *
 from genologics.config import BASEURI, USERNAME, PASSWORD
-from datetime import * 
+from datetime import *
 from email.mime.text import MIMEText
 
 import smtplib
@@ -15,24 +15,40 @@ def main(args):
     yesterday=date.today()-timedelta(days=1)
     pjs=lims.get_projects(open_date=sixMonthsAgo.strftime("%Y-%m-%d"))
 
-    operator="denis.moreno@scilifelab.se"
+    operator="par.lundin@scilifelab.se"
     summary={}
-    project_types=['Bcl Conversion & Demultiplexing (Illumina SBS) 4.0','Illumina Sequencing (Illumina SBS) 4.0', 
+    project_types=['Bcl Conversion & Demultiplexing (Illumina SBS) 4.0','Illumina Sequencing (Illumina SBS) 4.0',
     'MiSeq Run (MiSeq) 4.0','Cluster Generation (Illumina SBS) 4.0','Denature, Dilute and Load Sample (MiSeq) 4.0', 'Aggregate QC (DNA) 4.0','Aggregate QC (RNA) 4.0', 'Project Summary 1.3']
 
     def clean_names(name):
         return name.replace(u"\u00f6", "o").replace(u"\u00e9", "e").replace(u"\u00e4", "a")
 
+    def hasNGIRole(roles):
+        for role in roles:
+            if role.name in ['Facility Administrator', 'Researcher', 'System Administrator']:
+                return True
+        return False
+
     def get_email(fullname):
         #shotgun
-        names=fullname.split(" ")
-        rsl=lims.get_researchers(firstname=names[0], lastname=names[1]) + lims.get_researchers(lastname=names[1]) + lims.get_researchers(lastname=clean_names(names[1]))
+        #In multipart names, the first token is taken as first name and the rest taken as surname
+        names=fullname.split(" ", 1)
         try:
-            researcher=lims.get_researchers(firstname=names[0], lastname=names[1])[0]
+            researchers=lims.get_researchers(firstname=names[0], lastname=names[1])
         except:
-            names=clean_names(fullname).split(" ")
-            researcher=lims.get_researchers(firstname=names[0], lastname=names[1])[0]
-        return researcher.email
+            names=clean_names(fullname).split(" ", 1)
+            researchers=lims.get_researchers(firstname=names[0], lastname=names[1])
+        email=''
+        for r in researchers:
+            try:
+                if not r.account_locked and hasNGIRole(r.roles):
+                    email=r.email
+                    break
+            #older Contacts would not have the account_locked field which would throw an AttributeError
+            except AttributeError:
+                continue
+
+        return email
 
     for p in pjs:
         #Assuming this will be run on the early morning, this grabs all processes from the list that have been modified the day before
@@ -44,27 +60,27 @@ def main(args):
             for pr in pro:
                 date_start=None
                 #Special case for the project summary
-                if pr.type.name== 'Project Summary 1.3': 
+                if pr.type.name== 'Project Summary 1.3':
                     if 'Queued' in pr.udf and pr.udf['Queued'] == yesterday.strftime("%Y-%m-%d"):
-                        completed.append({'project':p.name, 
-                            'action':'has been queued', 
-                            'date':pr.udf['Queued'], 
+                        completed.append({'project':p.name,
+                            'action':'has been queued',
+                            'date':pr.udf['Queued'],
                             'techID':pr.udf['Signature Queued'],
-                            'tech':pr.technician.first_name+" "+pr.technician.last_name, 
+                            'tech':pr.technician.first_name+" "+pr.technician.last_name,
                             'sum':True})
                     if 'All samples sequenced' in pr.udf and pr.udf['All samples sequenced'] == yesterday.strftime("%Y-%m-%d"):
-                        completed.append({'project':p.name, 
+                        completed.append({'project':p.name,
                             'action':'Has all its samples sequenced',
-                            'date':pr.udf['All samples sequenced'], 
+                            'date':pr.udf['All samples sequenced'],
                             'techID':pr.udf['Signature All samples sequenced'],
-                            'tech':pr.technician.first_name+" "+pr.technician.last_name, 
+                            'tech':pr.technician.first_name+" "+pr.technician.last_name,
                             'sum':True})
                     if ' All raw data delivered' in pr.udf and pr.udf[' All raw data delivered'] == yesterday.strftime("%Y-%m-%d"):
-                        completed.append({'project':p.name, 
+                        completed.append({'project':p.name,
                             'action':'Has all its samples sequenced',
-                            'date':pr.udf[' All raw data delivered'], 
+                            'date':pr.udf[' All raw data delivered'],
                             'techID':pr.udf['Signature  All raw data delivered'],
-                            'tech':pr.technician.first_name+" "+pr.technician.last_name, 
+                            'tech':pr.technician.first_name+" "+pr.technician.last_name,
                             'sum':True})
 
                 else:#I don't want to combine this in a single elif because of the line 80, that must be done in the else, but regardless of the if
@@ -75,62 +91,66 @@ def main(args):
                             date_start=None
                         else:
                             date_start="20"+date_start#now, the format is YYYY-MM-DD, assuming no prjects come from the 1990's or the next century...
-                    completed.append({'project':p.name, 'process':pr.type.name, 'limsid':pr.id, 'start':date_start, 'end': pr.date_run, 'tech':pr.technician.first_name+" "+pr.technician.last_name,'sum':False}) 
+                    completed.append({'project':p.name, 'process':pr.type.name, 'limsid':pr.id, 'start':date_start, 'end': pr.date_run, 'tech':pr.technician.first_name+" "+pr.technician.last_name,'sum':False})
             #catch closed projects
             if p.close_date and p.close_date==yesterday.strftime("%Y-%m-%d"):
-                completed.append({'project':p.name, 
+                completed.append({'project':p.name,
                     'action':'Has been closed',
                     'date':p.close_date,
                     'techID':"the responsible",
                     'sum':True})
 
 
-        
+
             if completed:#If we actually have stuff to mail
                 ps=lims.get_processes(projectname=p.name, type='Project Summary 1.3')
                 for oneps in ps:#there should be only one project summary per project anyway.
                     if 'Bioinfo responsible' in oneps.udf  :
                         bfr=oneps.udf['Bioinfo responsible']
-
                         summary[bfr]=completed
                     if 'Lab responsible' in oneps.udf:
                         lbr=oneps.udf['Lab responsible']
                         summary[lbr]=completed
+                    if 'Project coordinator' in p.udf:
+                        pc=p.udf['Project coordinator']
+                        summary[pc]=completed
 
     control=''
     for resp in summary:
         plist=set()#no duplicates
         body=''
-        for struct in summary[resp]:
-            if resp != struct.get('tech') and not struct['sum']:
-                plist.add(struct['project'])
-                body+="In project {},  {} ({})".format(struct['project'], struct['process'], struct['limsid'])
-                if struct['start'] and yesterday.strftime("%Y-%m-%d") == struct['start']:
-                    body+="started on {}, ".format(struct['start'])
-                elif struct['end']:
-                    body+="ended on {}, ".format(struct['end'])
-                else:  
-                    body+="has been updated yesterday, "
-                body+="Done by {}\n".format(struct['tech'])
-            elif struct['sum']:
-                plist.add(struct['project'])
-                body+='Project {} {} on {} by {}\n'.format(struct['project'], struct['action'],struct['date'],struct['techID'])
-        if body!= '':
-            control+="{} : {}\n".format(get_email(resp), body)
-            body+='\n\n--\nThis mail is an automated mail that is generated once a day and summarizes the events of the previous days in the lims, \
-    for the projects you are described as "Lab responsible" or "Bioinfo Responsible". You can send comments or suggestions to {}'.format(operator)
-            msg=MIMEText(body)
-            msg['Subject']='[Lims update] {}'.format(" ".join(plist))
-            msg['From']='Lims_monitor'
-            try:
-                msg['To'] =get_email(resp)
-            except KeyError:
-                msg['To'] = operator
-                msg['Subject']='[Lims update] Failed to send a mail to {}'.format(resp)
+        resp_email=get_email(resp)
+        if resp_email:
+            for struct in summary[resp]:
+                if resp != struct.get('tech') and not struct['sum']:
+                    plist.add(struct['project'])
+                    body+="In project {},  {} ({})".format(struct['project'], struct['process'], struct['limsid'])
+                    if struct['start'] and yesterday.strftime("%Y-%m-%d") == struct['start']:
+                        body+="started on {}, ".format(struct['start'])
+                    elif struct['end']:
+                        body+="ended on {}, ".format(struct['end'])
+                    else:
+                        body+="has been updated yesterday, "
+                    body+="Done by {}\n".format(struct['tech'])
+                elif struct['sum']:
+                    plist.add(struct['project'])
+                    body+='Project {} {} on {} by {}\n'.format(struct['project'], struct['action'],struct['date'],struct['techID'])
+            if body!= '':
+                control+="{} : {}\n".format(resp_email, body)
+                body+='\n\n--\nThis mail is an automated mail that is generated once a day and summarizes the events of the previous days in the lims, \
+for the projects you are described as "Lab responsible", "Bioinfo Responsible" or "Project coordinator". You can send comments or suggestions to {}'.format(operator)
+                msg=MIMEText(body)
+                msg['Subject']='[Lims update] {}'.format(" ".join(plist))
+                msg['From']='Lims_monitor'
+                try:
+                    msg['To'] = resp_email
+                except KeyError:
+                    msg['To'] = operator
+                    msg['Subject']='[Lims update] Failed to send a mail to {}'.format(resp)
 
-            s = smtplib.SMTP('localhost')
-            s.sendmail('genologics-lims@scilifelab.se', msg['To'], msg.as_string())
-            s.quit()
+                s = smtplib.SMTP('localhost')
+                s.sendmail('genologics-lims@scilifelab.se', msg['To'], msg.as_string())
+                s.quit()
 
 
     ctrlmsg= MIMEText(control)
