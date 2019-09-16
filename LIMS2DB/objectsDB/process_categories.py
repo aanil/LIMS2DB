@@ -7,7 +7,7 @@ INITALQCFINISHEDLIB = {
     '67' : 'Qubit QC (Library Validation) 4.0',
     '904' : 'Automated Quant-iT QC (Library Validation) 4.0',
     '1154' : 'Fragment Analyzer QC (Library Validation) 4.0'}
-INITALQC ={
+INITALQC = {
     '16' : 'Bioanalyzer QC (DNA) 4.0',
     '18' : 'Bioanalyzer QC (RNA) 4.0',
     '20' : 'CaliperGX QC (DNA)',
@@ -62,7 +62,8 @@ PREPSTART = {
     '1105' : 'Library Pooling (RAD-seq) v1.0',
     '1305' : 'Adapter Ligation (MinION) 1.0',
     '1404' : 'Fragmentation & cDNA synthesis (SMARTer Pico) 4.0',
-    '1705' : 'Library preparation (Chromium Genome v2)'}
+    '1705' : 'Library preparation (Chromium Genome v2)',
+    '1856' : 'Sample Crosslinking'}
 PREPEND = {
     '109' : 'CA Purification',
     '111' : 'Amplify Captured Libraries to Add Index Tags (SS XT) 4.0',
