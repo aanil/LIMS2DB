@@ -21,8 +21,7 @@ ID  process Name
 26	Denature, Dilute and Load Sample (MiSeq) 4.0
 710	Cluster Generation (HiSeq X) 1.0
 1306  Load Sample and Sequencing (MinION) 1.0
-1456	Dilute and Denature (NovaSeq 6000 v2.0)
-1457	Dilute, Denature & ExAmp (NovaSeq 6000 v2.0)
+1458  Load to Flowcell (NovaSeq 6000 v2.0)
 === =======================================
 
 
@@ -273,6 +272,7 @@ ID  process Name
 1305 Adapter Ligation (MinION) 1.0
 1404	Fragmentation & cDNA synthesis (SMARTer Pico) 4.0
 1705 Library preparation (Chromium Genome v2)
+1856 Sample Crosslinking
 === =======================================
 
 
