@@ -850,18 +850,28 @@ class ProjectSQL:
                 except AttributeError:
                     self.log.info("No aggregate for sample {} prep {}".format(sample.name, one_libprep.luid))
                 # get output analyte of a given process that belongs to sample and has one_libprep_art as ancestor
+                # Here I commented out the old query from Denis that did not work any more, but I'd like to keep it in case anything is wrong
+                #query = "select art.* from artifact art \
+                    #inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
+                    #inner join outputmapping om on art.artifactid=om.outputartifactid \
+                    #inner join processiotracker piot on piot.trackerid=om.trackerid \
+                    #inner join sample sa on sa.processid=asm.processid \
+                    #inner join artifact_ancestor_map aam on art.artifactid=aam.artifactid \
+                    #where art.artifacttypeid = 2 \
+                    #and sa.processid = {sapid} \
+                    #and piot.processid = {agrid} \
+                    #and aam.ancestorartifactid = {libartid}".format(sapid=sample.processid, agrid=one_libprep.processid, libartid=one_libprep_art.artifactid)
                 query = "select art.* from artifact art \
-                    inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
-                    inner join outputmapping om on art.artifactid=om.outputartifactid \
+                    inner join artifact_sample_map asm on art.artifactid=asm.artifactid \
+                    inner join outputmapping om on om.outputartifactid=art.artifactid \
                     inner join processiotracker piot on piot.trackerid=om.trackerid \
                     inner join sample sa on sa.processid=asm.processid \
-                    inner join artifact_ancestor_map aam on art.artifactid=aam.artifactid \
-                    where art.artifacttypeid = 2 \
-                    and sa.processid = {sapid} \
-                    and piot.processid = {agrid} \
-                    and aam.ancestorartifactid = {libartid}".format(sapid=sample.processid, agrid=one_libprep.processid, libartid=one_libprep_art.artifactid)
+                    where sa.processid = {sapid} \
+                    and piot.processid = {libid} \
+                    and art.artifacttypeid = 2".format(sapid=sample.processid, libid=one_libprep.processid)
                 try:
-                    out_artifact = self.session.query(Artifact).from_statement(text(query)).one()
+                    #out_artifact = self.session.query(Artifact).from_statement(text(query)).one() This is with the old query from Denis
+                    out_artifact = self.session.query(Artifact).from_statement(text(query)).all()[0]
                     self.obj['samples'][sample.name]['library_prep'][prepname]['workset_name'] = out_artifact.containerplacement.container.name
                     self.obj['samples'][sample.name]['library_prep'][prepname]['amount_taken_(ng)'] = out_artifact.udf_dict.get("Amount taken (ng)")
                     self.obj['samples'][sample.name]['library_prep'][prepname]['volume_(ul)'] = out_artifact.udf_dict.get("Total Volume (uL)")
