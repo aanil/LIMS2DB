@@ -152,7 +152,6 @@ ID  process Name
 606 Size Selection (Pippin)
 805 NeoPrep Library Prep v1.0
 1307 Library Pooling (MinION) 1.0
-1406 Ribosomal cDNA Depletion and 2nd Amplification (SMARTer Pico) 4.0
 1554 Purification
 1705 Library preparation (Chromium Genome v2)
 === =======================================
