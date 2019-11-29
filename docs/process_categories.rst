@@ -22,6 +22,7 @@ ID  process Name
 710	Cluster Generation (HiSeq X) 1.0
 1306  Load Sample and Sequencing (MinION) 1.0
 1458  Load to Flowcell (NovaSeq 6000 v2.0)
+1910  Load to Flowcell (NextSeq v1.0)
 === =======================================
 
 
@@ -110,6 +111,8 @@ ID  process Name
 1307 Library Pooling (MinION) 1.0
 1506 Pre-Pooling (NovaSeq) v2.0
 1507 Library Pooling (NovaSeq) v2.0
+1906 Pre-Pooling (NextSeq) v1.0
+1907 Library Pooling (NextSeq) v1.0
 === =======================================
 
 
@@ -168,6 +171,7 @@ ID  process Name
 40	Library Normalization (MiSeq) 4.0
 715	Library Normalization (HiSeq X) 1.0
 1505	Library Normalization (NovaSeq) v2.0
+1905  Library Normalization (NextSeq) v1.0
 === =======================================
 
 
@@ -236,6 +240,7 @@ ID  process Name
 714	Illumina Sequencing (HiSeq X) 1.0
 1306 Load Sample and Sequencing (MinION) 1.0
 1454	AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)
+1908  Illumina Sequencing (NextSeq) v1.0
 === =======================================
 
 

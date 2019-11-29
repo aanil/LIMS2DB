@@ -66,8 +66,8 @@ def create_lims_data_obj(session, pro):
     return obj
 
 def get_sequencing_steps(session, interval="24 hours"):
-    #38, 46, 714 and 1454 are hiseq, miseq, hiseqX and novaseq sequencing
-    return get_last_modified_processes(session, [38,714, 1454, 46], interval)
+    #38, 46, 714, 1454, 1908 are hiseq, miseq, hiseqX, novaseq and nextseq sequencing
+    return get_last_modified_processes(session, [38,714, 1454, 46, 1908], interval)
 
 def upload_to_couch(couch, runid, lims_data):
     for dbname in ['flowcells', 'x_flowcells']:
