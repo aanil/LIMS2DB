@@ -37,7 +37,7 @@ def create_lims_data_obj(session, pro):
         pass
 
 
-    if pc_cg.SEQUENCING.get(str(pro.typeid), '') == 'AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)':
+    if pc_cg.SEQUENCING.get(str(pro.typeid), '') in ['AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)', 'Illumina Sequencing (NextSeq) v1.0']:
         #NovaSeq flowcell have the individual stats as output artifact
         query = "select art.* from artifact art \
                  inner join outputmapping omap on omap.outputartifactid=art.artifactid \
@@ -52,7 +52,7 @@ def create_lims_data_obj(session, pro):
     obj['run_summary']={}
     arts=session.query(Artifact).from_statement(text(query)).all()
     for art in arts:
-        if pc_cg.SEQUENCING.get(str(pro.typeid), '') == 'AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)':
+        if pc_cg.SEQUENCING.get(str(pro.typeid), '') in ['AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)', 'Illumina Sequencing (NextSeq) v1.0']:
             lane = art.name.replace("Lane ", "")
         else:
             lane=art.containerplacement.api_string.split(":")[0]
