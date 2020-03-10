@@ -24,6 +24,10 @@ def create_lims_data_obj(session, pro):
     obj['container_id']=cont.luid
     obj['container_name']=cont.name
 
+    # Fetch Run Type for MiSeq
+    if pc_cg.SEQUENCING.get(str(pro.typeid), '') in ['MiSeq Run (MiSeq) 4.0']:
+        obj['run_type'] = pro.udf_dict['Run Type']
+
     # Update container running notes
     try:
         cont_note = {}
