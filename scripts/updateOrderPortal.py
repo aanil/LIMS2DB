@@ -3,8 +3,8 @@
 from genologics.lims import *
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics_sql import queries
-from genologics_sql.utils import *
-from datetime import *
+import genologics_sql.utils
+from datetime import date, timedelta
 import json
 import argparse
 import requests
@@ -21,38 +21,38 @@ class Order_Portal_APIs(object):
         self.lims = Lims(BASEURI, USERNAME, PASSWORD)
 
     def update_order_internal_id(self, open_date, dry_run):
-        pjs = self.lims.get_projects(open_date=open_date.strftime("%Y-%m-%d"))
+        pjs = self.lims.get_projects(open_date=open_date.strftime('%Y-%m-%d'))
         for project in pjs:
             if project.open_date:
                 project_ngi_identifier=project.id
                 project_ngi_name=project.name
                 try:
-                    ORDER_ID=project.udf['Portal ID']
+                    ORDER_ID = project.udf['Portal ID']
                 except KeyError:
                     continue
 
-                url = "{base}/api/v1/order/{id}".format(base=self.base_url, id=ORDER_ID)
+                url = '{base}/api/v1/order/{id}'.format(base=self.base_url, id=ORDER_ID)
                 data = {'fields': {'project_ngi_name': project.name, 'project_ngi_identifier': project.id}}
                 if not dry_run:
                     response = requests.post(url, headers=self.headers, json=data)
                     assert response.status_code == 200, (response.status_code, response.reason)
 
-                    self.log.info('Updated internal id for order:{} - {}'.format(ORDER_ID, project.id))
+                    self.log.info('{} Updated internal id for order: {} - {}'.format(date.today(), ORDER_ID, project.id))
                 else:
-                    print('{} Dry run: Updated internal id for order:{} - {}'.format(ORDER_ID, project.id))
+                    print('Dry run: {} Updated internal id for order: {} - {}'.format(date.today(), ORDER_ID, project.id))
 
     def update_order_status(self, to_date, dry_run):
-        lims_db = get_session()
-        pjs = queries.get_last_modified_projectids(lims_db, "24 hours")
-        yesterday = (to_date-timedelta(days=1)).strftime("%Y-%m-%d")
-        today = to_date.strftime("%Y-%m-%d")
+        lims_db = genologics_sql.utils.get_session()
+        pjs = queries.get_last_modified_projectids(lims_db, '24 hours')
+        yesterday = (to_date-timedelta(days=1)).strftime('%Y-%m-%d')
+        today = to_date.strftime('%Y-%m-%d')
         for p in pjs:
             project = Project(self.lims, id=p)
             try:
-                ORDER_ID=project.udf['Portal ID']
+                ORDER_ID = project.udf['Portal ID']
             except KeyError:
                 continue
-            url = "{base}/api/v1/order/{id}".format(base=self.base_url, id=ORDER_ID)
+            url = '{base}/api/v1/order/{id}'.format(base=self.base_url, id=ORDER_ID)
             response = requests.get(url, headers=self.headers)
             data = ''
             try:
@@ -79,21 +79,21 @@ class Order_Portal_APIs(object):
                     #Order portal sends a mail to user on status change
                     response = requests.post(url, headers=self.headers)
                     assert response.status_code == 200, (response.status_code, response.reason)
-                    self.log.info('Updated status for order {} from {} to {}'.format(ORDER_ID, data['status'], status_set))
+                    self.log.info('{} Updated status for order {} from {} to {}'.format(date.today(), ORDER_ID, data['status'], status_set))
                 else:
-                    print('Dry run: Updated status for order {} from {} to {}'.format(ORDER_ID, data['status'], status_set))
+                    print('Dry run: {} Updated status for order {} from {} to {}'.format(date.today(), ORDER_ID, data['status'], status_set))
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('config', metavar="Path to config file", help='Path to config file with URL and API key in JSON format.')
-    parser.add_argument('option', metavar="Option to update order",
+    parser.add_argument('config', metavar='Path to config file', help='Path to config file with URL and API key in JSON format.')
+    parser.add_argument('option', metavar='Option to update order',
         help='Choose which order fields to update, either OrderStatus or OrderInternalID')
-    parser.add_argument("-l", "--log", dest="logfile",
+    parser.add_argument('-l', '--log', dest='logfile',
         default=os.path.join(os.environ['HOME'],'log/LIMS2DB','OrderPortal_update.log'),
-        help = 'log file.  Default: ~/log/LIMS2DB/OrderPortal_update.log')
+        help='log file.  Default: ~/log/LIMS2DB/OrderPortal_update.log')
     parser.add_argument('-d', '--dryrun',
-                      action="store_true", dest="dryrun", default=False,
+                      action='store_true', dest='dryrun', default=False,
                       help='dry run: no changes stored')
     args = parser.parse_args()
     log = lutils.setupLog('orderlogger', args.logfile)
