@@ -37,7 +37,7 @@ class Order_Portal_APIs(object):
                     response = requests.post(url, headers=self.headers, json=data)
                     assert response.status_code == 200, (response.status_code, response.reason)
 
-                    self.log.info('{} Updated internal id for order: {} - {}'.format(date.today(), ORDER_ID, project.id))
+                    self.log.info('Updated internal id for order: {} - {}'.format(ORDER_ID, project.id))
                 else:
                     print('Dry run: {} Updated internal id for order: {} - {}'.format(date.today(), ORDER_ID, project.id))
 
@@ -79,7 +79,7 @@ class Order_Portal_APIs(object):
                     #Order portal sends a mail to user on status change
                     response = requests.post(url, headers=self.headers)
                     assert response.status_code == 200, (response.status_code, response.reason)
-                    self.log.info('{} Updated status for order {} from {} to {}'.format(date.today(), ORDER_ID, data['status'], status_set))
+                    self.log.info('Updated status for order {} from {} to {}'.format(ORDER_ID, data['status'], status_set))
                 else:
                     print('Dry run: {} Updated status for order {} from {} to {}'.format(date.today(), ORDER_ID, data['status'], status_set))
 
