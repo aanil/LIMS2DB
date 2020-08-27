@@ -30,6 +30,8 @@ class Order_Portal_APIs(object):
                     ORDER_ID = project.udf['Portal ID']
                 except KeyError:
                     continue
+                if not ORDER_ID.startswith('NGI'):
+                    continue
 
                 url = '{base}/api/v1/order/{id}'.format(base=self.base_url, id=ORDER_ID)
                 data = {'fields': {'project_ngi_name': project.name, 'project_ngi_identifier': project.id}}
@@ -52,6 +54,8 @@ class Order_Portal_APIs(object):
                 ORDER_ID = project.udf['Portal ID']
             except KeyError:
                 continue
+            if not ORDER_ID.startswith('NGI'):
+                continue            
             url = '{base}/api/v1/order/{id}'.format(base=self.base_url, id=ORDER_ID)
             response = requests.get(url, headers=self.headers)
             data = ''
