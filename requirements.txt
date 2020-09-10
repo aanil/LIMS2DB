@@ -1,5 +1,4 @@
-LIMS2DB
-pyyaml=3.11
+pyyaml
 genologics_sql
 genologics
 
