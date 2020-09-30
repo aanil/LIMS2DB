@@ -769,7 +769,6 @@ class ProjectSQL:
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['prep_status'] = inp_artifact.qc_flag
                         self.obj['samples'][sample.name]['library_prep'][prepname]['prep_status'] = inp_artifact.qc_flag
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['well_location'] = inp_artifact.containerplacement.api_string
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['reagent_labels'] = [rg.name for rg in inp_artifact.reagentlabels]
                         if 'By user' not in self.obj['details']['library_construction_method'] and len(inp_artifact.reagentlabels)==1:
                             # if finlib, these are already computed
                             self.obj['samples'][sample.name]['library_prep'][prepname]['reagent_label'] = inp_artifact.reagentlabels[0].name
@@ -837,7 +836,6 @@ class ProjectSQL:
                                 out_art = self.session.query(Artifact).from_statement(text(query)).one()
                                 self.obj['samples'][sample.name]['library_prep'][prepname]['prep_status'] = out_art.qc_flag
                                 self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['prep_status'] = out_art.qc_flag
-                                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['reagent_labels'] = [rg.name for rg in out_art.reagentlabels]
 
                             except NoResultFound:
                                 self.log.info("Did not find the output resultfile of the Neoprep step for sample {}".format(sample.name))
