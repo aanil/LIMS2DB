@@ -385,7 +385,7 @@ class ProjectSQL:
         self.get_escalations()
         self.get_samples()
 
-    def save(self):
+    def save(self, update_modification_time=True):
         doc = None
         # When running for a single project, sometimes the connection is lost so retry
         try:
@@ -408,13 +408,20 @@ class ProjectSQL:
                 self.obj['_id'] = my_id
                 self.obj['_rev'] = my_rev
                 self.obj['creation_time'] = my_crea
-                self.obj['modification_time'] = datetime.now().isoformat()
+
+                if update_modification_time:
+                    self.obj['modification_time'] = datetime.now().isoformat()
+                else:
+                    self.obj['modification_time'] = my_mod
+
                 if my_staged_files:
                     self.obj['staged_files'] = my_staged_files
                 self.log.info("Trying to save new doc for project {}".format(self.pid))
                 db.save(self.obj)
 
         else:
+            self.obj['creation_time'] = datetime.now().isoformat()
+            self.obj['modification_time'] = self.obj['creation_time']
             self.log.info("Trying to save new doc for project {}".format(self.pid))
             db.save(self.obj)
 

@@ -139,7 +139,7 @@ def main(options):
                 pj_id=options.project_name
             P = ProjectSQL(lims_db, mainlog, pj_id, host, couch, oconf)
             if options.upload:
-                P.save()
+                P.save(update_modification_time=not options.no_new_modification_time)
             else:
                 if output_f is not None:
                     with open(output_f, 'w') as f:
@@ -392,6 +392,8 @@ if __name__ == '__main__':
     parser.add_option("-k", "--control", dest = "control", action="store_true", help = ("only perform a dry-run"), default=False)
     parser.add_option("-i", "--input", dest = "input", help = ("path to the input file containing projects to update"), default=None)
     parser.add_option("--old", dest = "old", help = ("use the old version of psul, via the API"), action="store_true", default=False)
+    parser.add_option("--no_new_modification_time", action="store_true", help=("This updates documents without changing the modification"
+                        " time. Slightly dangerous, but useful e.g. when all projects would be updated. Does not work together with '--old'"))
 
     (options, args) = parser.parse_args()
     main(options)
