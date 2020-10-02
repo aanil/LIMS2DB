@@ -941,7 +941,7 @@ class ProjectSQL:
                                 self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date'] = seqstarts[0].daterun.strftime("%Y-%m-%d")
                             except AttributeError:
                                 self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date'] = seqstarts[0].createddate.strftime("%Y-%m-%d")
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sample_run_metrics_id'] = self.find_couch_sampleid(samp_run_met_id)
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sample_run_metrics_id'] = None  # Deprecated
                             try:
                                 self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dillution_and_pooling_start_date'] = dilstarts[0].daterun.strftime("%Y-%m-%d")
                             except AttributeError:
@@ -1008,9 +1008,3 @@ class ProjectSQL:
             if matches:
                 barcode = matches.group(0).replace('_','-')
         return barcode
-
-    def find_couch_sampleid(self, sample_run):
-        db = self.couch['samples']
-        view = db.view('names/name_to_id')
-        for row in view[sample_run]:
-            return row.id
