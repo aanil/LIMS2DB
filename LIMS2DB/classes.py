@@ -418,6 +418,8 @@ class ProjectSQL:
                     self.obj['staged_files'] = my_staged_files
                 self.log.info("Trying to save new doc for project {}".format(self.pid))
                 db.save(self.obj)
+            else:
+                self.log.info("No modifications found for project {}".format(self.pid))
 
         else:
             self.obj['creation_time'] = datetime.now().isoformat()
