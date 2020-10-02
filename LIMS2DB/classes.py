@@ -8,6 +8,7 @@ from datetime import datetime
 
 import LIMS2DB.objectsDB.process_categories as pc_cg
 import re
+import httplib
 
 class Workset:
 
@@ -386,6 +387,12 @@ class ProjectSQL:
 
     def save(self):
         doc = None
+        # When running for a single project, sometimes the connection is lost so retry
+        try:
+            self.couch['projects']
+        except httplib.BadStatusLine:
+            self.log.warning("Access to couch failed before trying to save new doc for project {}".format(self.pid))
+            pass
         db = self.couch['projects']
         view = db.view('project/project_id')
         for row in view[self.pid]:
