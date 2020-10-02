@@ -29,7 +29,7 @@ import sys
 import time
 import traceback
 
-   
+
 class PSUL():
     def __init__(self, proj, samp_db, proj_db, upload_data, man_name, output_f, log):
         self.proj = proj
@@ -141,7 +141,12 @@ def main(options):
             if options.upload:
                 P.save()
             else:
-                pprint(P.obj)
+                if output_f is not None:
+                    with open(output_f, 'w') as f:
+                        pprint(P.obj, stream=f)
+                else:
+                    pprint(P.obj)
+
     else :
         projects=create_projects_list(options, lims_db, mainlims, mainlog)
         masterProcess(options,projects, mainlims, mainlog, oconf)
@@ -265,16 +270,16 @@ def masterProcess(options,projectList, mainlims, logger, oconf=None):
     logger.info("ordering the project list")
     orderedprojectlist=sorted(projectList, key=lambda x: (mainlims.get_sample_number(projectname=x.name)), reverse=True)
     logger.info("done ordering the project list")
-    #spawn a pool of processes, and pass them queue instance 
+    #spawn a pool of processes, and pass them queue instance
     for i in range(options.processes):
         p = mp.Process(target=processPSUL, args=(options,projectsQueue, logQueue, oconf))
         p.start()
         childs.append(p)
-    #populate queue with data   
+    #populate queue with data
     for proj in orderedprojectlist:
         projectsQueue.put(proj.name)
 
-    #wait on the queue until everything has been processed     
+    #wait on the queue until everything has been processed
     notDone=True
     while notDone:
         try:
@@ -356,13 +361,13 @@ class QueueHandler(logging.Handler):
             self.enqueue(self.prepare(record))
         except Exception:
             self.handleError(record)
-                  
+
 if __name__ == '__main__':
     usage = "Usage:       python project_summary_upload_LIMS.py [options]"
     parser = OptionParser(usage=usage)
     parser.add_option("-p", "--project", dest = "project_name", default = None,
                       help = "eg: M.Uhlen_13_01. Dont use with -a flagg.")
-    parser.add_option("-a", "--all_projects", dest = "all_projects", action = 
+    parser.add_option("-a", "--all_projects", dest = "all_projects", action =
                       "store_true", default = False, help = ("Upload all Lims ",
                       "projects into couchDB. Don't use with -f flagg."))
     parser.add_option("-c", "--conf", dest = "conf", default = os.path.join(
@@ -371,7 +376,7 @@ if __name__ == '__main__':
     parser.add_option("--oconf", dest = "oconf", default = os.path.join(
                       os.environ['HOME'],'.ngi_config/orderportal_cred.yaml'),
                       help = "Orderportal config file. Default: ~/.ngi_config/orderportal_cred.yaml")
-    parser.add_option("--no_upload", dest = "upload", default = True, action = 
+    parser.add_option("--no_upload", dest = "upload", default = True, action =
                       "store_false", help = ("Use this tag if project objects ",
                       "should not be uploaded, but printed to output_f, or to ",
                       "stdout"))
@@ -390,4 +395,3 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
     main(options)
-
