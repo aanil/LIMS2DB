@@ -8,6 +8,7 @@ from datetime import datetime
 
 import LIMS2DB.objectsDB.process_categories as pc_cg
 import re
+import httplib
 
 class Workset:
 
@@ -384,8 +385,14 @@ class ProjectSQL:
         self.get_escalations()
         self.get_samples()
 
-    def save(self):
+    def save(self, update_modification_time=True):
         doc = None
+        # When running for a single project, sometimes the connection is lost so retry
+        try:
+            self.couch['projects']
+        except httplib.BadStatusLine:
+            self.log.warning("Access to couch failed before trying to save new doc for project {}".format(self.pid))
+            pass
         db = self.couch['projects']
         view = db.view('project/project_id')
         for row in view[self.pid]:
@@ -401,13 +408,22 @@ class ProjectSQL:
                 self.obj['_id'] = my_id
                 self.obj['_rev'] = my_rev
                 self.obj['creation_time'] = my_crea
-                self.obj['modification_time'] = datetime.now().isoformat()
+
+                if update_modification_time:
+                    self.obj['modification_time'] = datetime.now().isoformat()
+                else:
+                    self.obj['modification_time'] = my_mod
+
                 if my_staged_files:
                     self.obj['staged_files'] = my_staged_files
                 self.log.info("Trying to save new doc for project {}".format(self.pid))
                 db.save(self.obj)
+            else:
+                self.log.info("No modifications found for project {}".format(self.pid))
 
         else:
+            self.obj['creation_time'] = datetime.now().isoformat()
+            self.obj['modification_time'] = self.obj['creation_time']
             self.log.info("Trying to save new doc for project {}".format(self.pid))
             db.save(self.obj)
 
@@ -769,7 +785,6 @@ class ProjectSQL:
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['prep_status'] = inp_artifact.qc_flag
                         self.obj['samples'][sample.name]['library_prep'][prepname]['prep_status'] = inp_artifact.qc_flag
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['well_location'] = inp_artifact.containerplacement.api_string
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['reagent_labels'] = [rg.name for rg in inp_artifact.reagentlabels]
                         if 'By user' not in self.obj['details']['library_construction_method'] and len(inp_artifact.reagentlabels)==1:
                             # if finlib, these are already computed
                             self.obj['samples'][sample.name]['library_prep'][prepname]['reagent_label'] = inp_artifact.reagentlabels[0].name
@@ -837,7 +852,6 @@ class ProjectSQL:
                                 out_art = self.session.query(Artifact).from_statement(text(query)).one()
                                 self.obj['samples'][sample.name]['library_prep'][prepname]['prep_status'] = out_art.qc_flag
                                 self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['prep_status'] = out_art.qc_flag
-                                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['reagent_labels'] = [rg.name for rg in out_art.reagentlabels]
 
                             except NoResultFound:
                                 self.log.info("Did not find the output resultfile of the Neoprep step for sample {}".format(sample.name))
@@ -943,7 +957,7 @@ class ProjectSQL:
                                 self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date'] = seqstarts[0].daterun.strftime("%Y-%m-%d")
                             except AttributeError:
                                 self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date'] = seqstarts[0].createddate.strftime("%Y-%m-%d")
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sample_run_metrics_id'] = self.find_couch_sampleid(samp_run_met_id)
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sample_run_metrics_id'] = None  # Deprecated
                             try:
                                 self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dillution_and_pooling_start_date'] = dilstarts[0].daterun.strftime("%Y-%m-%d")
                             except AttributeError:
@@ -1010,9 +1024,3 @@ class ProjectSQL:
             if matches:
                 barcode = matches.group(0).replace('_','-')
         return barcode
-
-    def find_couch_sampleid(self, sample_run):
-        db = self.couch['samples']
-        view = db.view('names/name_to_id')
-        for row in view[sample_run]:
-            return row.id
