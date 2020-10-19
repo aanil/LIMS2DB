@@ -17,11 +17,12 @@ def main(args):
             where sa.projectid = {pjid};".format(pjid=project_nr)
     escalations = session.query(tbls.EscalationEvent).from_statement(text(query)).all()
 
-    def make_esc_running_note(researcher, comment, date):
+    def make_esc_running_note(researcher, comment, date, processid):
         timestamp = datetime.datetime.strftime(date, '%Y-%m-%d %H:%M:%S')
+        lims_link = "[LIMS](https://genologics.scilifelab.se/clarity/work-complete/{0})".format(processid)
         newNote = {'user': "{0} {1}".format(researcher.firstname, researcher.lastname),
                    'email': researcher.email,
-                   'note': comment,
+                   'note': "Comment from Aggregate QC ({0}) : \n{1}".format(lims_link, comment.encode('utf-8')),
                    'category': 'Lab',
                    'timestamp': timestamp}
         return newNote
@@ -31,12 +32,12 @@ def main(args):
                  inner join researcher rs on rs.researcherid=pr.researcherid \
                  where principalid=:pid;"
         owner = session.query(tbls.Researcher).from_statement(text(query)).params(pid=esc.ownerid).first()
-        escnote = make_esc_running_note(owner, esc.escalationcomment, esc.escalationdate)
+        escnote = make_esc_running_note(owner, esc.escalationcomment, esc.escalationdate, esc.processid)
         print(escnote)
 
         if esc.reviewcomment:
             reviewer = session.query(tbls.Researcher).from_statement(text(query)).params(pid=esc.reviewerid).first()
-            revnote = make_esc_running_note(reviewer, esc.reviewcomment, esc.reviewdate)
+            revnote = make_esc_running_note(reviewer, esc.reviewcomment, esc.reviewdate, esc.processid)
             print(revnote)
 
 
