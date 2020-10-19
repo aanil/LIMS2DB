@@ -31,10 +31,10 @@ def main(args):
                  inner join researcher rs on rs.researcherid=pr.researcherid \
                  where principalid=:pid;"
         owner = session.query(tbls.Researcher).from_statement(text(query)).params(pid=esc.ownerid).first()
-        escnote = make_esc_running_note(owner, esc.escallationcomment, esc.escalationdate)
+        escnote = make_esc_running_note(owner, esc.escalationcomment, esc.escalationdate)
         print(escnote)
 
-        if esc.reviewerid:
+        if esc.reviewcomment:
             reviewer = session.query(tbls.Researcher).from_statement(text(query)).params(pid=esc.reviewerid).first()
             revnote = make_esc_running_note(reviewer, esc.reviewcomment, esc.reviewdate)
             print(revnote)
