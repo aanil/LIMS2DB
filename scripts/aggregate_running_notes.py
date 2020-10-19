@@ -42,7 +42,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Sync the comments made in aggregate QC to running notes UDFs')
-    parser.add_argument('--project', '-p', action="project_id", help='Only run for the given specific project id in PNNNN form.')
+    parser.add_argument('--project', '-p', help='Only run for the given specific project id in PNNNN form.')
     args = parser.parse_args()
 
     main(args)
