@@ -157,6 +157,7 @@ ID  process Name
 1307 Library Pooling (MinION) 1.0
 1554 Purification
 1705 Library preparation (Chromium Genome v2)
+2105 Amplification and Purification
 === =======================================
 
 
@@ -277,6 +278,7 @@ ID  process Name
 1404	Fragmentation & cDNA synthesis (SMARTer Pico) 4.0
 1705 Library preparation (Chromium Genome v2)
 1856 Sample Crosslinking
+2104 Selection, cDNA Synthesis and Library Construction
 === =======================================
 
 

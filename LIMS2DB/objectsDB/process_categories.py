@@ -65,7 +65,8 @@ PREPSTART = {
     '1305' : 'Adapter Ligation (MinION) 1.0',
     '1404' : 'Fragmentation & cDNA synthesis (SMARTer Pico) 4.0',
     '1705' : 'Library preparation (Chromium Genome v2)',
-    '1856' : 'Sample Crosslinking'}
+    '1856' : 'Sample Crosslinking',
+    '2104' : 'Selection, cDNA Synthesis and Library Construction'}
 PREPEND = {
     '109' : 'CA Purification',
     '111' : 'Amplify Captured Libraries to Add Index Tags (SS XT) 4.0',
@@ -77,7 +78,8 @@ PREPEND = {
     '805' : 'NeoPrep Library Prep v1.0',
     '1307' : 'Library Pooling (MinION) 1.0',
     '1554' : 'Purification',
-    '1705' : 'Library preparation (Chromium Genome v2)'}
+    '1705' : 'Library preparation (Chromium Genome v2)',
+    '2105' : 'Amplification and Purification'}
 LIBVAL = {
     '17' : 'Bioanalyzer QC (Library Validation) 4.0',
     '20' : 'CaliperGX QC (DNA)',
