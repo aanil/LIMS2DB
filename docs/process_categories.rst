@@ -56,6 +56,7 @@ ID  process Name
 304	Ligate 3' adapters (TruSeq small RNA) 1.0
 1104 RAD-seq Library Indexing v1.0
 1706 GEM Generation (Chromium Genome v2)
+2054 Sectioning and HE Staining
 === =======================================
 
 
@@ -157,6 +158,7 @@ ID  process Name
 1307 Library Pooling (MinION) 1.0
 1554 Purification
 1705 Library preparation (Chromium Genome v2)
+2060 Visium Library Construction
 2105 Amplification and Purification
 === =======================================
 
@@ -278,6 +280,8 @@ ID  process Name
 1404	Fragmentation & cDNA synthesis (SMARTer Pico) 4.0
 1705 Library preparation (Chromium Genome v2)
 1856 Sample Crosslinking
+1861 Chromatin capture, digestion, end ligation and crosslink reversal (HiC) 1.0
+2058 Permeabilization and Second Strand Synthesis
 2104 Selection, cDNA Synthesis and Library Construction
 === =======================================
 
