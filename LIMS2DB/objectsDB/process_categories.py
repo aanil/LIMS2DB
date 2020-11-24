@@ -69,7 +69,9 @@ PREPSTART = {
     '1856' : 'Sample Crosslinking',
     '1861' : 'Chromatin capture, digestion, end ligation and crosslink reversal (HiC) 1.0',
     '2058' : 'Permeabilization and Second Strand Synthesis',
-    '2104' : 'Selection, cDNA Synthesis and Library Construction'}
+    '2104' : 'Selection, cDNA Synthesis and Library Construction',
+    '2154' : 'PCR1 (Amplicon)',
+    '2155' : 'PCR2 (Amplicon)'}
 PREPEND = {
     '109' : 'CA Purification',
     '111' : 'Amplify Captured Libraries to Add Index Tags (SS XT) 4.0',

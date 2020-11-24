@@ -283,6 +283,8 @@ ID  process Name
 1861 Chromatin capture, digestion, end ligation and crosslink reversal (HiC) 1.0
 2058 Permeabilization and Second Strand Synthesis
 2104 Selection, cDNA Synthesis and Library Construction
+2154 PCR1 (Amplicon)
+2155 PCR2 (Amplicon)
 === =======================================
 
 
