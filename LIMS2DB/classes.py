@@ -211,7 +211,12 @@ class Workset_SQL:
     def extract_barcode(self, chain):
         barcode=''
         bcp = re.compile("[ATCG\-]{4,}")
+        TENX_PAT = re.compile("SI-(?:GA|NA)-[A-H][1-9][0-2]?")
+        ST_PAT = re.compile("SI-TT-[A-H][1-9][0-2]?")
+        SMARTSEQ_PAT = re.compile('SMARTSEQ[1-9]?-[1-9][0-9]?[A-P]')
         if "NoIndex" in chain:
+            return chain
+        if TENX_PAT.match(chain) or ST_PAT.match(chain) or SMARTSEQ_PAT.match(chain):
             return chain
         if '(' not in chain:
             barcode = chain
@@ -1008,7 +1013,12 @@ class ProjectSQL:
     def extract_barcode(self, chain):
         barcode=''
         bcp = re.compile("[ATCG\-\_]{4,}")
+        TENX_PAT = re.compile("SI-(?:GA|NA)-[A-H][1-9][0-2]?")
+        ST_PAT = re.compile("SI-TT-[A-H][1-9][0-2]?")
+        SMARTSEQ_PAT = re.compile('SMARTSEQ[1-9]?-[1-9][0-9]?[A-P]')
         if "NoIndex" in chain:
+            return chain
+        if TENX_PAT.match(chain) or ST_PAT.match(chain) or SMARTSEQ_PAT.match(chain):
             return chain
         if '(' not in chain:
             barcode = chain
