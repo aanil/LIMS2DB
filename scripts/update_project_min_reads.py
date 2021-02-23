@@ -38,12 +38,13 @@ def main(args):
             key = project.udf['Sequencing platform']
         except:
             continue
-        try:
+        if key in min_yields:
             value = min_yields[key]
-            project.udf['Reads Min'] = float(value) * lanes_ordered / samples_count
-            project.put()
-        except ZeroDivisionError:
-            pass
+            try:
+                project.udf['Reads Min'] = float(value) * lanes_ordered / samples_count
+                project.put()
+            except ZeroDivisionError:
+                pass
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
