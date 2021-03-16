@@ -453,7 +453,6 @@ class ProjectSQL:
         if self.project.udf_dict.get("Reference genome"):
             self.obj['reference_genome'] = self.project.udf_dict.get("Reference genome")
         self.obj['details'] = self.make_normalized_dict(self.project.udf_dict)
-        #Until the Running Notes udf is removed from lims_step
         rem_run_note_udf = self.obj['details'].pop('running_notes')
         self.obj['order_details'] = self.get_project_order()
 
