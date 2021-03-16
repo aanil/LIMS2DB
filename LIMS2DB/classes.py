@@ -409,6 +409,7 @@ class ProjectSQL:
             my_crea = doc.pop('creation_time', None)
             my_staged_files = doc.pop('staged_files', None)
             my_running_notes = doc['details'].pop('running_notes', None)
+            my_snic_check = doc['details'].pop('snic_checked', None)
             diffs = diff_objects(doc, self.obj)
             if diffs:
                 self.obj['_id'] = my_id
@@ -424,6 +425,9 @@ class ProjectSQL:
                     self.obj['staged_files'] = my_staged_files
                 if my_running_notes:
                     self.obj['details']['running_notes'] = my_running_notes
+                if my_snic_check:
+                    self.obj['details']['snic_checked'] = my_snic_check
+
                 self.log.info("Trying to save new doc for project {}".format(self.pid))
                 db.save(self.obj)
             else:
