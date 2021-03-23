@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20210323.1
+Fix bug that new workset cannot be imported with step id specified
+
 ## 20210318.2
 Support additional 10X index types
 
