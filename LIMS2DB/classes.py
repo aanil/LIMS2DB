@@ -713,7 +713,7 @@ class ProjectSQL:
 
                             # Only skip the TruSeq small RNA protocol because we want the QC results of individual sample, not library pool
                             # For other protocols sample QC results should just copy the one of library pool
-                            if len(inp_artifact.samples) > 1 and 'By user' not in self.obj['details']['library_construction_method'] and 'TruSeq small RNA' in self.obj['details']['library_construction_method']:
+                            if len(inp_artifact.samples) > 1 and 'by user' not in self.obj['details']['library_construction_method'].lower() and 'in-house' not in self.obj['details']['library_construction_method'].lower() and 'TruSeq small RNA' in self.obj['details']['library_construction_method']:
                                 continue
                             else:
                                 agrlibval = agrlv
@@ -738,7 +738,7 @@ class ProjectSQL:
                         pass
 
                     # Get barcode for finlib
-                    if 'By user' in self.obj['details']['library_construction_method']:
+                    if 'by user' in self.obj['details']['library_construction_method'].lower() or 'in-house' in self.obj['details']['library_construction_method'].lower():
                         # Get initial artifact for given sample
                         query = "select art.* from artifact art \
                             inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
@@ -798,11 +798,11 @@ class ProjectSQL:
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['prep_status'] = inp_artifact.qc_flag
                         self.obj['samples'][sample.name]['library_prep'][prepname]['prep_status'] = inp_artifact.qc_flag
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['well_location'] = inp_artifact.containerplacement.api_string
-                        if 'By user' not in self.obj['details']['library_construction_method'] and len(inp_artifact.reagentlabels)==1:
+                        if 'by user' not in self.obj['details']['library_construction_method'].lower() and 'in-house' not in self.obj['details']['library_construction_method'].lower() and len(inp_artifact.reagentlabels)==1:
                             # if finlib, these are already computed
                             self.obj['samples'][sample.name]['library_prep'][prepname]['reagent_label'] = inp_artifact.reagentlabels[0].name
                             self.obj['samples'][sample.name]['library_prep'][prepname]['barcode'] = self.extract_barcode(inp_artifact.reagentlabels[0].name)
-                        elif 'By user' not in self.obj['details']['library_construction_method'] and len(inp_artifact.reagentlabels)>1:
+                        elif 'by user' not in self.obj['details']['library_construction_method'].lower() and 'in-house' not in self.obj['details']['library_construction_method'].lower() and len(inp_artifact.reagentlabels)>1:
                             # For cases that samples are indexed and pooled prior to Library QC
                             for iaa in inp_artifact.ancestors:
                                 if iaa.reagentlabels and len(iaa.samples)==1 and iaa.samples[0].name==sample.name:
