@@ -1045,7 +1045,7 @@ class ProjectSQL:
         return barcode
 
     def set_status(self):
-        proj_details = self.obj.get(['details'])
+        proj_details = self.obj.get('details')
         status_fields = {}
 
         if self.obj.get('aborted'):
