@@ -389,6 +389,7 @@ class ProjectSQL:
         self.get_project_summary()
         self.get_escalations()
         self.get_samples()
+        self.set_status()
 
     def save(self, update_modification_time=True):
         doc = None
@@ -1042,3 +1043,65 @@ class ProjectSQL:
             if matches:
                 barcode = matches.group(0).replace('_','-')
         return barcode
+
+    def set_status(self):
+        proj_details = self.obj.get(['details'])
+        status_fields = {}
+
+        if self.obj.get('aborted'):
+            status_fields['status'] = 'Aborted'
+            status_fields['aborted'] = True
+            status_fields['closed'] = True
+
+            status_fields['ongoing'] = False
+            status_fields['open'] = False
+            status_fields['pending'] = False
+            status_fields['reception_control'] = False
+            status_fields['need_review'] = False
+
+        else:
+            status_fields['aborted'] = False
+            if self.obj.get('close_date'):
+                status_fields['status'] = 'Closed'
+                status_fields['closed'] = True
+
+                status_fields['ongoing'] = False
+                status_fields['open'] = False
+                status_fields['pending'] = False
+                status_fields['reception_control'] = False
+                status_fields['need_review'] = False
+            else:
+                status_fields['closed'] = True
+                if self.obj.get('open_date'):
+                    if self.obj.get('escalations'):
+                        status_fields['need_review'] = True
+
+                    if proj_details.get('queued'):
+                        status_fields['status'] = 'Ongoing'
+                        status_fields['ongoing'] = True
+                        status_fields['open'] = True
+
+                        status_fields['need_review'] = False
+                        status_fields['pending'] = False
+                        status_fields['reception_control'] = False
+                    else:
+                        status_fields['status'] = 'Reception Control'
+                        status_fields['reception_control'] = True
+                        status_fields['open'] = True
+
+                        status_fields['ongoing'] = False
+                        status_fields['pending'] = False
+                        status_fields['need_review'] = False
+                else:
+                    if self.obj.get('order_date'):
+                        status_fields['status'] = 'Pending'
+                        status_fields['pending'] = True
+
+                        status_fields['open'] = False
+                        status_fields['reception_control'] = False
+                        status_fields['ongoing'] = False
+                        status_fields['need_review'] = False
+                    else:
+                        raise ValueError('Project status data is invalid')
+
+        self.obj['status_fields'] = status_fields
