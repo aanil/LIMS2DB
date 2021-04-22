@@ -1071,7 +1071,7 @@ class ProjectSQL:
                 status_fields['reception_control'] = False
                 status_fields['need_review'] = False
             else:
-                status_fields['closed'] = True
+                status_fields['closed'] = False
                 if self.obj.get('open_date'):
                     if self.obj.get('escalations'):
                         status_fields['need_review'] = True
