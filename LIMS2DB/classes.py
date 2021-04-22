@@ -1091,7 +1091,7 @@ class ProjectSQL:
                         status_fields['ongoing'] = False
                         status_fields['pending'] = False
                 else:
-                    if self.obj.get('order_date'):
+                    if proj_details.get('order_received'):
                         status_fields['status'] = 'Pending'
                         status_fields['pending'] = True
 
