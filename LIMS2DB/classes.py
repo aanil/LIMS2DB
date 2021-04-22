@@ -1081,7 +1081,6 @@ class ProjectSQL:
                         status_fields['ongoing'] = True
                         status_fields['open'] = True
 
-                        status_fields['need_review'] = False
                         status_fields['pending'] = False
                         status_fields['reception_control'] = False
                     else:
@@ -1091,7 +1090,6 @@ class ProjectSQL:
 
                         status_fields['ongoing'] = False
                         status_fields['pending'] = False
-                        status_fields['need_review'] = False
                 else:
                     if self.obj.get('order_date'):
                         status_fields['status'] = 'Pending'
