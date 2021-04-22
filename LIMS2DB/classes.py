@@ -1048,7 +1048,7 @@ class ProjectSQL:
         proj_details = self.obj.get('details')
         status_fields = {}
 
-        if self.obj.get('aborted'):
+        if proj_details.get('aborted'):
             status_fields['status'] = 'Aborted'
             status_fields['aborted'] = True
             status_fields['closed'] = True
