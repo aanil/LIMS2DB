@@ -5,8 +5,8 @@ from genologics.lims import *
 
 def comp_dates(a, b):
     """Dates in isoformat. Is a < b?"""
-    a = date(*map(int, a.split('-') ))
-    b = date(*map(int, b.split('-') ))
+    a = date(*list(map(int, a.split('-'))))
+    b = date(*list(map(int, b.split('-'))))
     delta = a - b
     if delta.days < 0:
         return True
@@ -28,11 +28,11 @@ def delete_Nones(dict):
         return None
 
 def udf_dict(element, exeptions = [], exclude = True):
-    """Takes a lims element and tertuns a dictionary of its udfs, where the udf 
+    """Takes a lims element and tertuns a dictionary of its udfs, where the udf
     names are trensformed to statusdb keys (underscore and lowercase).
-    
+
     exeptions and exclude = False - will return a dict with only the exeptions
-    exeptions and exclude = True - will return a dict without the exeptions  
+    exeptions and exclude = True - will return a dict without the exeptions
 
     Arguments:
         element     lims element (Sample, Artifact, Process, Project...)
@@ -75,4 +75,3 @@ def get_caliper_img(sample_name, caliper_id, lims):
         #Should happen when no caliper processes are found
         pass
     return caliper_image
-

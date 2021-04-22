@@ -1,5 +1,6 @@
 
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 from genologics.lims import *
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from datetime import *
@@ -21,7 +22,7 @@ def main(args):
     'MiSeq Run (MiSeq) 4.0','Cluster Generation (Illumina SBS) 4.0','Denature, Dilute and Load Sample (MiSeq) 4.0', 'Aggregate QC (DNA) 4.0','Aggregate QC (RNA) 4.0', 'Project Summary 1.3']
 
     def clean_names(name):
-        return name.replace(u"\u00f6", "o").replace(u"\u00e9", "e").replace(u"\u00e4", "a")
+        return name.replace("\u00f6", "o").replace("\u00e9", "e").replace("\u00e4", "a")
 
     def hasNGIRole(roles):
         for role in roles:

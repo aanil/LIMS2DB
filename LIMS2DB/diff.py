@@ -12,10 +12,10 @@ def diff_project_objects(pj_id, couch, logfile, new=True):
     lims = Lims(BASEURI, USERNAME, PASSWORD)
 
     view = proj_db.view('projects/lims_followed')
-        
+
     try:
         old_project_couchid = view[pj_id].rows[0].value
-    except KeyError, IndexError:
+    except (KeyError, IndexError):
         log.error("No such project {}".format(pj_id))
 
 
@@ -26,7 +26,7 @@ def diff_project_objects(pj_id, couch, logfile, new=True):
     old_project.pop('creation_time', None)
 
     if new:
-        from LIMS2DB.classes import ProjectSQL 
+        from LIMS2DB.classes import ProjectSQL
         session=get_session()
         host=get_configuration()['url']
         new_project=ProjectSQL(session, log, pj_id, host, couch)
@@ -39,7 +39,7 @@ def diff_project_objects(pj_id, couch, logfile, new=True):
     return (fediff, old_project, new_project.obj)
 
 
-    
+
 
 
 
@@ -73,4 +73,4 @@ if __name__ == "__main__":
     a={'a' : 1, 'b': 2, 'c':{'d':3, 'e':{'f':5}}}
     b={'a' : 1, 'b': 7, 'c':{'d':4, 'e':{'f':4}}}
     diffs=diff_objects(a,b)
-    print diffs
+    print(diffs)

@@ -20,7 +20,8 @@ setup(name = "LIMS2DB",
     packages=find_packages(),
     scripts = glob.glob('scripts/*.py'))
 
-
-from LIMS2DB.objectsDB import make_process_category_doc
+try:
+    from LIMS2DB.objectsDB import make_process_category_doc
+except ImportError:
+    from .LIMS2DB.objectsDB import make_process_category_doc
 make_process_category_doc.make_doc()
-

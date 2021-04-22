@@ -9,7 +9,7 @@ GENERALINFO = """
 What is a Process Category?
 ============================
 
-In the project-statusdb context, lims processes are categorised into groups that define, or are used to define a certain type of status-db key in a project database. The categories are specified here. 
+In the project-statusdb context, lims processes are categorised into groups that define, or are used to define a certain type of status-db key in a project database. The categories are specified here.
 
 
 Adding a work flow.
@@ -24,20 +24,19 @@ SECTIONMIDLE = """
 ID  process Name
 === ======================================="""
 SECTIONEND = """=== =======================================
-    
+
 """
 
 def make_doc():
     f = open('docs/process_categories.rst', 'w')
-    print >> f, GENERALINFO
+    print(GENERALINFO, file=f)
     for cat in PROCESSCATEGORIES:
-        print >> f, cat
-        print >> f, SECTIONSTART
+        print(cat, file=f)
+        print(SECTIONSTART, file=f)
         #print >> f, PROCESSCATEGORIES[cat]['Description']
-        print >> f, SECTIONMIDLE
+        print(SECTIONMIDLE, file=f)
         for id, name in PROCESSCATEGORIES[cat].items():
             if not id=='Description':
-                print >> f, '\t'.join([id, name])
-        print >> f, SECTIONEND
+                print('\t'.join([id, name]), file=f)
+        print(SECTIONEND, file=f)
     f.close()
-

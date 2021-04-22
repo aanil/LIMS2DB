@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-"""valitadion_of_LIMS_upgrade.py is a script to compare extraction output from lims stage 
-server and lims production server. The comparison is based on the objects created to build 
-documents in the projects database on status db. A recursive function compares all values 
+"""valitadion_of_LIMS_upgrade.py is a script to compare extraction output from lims stage
+server and lims production server. The comparison is based on the objects created to build
+documents in the projects database on status db. A recursive function compares all values
 in the objects and any differing values or missing keys are logged in a validation log file.
 
 Maya Brandi, Science for Life Laboratory, Stockholm, Sweden.
@@ -14,8 +14,8 @@ usage = """
 
 Testing the script:
 
-Test that the script is caching differences by changing something on the 
-stage server, eg. the value of the sample udf "status_(manual)". for some 
+Test that the script is caching differences by changing something on the
+stage server, eg. the value of the sample udf "status_(manual)". for some
 project J.Doe_00_00. Then run the script with the -p flagg:
 
 valitadion_of_LIMS_upgrade.py -p J.Doe_00_00
@@ -27,15 +27,15 @@ Key status_(manual) differing: Lims production gives: Aborted. Lims stage gives 
 
 Running the validation:
 
-Run valitadion_of_LIMS_upgrade.py with the -a flagg and grep for "True" in 
-the logfile when the script is finished. It will take some hours to go through 
+Run valitadion_of_LIMS_upgrade.py with the -a flagg and grep for "True" in
+the logfile when the script is finished. It will take some hours to go through
 all projects opened after jul 1
 
-If you don't find anything when grepping for True in the log file, no differences 
+If you don't find anything when grepping for True in the log file, no differences
 are found for any projects.
 
-If you get output when grepping for True, there are differences. Then read the log 
-file to find what is differing. 
+If you get output when grepping for True, there are differences. Then read the log
+file to find what is differing.
 
 """
 import sys
@@ -52,6 +52,8 @@ from datetime import date
 lims = Lims('https://genologics.scilifelab.se:8443', USERNAME, PASSWORD)
 lims_stage = Lims('https://genologics-stage.scilifelab.se:8443', USERNAME, PASSWORD)
 import logging
+import six
+from six.moves import input
 
 
 def comp_obj(stage, prod):
@@ -62,12 +64,12 @@ def comp_obj(stage, prod):
 
 def recursive_comp(stage, prod):
     diff = False
-    keys = list(set(stage.keys() + prod.keys()))
+    keys = list(set(list(stage.keys()) + list(prod.keys())))
     for key in keys:
-        if not (stage.has_key(key)):
+        if not (key in stage):
             logging.info('Key %s missing in Lims stage to db object ' % key)
             diff = True
-        elif not  prod.has_key(key):
+        elif key not in prod:
             logging.info('Key %s missing in Lims production to db object ' % key)
             diff = True
         else:
@@ -120,12 +122,12 @@ def  main(proj_name, all_projects, conf, only_closed):
                         else:
                             logging.info('Open date missing for project %s' % proj_name)
                 except:
-                    logging.info('Failed comparing stage and prod for proj %s' % proj_name)    
+                    logging.info('Failed comparing stage and prod for proj %s' % proj_name)
     elif proj_name is not None:
         proj = lims.get_projects(name = proj_name)
         proj_stage = lims_stage.get_projects(name = proj_name)
         if (not proj) | (not proj_stage):
-            logging.warning("""Found %s projects on Lims stage, and %s projects 
+            logging.warning("""Found %s projects on Lims stage, and %s projects
                         on Lims production with project name %s""" % (str(len(proj_stage)), str(len(proj)), proj_name))
         else:
             proj = proj[0]
@@ -135,7 +137,7 @@ def  main(proj_name, all_projects, conf, only_closed):
                 if comp_dates(first_of_july, opened):
                     cont = 'yes'
                 else:
-                    cont = raw_input("""The project %s is opened before 2013-07-01. 
+                    cont = input("""The project %s is opened before 2013-07-01.
                     Do you still want to load the data from lims into statusdb? (yes/no): """ % proj_name)
                 if cont == 'yes':
                     obj = DB.ProjectDB(lims, proj.id, None)
@@ -156,11 +158,10 @@ if __name__ == '__main__':
     parser.add_option("-C", "--closed_projects", dest="closed_projects", action="store_true", default=False,
     help = "Upload only closed projects. Use with -a flagg.")
 
-    parser.add_option("-c", "--conf", dest="conf", 
-    default=os.path.join(os.environ['HOME'],'opt/config/post_process.yaml'),         
+    parser.add_option("-c", "--conf", dest="conf",
+    default=os.path.join(os.environ['HOME'],'opt/config/post_process.yaml'),
     help = "Config file.  Default: ~/opt/config/post_process.yaml")
     logging.basicConfig(filename='PSUL_validation.log',level=logging.INFO)
 
     (options, args) = parser.parse_args()
     main(options.project_name, options.all_projects, options.conf, options.closed_projects)
-

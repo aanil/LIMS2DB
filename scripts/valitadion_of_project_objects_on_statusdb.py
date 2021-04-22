@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-"""valitadion_of_LIMS_upgrade.py is a script to compare extraction output from lims stage 
-server and lims production server. The comparison is based on the objects created to build 
-documents in the projects database on status db. A recursive function compares all values 
+"""valitadion_of_LIMS_upgrade.py is a script to compare extraction output from lims stage
+server and lims production server. The comparison is based on the objects created to build
+documents in the projects database on status db. A recursive function compares all values
 in the objects and any differing values or missing keys are logged in a validation log file.
 
 Maya Brandi, Science for Life Laboratory, Stockholm, Sweden.
@@ -14,8 +14,8 @@ usage = """
 
 Testing the script:
 
-Test that the script is caching differences by changing something on the 
-stage server, eg. the value of the sample udf "status_(manual)". for some 
+Test that the script is caching differences by changing something on the
+stage server, eg. the value of the sample udf "status_(manual)". for some
 project J.Doe_00_00. Then run the script with the -p flagg:
 
 valitadion_of_LIMS_upgrade.py -p J.Doe_00_00
@@ -27,15 +27,15 @@ Key status_(manual) differing: Lims production gives: Aborted. Lims stage gives 
 
 Running the validation:
 
-Run valitadion_of_LIMS_upgrade.py with the -a flagg and grep for "True" in 
-the logfile when the script is finished. It will take some hours to go through 
+Run valitadion_of_LIMS_upgrade.py with the -a flagg and grep for "True" in
+the logfile when the script is finished. It will take some hours to go through
 all projects opened after jul 1
 
-If you don't find anything when grepping for True in the log file, no differences 
+If you don't find anything when grepping for True in the log file, no differences
 are found for any projects.
 
-If you get output when grepping for True, there are differences. Then read the log 
-file to find what is differing. 
+If you get output when grepping for True, there are differences. Then read the log
+file to find what is differing.
 
 """
 import sys
@@ -51,11 +51,11 @@ import logging
 
 def comp_obj(proj_tools_dev, diff, keys):
     """compares the two dictionaries obj and dbobj"""
-    if proj_tools_dev.has_key('project_name'):
+    if 'project_name' in proj_tools_dev:
         if keys:
             logging.info('tools and tools-dev are differing for proj %s: %s' % (
                                                 proj_tools_dev['project_name'],diff))
-        logging.info('tools and tools-dev are differing for proj %s: %s' % ( 
+        logging.info('tools and tools-dev are differing for proj %s: %s' % (
                                     proj_tools_dev['project_name'],diff))
     elif proj_tools_dev:
         logging.info('project_name missing in %s' % (proj_tools_dev['_id']))
@@ -63,21 +63,21 @@ def comp_obj(proj_tools_dev, diff, keys):
 def missing_keys(proj_tools_dev, proj_tools,proj_name,application,diff_keys=[],diff = False):
     G20158 = ['m_reads_sequenced','status','size_(bp)']
     BASEDIF = ['_rev','modification_time','reagent_labels']
-    keys = list(set(proj_tools_dev.keys() + proj_tools.keys()))
+    keys = list(set(list(proj_tools_dev.keys()) + list(proj_tools.keys())))
     for key in keys:
         if len(key.split('_'))==2 and key[0]=='P':
                         logging.info('SAMPLE:   %s' %(key))
-        if (key not in BASEDIF+G20158) and (proj_tools.has_key(key)) and proj_tools[key]:
-            if proj_tools_dev.has_key(key) and proj_tools_dev[key]:
+        if (key not in BASEDIF+G20158) and (key in proj_tools) and proj_tools[key]:
+            if key in proj_tools_dev and proj_tools_dev[key]:
                 proj_tools_val = proj_tools[key]
                 proj_tools_dev_val = proj_tools_dev[key]
                 if (proj_tools_val != proj_tools_dev_val):
                     diff = True
                     if (type(proj_tools_val) is dict) and (
                                         type(proj_tools_dev_val) is dict):
-                        diff,diff_keys = missing_keys(proj_tools_dev_val, 
+                        diff,diff_keys = missing_keys(proj_tools_dev_val,
                                proj_tools_val,proj_name,application,diff_keys=diff_keys,diff = diff)
-            elif not proj_tools_dev.has_key(key):
+            elif key not in proj_tools_dev:
                 logging.info('tools-dev proj %s-%s - missing Key %s' %(proj_name,
                                                 application,key))
                 diff = True
@@ -88,12 +88,12 @@ def missing_keys(proj_tools_dev, proj_tools,proj_name,application,diff_keys=[],d
 def differing_keys(proj_tools_dev,proj_tools,proj_name,application,diff_keys = [],diff = False):
     G20158 = ['m_reads_sequenced','status','size_(bp)']
     BASEDIF = ['_rev','modification_time']
-    keys = list(set(proj_tools_dev.keys() + proj_tools.keys()))
+    keys = list(set(list(proj_tools_dev.keys()) + list(proj_tools.keys())))
     for key in keys:
         if len(key.split('_'))==2 and key[0]=='P':
             logging.info('SAMPLE:   %s' %(key))
         if key not in BASEDIF+G20158:
-            if proj_tools.has_key(key) and proj_tools_dev.has_key(key):
+            if key in proj_tools and key in proj_tools_dev:
                 if not proj_tools_dev[key]:
                     logging.info('empty key %s in proj %s'%(key,proj_name))
                 proj_tools_val = proj_tools[key]
@@ -101,12 +101,12 @@ def differing_keys(proj_tools_dev,proj_tools,proj_name,application,diff_keys = [
                 if (proj_tools_val != proj_tools_dev_val):
                     if (type(proj_tools_val) is dict) and (type(
                                                    proj_tools_dev_val) is dict):
-                        diff, diff_keys = differing_keys(proj_tools_dev_val, 
+                        diff, diff_keys = differing_keys(proj_tools_dev_val,
                                proj_tools_val,proj_name,application, diff_keys,diff = diff)
                     else:
                         diff = True
                         diff_keys.append(key)
-                        logging.info('Key %s is differing for proj %s-%s: tools gives:' 
+                        logging.info('Key %s is differing for proj %s-%s: tools gives:'
                                  '%s. tools-dev gives %s. ' %( key, proj_name,
                                  application,proj_tools_val,
                                  proj_tools_dev_val))
@@ -135,15 +135,15 @@ def  main(proj_name, all_projects, conf_tools_dev, conf_tools):
                 proj_name = 'XX'
                 logging.info('Project name missing in tools: %s' %(key))
             if not proj_tools_dev:
-                logging.warning("Found no projects on tools-dev with name %s" % 
+                logging.warning("Found no projects on tools-dev with name %s" %
                                                                   proj_name)
             elif proj_name and application:
-                diff , keys= differing_keys(proj_tools_dev, proj_tools, proj_name, 
+                diff , keys= differing_keys(proj_tools_dev, proj_tools, proj_name,
                                                                 application, diff_keys= keys)
-                print diff
+                print(diff)
                 diff, keys = missing_keys(proj_tools_dev, proj_tools, proj_name,
                                                     application,diff_keys=keys,diff = diff)
-                print diff
+                print(diff)
                 comp_obj(proj_tools_dev, diff,keys)
     elif proj_name is not None:
         keys =[]
@@ -156,27 +156,26 @@ def  main(proj_name, all_projects, conf_tools_dev, conf_tools):
         else:
             diff,keys = differing_keys(proj_tools_dev, proj_tools,proj_name,
                                              proj_tools['application'], diff_keys=keys)
-            print diff
+            print(diff)
             diff,keys = missing_keys(proj_tools_dev, proj_tools, proj_name,
                                          proj_tools['application'],diff_keys=keys,diff = diff)
-            print diff
+            print(diff)
             comp_obj(proj_tools_dev, diff,keys)
 
 if __name__ == '__main__':
     parser = OptionParser(usage=usage)
     parser.add_option("-p", "--project", dest="project_name", default=None,
         help = "eg: M.Uhlen_13_01. Dont use with -a flagg.")
-    parser.add_option("-a", "--all_projects", dest="all_projects", 
+    parser.add_option("-a", "--all_projects", dest="all_projects",
         action="store_true", default=False,
         help = "Check all projects on couchDB. Don't use with -f flagg.")
-    parser.add_option("-c", "--conf", dest="conf", 
+    parser.add_option("-c", "--conf", dest="conf",
         help = "Config file for tools.")
-    parser.add_option("-d", "--conf_dev", dest="conf_dev", 
-        help = "Config file for tools-dev.") 
+    parser.add_option("-d", "--conf_dev", dest="conf_dev",
+        help = "Config file for tools-dev.")
     (options, args) = parser.parse_args()
 
     logging.basicConfig(filename='validate_projects_statusdb.log',level=logging.INFO)
 
-    main(options.project_name, options.all_projects, options.conf_dev, 
+    main(options.project_name, options.all_projects, options.conf_dev,
                                                         options.conf)
-
