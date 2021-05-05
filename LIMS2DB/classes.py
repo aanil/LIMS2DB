@@ -1084,10 +1084,7 @@ class ProjectSQL:
                         status_fields['reception_control'] = True
                         status_fields['open'] = True
                 else:
-                    if proj_details.get('order_received'):
-                        status_fields['status'] = 'Pending'
-                        status_fields['pending'] = True
-                    else:
-                        self.log.error("Project status data for {} is invalid.".format(self.obj['project_name']))
+                    status_fields['status'] = 'Pending'
+                    status_fields['pending'] = True
 
         self.obj['status_fields'] = status_fields
