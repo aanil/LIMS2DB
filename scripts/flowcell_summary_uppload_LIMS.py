@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Script to load runinfo from the lims process: 'Illumina Sequencing (Illumina SBS) 4.0' 
+"""Script to load runinfo from the lims process: 'Illumina Sequencing (Illumina SBS) 4.0'
 into the flowcell database in statusdb.
 
 Maya Brandi, Science for Life Laboratory, Stockholm, Sweden.
@@ -30,7 +30,7 @@ def get_run_qcs(fc, lanesobj):
             #should never happen if pm works
             lanesobj[lane]={}
         lanesobj[lane]['seq_qc_flag']=art.qc_flag
-        dem=lims.get_processes(type=DEMULTIPLEX.values(), inputartifactlimsid=art.id)
+        dem=lims.get_processes(type=list(DEMULTIPLEX.values()), inputartifactlimsid=art.id)
         try:
             for outart in dem[0].all_outputs():
                 if "FASTQ reads" not in outart.name:
@@ -50,23 +50,23 @@ def  main(flowcell, all_flowcells,days,conf,run_type):
     today = date.today()
     couch = load_couch_server(conf)
     fc_db = couch['flowcells']
-    xfc_db = couch['x_flowcells']    
+    xfc_db = couch['x_flowcells']
     # Collect flowcell processes based upon how script is called
     if all_flowcells:
-        flowcells = lims.get_processes(type = process_dict.values())
+        flowcells = lims.get_processes(type = list(process_dict.values()))
     elif flowcell:
         if not run_type:
-            raise SystemExit("Option -f should always be called with option -t. kindly refer -h fo rmore info.")        
+            raise SystemExit("Option -f should always be called with option -t. kindly refer -h fo rmore info.")
         fc_id = flowcell if run_type == 'miseq' else flowcell[1:]
         try:
             flowcells = [lims.get_processes(type = process_dict[run_type], udf = {'Flow Cell ID' : fc_id})[0]]
             days = float('inf') #no need of days check when a flowcell is specified
         except:
             raise SystemExit("Could not find any process for FC {} (type: {})".format(flowcell, run_type))
-    
+
     for fc in flowcells:
         try:
-            closed = date(*map(int, fc.date_run.split('-')))
+            closed = date(*list(map(int, fc.date_run.split('-'))))
             delta = today-closed
             if delta.days > days:
                 continue
@@ -74,7 +74,7 @@ def  main(flowcell, all_flowcells,days,conf,run_type):
             #Happens if fc has no date run, we should just not update and get to the next flowcell
             continue
 
-        fc_udfs = dict(fc.udf.items())
+        fc_udfs = dict(list(fc.udf.items()))
         try:
             flowcell_name = fc_udfs['Flow Cell ID']
             fc_type = "miseq"
@@ -89,10 +89,10 @@ def  main(flowcell, all_flowcells,days,conf,run_type):
 
         #take right database to put information, this might be not neccesary in near future
         if fc_type == "hiseqx":
-            db_con = xfc_db 
+            db_con = xfc_db
         elif fc_type in ["hiseq", "miseq"]:
             db_con = fc_db
-        
+
         key = find_flowcell_from_view(db_con, flowcell_name)
         if key:
             dbobj = db_con.get(key)
@@ -112,20 +112,20 @@ if __name__ == '__main__':
     usage = "Usage:       python flowcell_summary_upload_LIMS.py [options]"
     parser = OptionParser(usage=usage)
 
-    parser.add_option("-f", "--flowcell", dest="flowcell_name", default=None, 
+    parser.add_option("-f", "--flowcell", dest="flowcell_name", default=None,
     help = "eg: AD1TAPACXX. Don't use with -a flag and -t should also be used along this.")
-    
-    parser.add_option("-t", "--type", dest="run_type", default=None, choices=process_dict.keys(),
+
+    parser.add_option("-t", "--type", dest="run_type", default=None, choices=list(process_dict.keys()),
     help = "Specify the type of run to look, should be specified when -f is given")
 
-    parser.add_option("-a", "--all_flowcells", dest="all_flowcells", action="store_true", default=False, 
+    parser.add_option("-a", "--all_flowcells", dest="all_flowcells", action="store_true", default=False,
     help = "Uploads all Lims flowcells into couchDB. Don't use with -f flagg.")
 
-    parser.add_option("-d", "--days", dest="days", default=30, type=int, 
+    parser.add_option("-d", "--days", dest="days", default=30, type=int,
     help="Runs older than DAYS days are not updated. Default is 30 days. Use with -a flagg")
 
-    parser.add_option("-c", "--conf", dest="conf", 
-    default=os.path.join(os.environ['HOME'],'opt/config/post_process.yaml'), 
+    parser.add_option("-c", "--conf", dest="conf",
+    default=os.path.join(os.environ['HOME'],'opt/config/post_process.yaml'),
     help = "Config file.  Default: ~/opt/config/post_process.yaml")
 
     (options, args) = parser.parse_args()
