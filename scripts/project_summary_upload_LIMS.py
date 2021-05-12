@@ -5,7 +5,7 @@ Maya Brandi, Science for Life Laboratory, Stockholm, Sweden.
 """
 from __future__ import print_function
 from genologics.config import BASEURI, USERNAME, PASSWORD
-from genologics.lims import Lims, Project
+from genologics.lims import Lims
 from argparse import ArgumentParser
 from LIMS2DB.utils import formatStack
 from statusdb.db.utils import load_couch_server
@@ -81,21 +81,12 @@ def create_projects_list(options, db_session, lims, log):
         if options.hours:
             postgres_string = "{} hours".format(options.hours)
             project_ids = get_last_modified_projectids(db_session, postgres_string)
-            if options.old:
-                projects = lims.get_projects()
-                valid_projects = [Project(lims, id=x) for x in project_ids]
-                log.info("project list : {0}".format(" ".join([p.id for p in valid_projects])))
-            else:
-                valid_projects = db_session.query(DBProject).filter(DBProject.luid.in_(project_ids)).all()
-                log.info("project list : {0}".format(" ".join([p.luid for p in valid_projects])))
+            valid_projects = db_session.query(DBProject).filter(DBProject.luid.in_(project_ids)).all()
+            log.info("project list : {0}".format(" ".join([p.luid for p in valid_projects])))
             return valid_projects
         else:
-            if options.old:
-                projects = lims.get_projects()
-                log.info("project list : {0}".format(" ".join([p.id for p in projects])))
-            else:
-                projects = db_session.query(DBProject).all()
-                log.info("project list : {0}".format(" ".join([p.luid for p in projects])))
+            projects = db_session.query(DBProject).all()
+            log.info("project list : {0}".format(" ".join([p.luid for p in projects])))
             return projects
 
     elif options.input:
