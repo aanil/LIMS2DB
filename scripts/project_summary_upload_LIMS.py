@@ -308,6 +308,6 @@ if __name__ == '__main__':
                         help=("This updates documents without changing the modification time. "
                               "Slightly dangerous, but useful e.g. when all projects would be updated."))
 
-    (options, args) = parser.parse_args()
+    options = parser.parse_args()
 
     main(options)
