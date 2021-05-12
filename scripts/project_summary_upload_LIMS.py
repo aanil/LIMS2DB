@@ -276,10 +276,12 @@ class QueueHandler(logging.Handler):
 if __name__ == '__main__':
     usage = "Usage:       python project_summary_upload_LIMS.py [options]"
     parser = ArgumentParser(usage=usage)
+
     parser.add_argument("-p", "--project", dest="project_name", default=None,
                         help="eg: M.Uhlen_13_01. Dont use with -a flagg.")
+
     parser.add_argument("-a", "--all_projects", action="store_true",
-                        default=False, help=("Upload all Lims projects into couchDB.",
+                        default=False, help=("Upload all Lims projects into couchDB."
                                              "Don't use together with -f flag."))
     parser.add_argument("-c", "--conf", default=os.path.join(
                         os.environ['HOME'], 'opt/config/post_process.yaml'),
@@ -288,7 +290,7 @@ if __name__ == '__main__':
                         os.environ['HOME'], '.ngi_config/orderportal_cred.yaml'),
                         help="Orderportal config file. Default: ~/.ngi_config/orderportal_cred.yaml")
     parser.add_argument("--no_upload", dest="upload", default=True, action="store_false",
-                        help=("Use this tag if project objects should not be uploaded,",
+                        help=("Use this tag if project objects should not be uploaded,"
                               " but printed to output_f, or to stdout. Only works with"
                               " individual projects, not with -a."))
     parser.add_argument("--output_f", default=None,
