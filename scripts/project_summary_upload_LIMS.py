@@ -293,7 +293,7 @@ if __name__ == '__main__':
                               " individual projects, not with -a."))
     parser.add_argument("--output_f", default=None,
                         help="Output file that will be used only if --no_upload tag is used")
-    parser.add_argument("-m", "--multiprocs", type='int', dest="processes", default=4,
+    parser.add_argument("-m", "--multiprocs", type=int, dest="processes", default=4,
                         help="The number of processes that will be spawned. Will only work with -a")
     parser.add_argument("-l", "--logfile", dest="logfile",
                         default=os.path.expanduser("~/lims2db_projects.log"),
@@ -301,7 +301,7 @@ if __name__ == '__main__':
     parser.add_argument("--lockdir", dest="lockdir", default=os.path.expanduser("~/psul_locks"),
                         help=("Directory for handling the lock files to avoid multiple updates "
                               "of one project. default is $HOME/psul_locks "))
-    parser.add_argument("-j", "--hours", dest="hours", type='int', default=None,
+    parser.add_argument("-j", "--hours", dest="hours", type=int, default=None,
                         help=("only handle projects modified in the last X hours"))
     parser.add_argument("-i", "--input", dest="input", default=None,
                         help="path to the input file containing projects to update")
