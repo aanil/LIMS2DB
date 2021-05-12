@@ -19,9 +19,3 @@ setup(name = "LIMS2DB",
     description = "Fetching data from Genologics LIMS and pushing it to statusdb",
     packages=find_packages(),
     scripts = glob.glob('scripts/*.py'))
-
-try:
-    from LIMS2DB.objectsDB import make_process_category_doc
-except ImportError:
-    from .LIMS2DB.objectsDB import make_process_category_doc
-make_process_category_doc.make_doc()
