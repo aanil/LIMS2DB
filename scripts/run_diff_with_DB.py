@@ -8,18 +8,18 @@ from statusdb.db.utils import load_couch_server
 
 def write_results_to_file(diffs, args):
     with open(args.resultfile, 'w') as f:
-        for p in diffs:
+        for p, diff in diffs.items():
             if diffs[p]:
                 f.write("Project {} :\n".format(p))
-            for d in diffs[p]:
-                f.write(" {} : was {}, is {}\n".format(d, diffs[p][d][0], diffs[p][d][1]))
+            for d in diff[0]:
+                f.write(" {} : was {}, is {}\n".format(d, diffs[p][d], diffs[p][d]))
 
 
 def main(args):
     couch = load_couch_server(args.conf)
-
+    diffs = {}
     if args.pj_id:
-        diffs = df.diff_project_objects(args.pj_id, couch, args.log)
+        diffs[args.pj_id] = df.diff_project_objects(args.pj_id, couch, args.log)
 
     elif args.random:
         random.seed()
@@ -32,12 +32,12 @@ def main(args):
         nb = int(len(closed_ids)/10)
         picked_ids = random.sample(closed_ids, nb)
         for one_id in picked_ids:
-            diffs = df.diff_project_objects(one_id, couch, args.log)
+            diffs[one_id] = df.diff_project_objects(one_id, couch, args.log)
     else:
         proj_db = couch['projects']
         view = proj_db.view('project/project_id')
         for row in view:
-            diffs = df.diff_project_objects(row.key, couch, args.log)
+            diffs[row.key] = df.diff_project_objects(row.key, couch, args.log)
 
     write_results_to_file(diffs, args)
 
