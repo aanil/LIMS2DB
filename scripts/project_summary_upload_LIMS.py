@@ -276,39 +276,38 @@ class QueueHandler(logging.Handler):
 if __name__ == '__main__':
     usage = "Usage:       python project_summary_upload_LIMS.py [options]"
     parser = ArgumentParser(usage=usage)
-    parser.add_option("-p", "--project", dest="project_name", default=None,
-                      help="eg: M.Uhlen_13_01. Dont use with -a flagg.")
-    parser.add_option("-a", "--all_projects", dest="all_projects", action="store_true",
-                      default=False, help=("Upload all Lims projects into couchDB.",
-                                           "Don't use together with -f flag."))
-    parser.add_option("-c", "--conf", dest="conf", default=os.path.join(
-                      os.environ['HOME'], 'opt/config/post_process.yaml'),
-                      help="Config file.  Default: ~/opt/config/post_process.yaml")
-    parser.add_option("--oconf", dest="oconf", default=os.path.join(
-                      os.environ['HOME'], '.ngi_config/orderportal_cred.yaml'),
-                      help="Orderportal config file. Default: ~/.ngi_config/orderportal_cred.yaml")
-    parser.add_option("--no_upload", dest="upload", default=True, action="store_false",
-                      help=("Use this tag if project objects should not be uploaded,",
-                            " but printed to output_f, or to stdout. Only works with"
-                            " individual projects, not with -a."))
-    parser.add_option("--output_f", default=None,
-                      help="Output file that will be used only if --no_upload tag is used")
-    parser.add_option("-m", "--multiprocs", type='int', dest="processes", default=4,
-                      help="The number of processes that will be spawned. Will only work with -a")
-    parser.add_option("-l", "--logfile", dest="logfile",
-                      default=os.path.expanduser("~/lims2db_projects.log"),
-                      help="log file that will be used. Default is $HOME/lims2db_projects.log")
-    parser.add_option("--lockdir", dest="lockdir", default=os.path.expanduser("~/psul_locks"),
-                      help=("Directory for handling the lock files to avoid multiple updates "
-                            "of one project. default is $HOME/psul_locks "))
-    parser.add_option("-j", "--hours", dest="hours", type='int', default=None,
-                      help=("only handle projects modified in the last X hours"))
-    parser.add_option("-i", "--input", dest="input", default=None,
-                      help="path to the input file containing projects to update")
-    parser.add_option("--no_new_modification_time", action="store_true",
-                      help=("This updates documents without changing the modification time. "
-                            "Slightly dangerous, but useful e.g. when all projects would be updated.")
-                      )
+    parser.add_argument("-p", "--project", dest="project_name", default=None,
+                        help="eg: M.Uhlen_13_01. Dont use with -a flagg.")
+    parser.add_argument("-a", "--all_projects", dest="all_projects", action="store_true",
+                        default=False, help=("Upload all Lims projects into couchDB.",
+                                             "Don't use together with -f flag."))
+    parser.add_argument("-c", "--conf", dest="conf", default=os.path.join(
+                        os.environ['HOME'], 'opt/config/post_process.yaml'),
+                        help="Config file.  Default: ~/opt/config/post_process.yaml")
+    parser.add_argument("--oconf", dest="oconf", default=os.path.join(
+                        os.environ['HOME'], '.ngi_config/orderportal_cred.yaml'),
+                        help="Orderportal config file. Default: ~/.ngi_config/orderportal_cred.yaml")
+    parser.add_argument("--no_upload", dest="upload", default=True, action="store_false",
+                        help=("Use this tag if project objects should not be uploaded,",
+                              " but printed to output_f, or to stdout. Only works with"
+                              " individual projects, not with -a."))
+    parser.add_argument("--output_f", default=None,
+                        help="Output file that will be used only if --no_upload tag is used")
+    parser.add_argument("-m", "--multiprocs", type='int', dest="processes", default=4,
+                        help="The number of processes that will be spawned. Will only work with -a")
+    parser.add_argument("-l", "--logfile", dest="logfile",
+                        default=os.path.expanduser("~/lims2db_projects.log"),
+                        help="log file that will be used. Default is $HOME/lims2db_projects.log")
+    parser.add_argument("--lockdir", dest="lockdir", default=os.path.expanduser("~/psul_locks"),
+                        help=("Directory for handling the lock files to avoid multiple updates "
+                              "of one project. default is $HOME/psul_locks "))
+    parser.add_argument("-j", "--hours", dest="hours", type='int', default=None,
+                        help=("only handle projects modified in the last X hours"))
+    parser.add_argument("-i", "--input", dest="input", default=None,
+                        help="path to the input file containing projects to update")
+    parser.add_argument("--no_new_modification_time", action="store_true",
+                        help=("This updates documents without changing the modification time. "
+                              "Slightly dangerous, but useful e.g. when all projects would be updated."))
 
     (options, args) = parser.parse_args()
 
