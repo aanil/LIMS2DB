@@ -46,13 +46,12 @@ def main(options):
 
     # try getting orderportal config
     oconf = None
-    if not options.old:
-        try:
-            with open(options.oconf, 'r') as ocf:
-                oconf = yaml.load(ocf)['order_portal']
-        except Exception as e:
-            mainlog.warn("Loading orderportal config {} failed due to {}, so order information "
-                         "for project will not be updated".format(options.oconf, e))
+    try:
+        with open(options.oconf, 'r') as ocf:
+            oconf = yaml.load(ocf)['order_portal']
+    except Exception as e:
+        mainlog.warn("Loading orderportal config {} failed due to {}, so order information "
+                     "for project will not be updated".format(options.oconf, e))
 
     if options.project_name:
         host = get_configuration()['url']
@@ -280,7 +279,7 @@ if __name__ == '__main__':
     parser.add_option("-p", "--project", dest="project_name", default=None,
                       help="eg: M.Uhlen_13_01. Dont use with -a flagg.")
     parser.add_option("-a", "--all_projects", dest="all_projects", action="store_true",
-                      default=False, help=("Upload all Lims projects into coucDB.",
+                      default=False, help=("Upload all Lims projects into couchDB.",
                                            "Don't use together with -f flag."))
     parser.add_option("-c", "--conf", dest="conf", default=os.path.join(
                       os.environ['HOME'], 'opt/config/post_process.yaml'),
@@ -292,7 +291,7 @@ if __name__ == '__main__':
                       help=("Use this tag if project objects should not be uploaded,",
                             " but printed to output_f, or to stdout. Only works with"
                             " individual projects, not with -a."))
-    parser.add_option("--output_f", dest="output_f", default=None,
+    parser.add_option("--output_f", default=None,
                       help="Output file that will be used only if --no_upload tag is used")
     parser.add_option("-m", "--multiprocs", type='int', dest="processes", default=4,
                       help="The number of processes that will be spawned. Will only work with -a")
@@ -304,8 +303,6 @@ if __name__ == '__main__':
                             "of one project. default is $HOME/psul_locks "))
     parser.add_option("-j", "--hours", dest="hours", type='int', default=None,
                       help=("only handle projects modified in the last X hours"))
-    parser.add_option("-k", "--control", dest="control", action="store_true", default=False,
-                      help="Only perform a dry-run")
     parser.add_option("-i", "--input", dest="input", default=None,
                       help="path to the input file containing projects to update")
     parser.add_option("--no_new_modification_time", action="store_true",
