@@ -18,13 +18,14 @@ def write_results_to_file(diffs, args):
 
 def main(args):
     couch = load_couch_server(args.conf)
+    proj_db = couch['projects']
 
     with open(args.oconf, 'r') as ocf:
         oconf = yaml.load(ocf, Loader=yaml.SafeLoader)['order_portal']
 
     diffs = {}
     if args.pj_id:
-        diffs[args.pj_id] = df.diff_project_objects(args.pj_id, couch, args.log, oconf)
+        diffs[args.pj_id] = df.diff_project_objects(args.pj_id, couch, proj_db, args.log, oconf)
 
     elif args.random:
         random.seed()
@@ -37,12 +38,11 @@ def main(args):
         nb = int(len(closed_ids)/10)
         picked_ids = random.sample(closed_ids, nb)
         for one_id in picked_ids:
-            diffs[one_id] = df.diff_project_objects(one_id, couch, args.log, oconf)
+            diffs[one_id] = df.diff_project_objects(one_id, couch, proj_db, args.log, oconf)
     else:
-        proj_db = couch['projects']
         view = proj_db.view('project/project_id')
         for row in view:
-            proj_diff = df.diff_project_objects(row.key, couch, args.log, oconf)
+            proj_diff = df.diff_project_objects(row.key, couch, proj_db, args.log, oconf)
             if proj_diff is not None:
                 diffs[row.key] = proj_diff
 

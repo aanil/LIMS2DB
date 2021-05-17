@@ -3,10 +3,9 @@ from LIMS2DB.utils import setupLog
 from genologics_sql.utils import get_session, get_configuration
 
 
-def diff_project_objects(pj_id, couch, logfile, oconf):
+def diff_project_objects(pj_id, couch, proj_db, logfile, oconf):
     # Import is put here to defer circular imports
     from LIMS2DB.classes import ProjectSQL
-    proj_db = couch['projects']
     log = setupLog('diff - {}'.format(pj_id), logfile)
 
     view = proj_db.view('projects/lims_followed')
