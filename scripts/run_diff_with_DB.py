@@ -12,7 +12,7 @@ def write_results_to_file(diffs, args):
             if diffs[p]:
                 f.write("Project {} :\n".format(p))
             for d in diff[0]:
-                f.write(" {} : was {}, is {}\n".format(d, diffs[p][d], diffs[p][d]))
+                f.write(" {} : was {}, is {}\n".format(d, diff[0], diff[0]))
 
 
 def main(args):
