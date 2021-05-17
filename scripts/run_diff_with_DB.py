@@ -37,12 +37,12 @@ def main(args):
         nb = int(len(closed_ids)/10)
         picked_ids = random.sample(closed_ids, nb)
         for one_id in picked_ids:
-            diffs[one_id] = df.diff_project_objects(one_id, couch, args.log)
+            diffs[one_id] = df.diff_project_objects(one_id, couch, args.log, oconf)
     else:
         proj_db = couch['projects']
         view = proj_db.view('project/project_id')
         for row in view:
-            diffs[row.key] = df.diff_project_objects(row.key, couch, args.log)
+            diffs[row.key] = df.diff_project_objects(row.key, couch, args.log, oconf)
 
     write_results_to_file(diffs, args)
 
