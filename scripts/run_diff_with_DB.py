@@ -9,11 +9,11 @@ from statusdb.db.utils import load_couch_server
 
 def write_results_to_file(diffs, args):
     with open(args.resultfile, 'w') as f:
-        for proj_id, diff in diffs.items():
-            if diffs[proj_id]:
+        for proj_id, diff_tuple in diffs.items():
+            if diff_tuple:
                 f.write("Project {} :\n".format(proj_id))
-            for d in diff[0]:
-                f.write(" {} : was {}, is {}\n".format(d, diff[0][0], diff[0][1]))
+            for diff_key, diff_val in diff_tuple[0].items():
+                f.write(" {} : was {}, is {}\n".format(diff_key, diff_val[0], diff_val[1]))
 
 
 def main(args):
