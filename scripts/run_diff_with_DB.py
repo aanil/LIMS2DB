@@ -42,7 +42,9 @@ def main(args):
         proj_db = couch['projects']
         view = proj_db.view('project/project_id')
         for row in view:
-            diffs[row.key] = df.diff_project_objects(row.key, couch, args.log, oconf)
+            proj_diff = df.diff_project_objects(row.key, couch, args.log, oconf)
+            if proj_diff is not None:
+                diffs[row.key] = proj_diff
 
     write_results_to_file(diffs, args)
 

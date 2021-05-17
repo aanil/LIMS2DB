@@ -15,6 +15,7 @@ def diff_project_objects(pj_id, couch, logfile, oconf):
         old_project_couchid = view[pj_id].rows[0].value
     except (KeyError, IndexError):
         log.error("No such project {}".format(pj_id))
+        return None
 
     old_project = proj_db.get(old_project_couchid)
     old_project.pop('_id', None)
