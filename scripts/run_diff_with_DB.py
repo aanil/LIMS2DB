@@ -3,6 +3,7 @@ import datetime
 import argparse
 import os
 import random
+import yaml
 from statusdb.db.utils import load_couch_server
 
 
@@ -17,9 +18,13 @@ def write_results_to_file(diffs, args):
 
 def main(args):
     couch = load_couch_server(args.conf)
+
+    with open(args.oconf, 'r') as ocf:
+        oconf = yaml.load(ocf, Loader=yaml.SafeLoader)['order_portal']
+
     diffs = {}
     if args.pj_id:
-        diffs[args.pj_id] = df.diff_project_objects(args.pj_id, couch, args.log)
+        diffs[args.pj_id] = df.diff_project_objects(args.pj_id, couch, args.log, oconf)
 
     elif args.random:
         random.seed()
@@ -44,8 +49,10 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Compare the results of the installed PSUL with the contents of the DB')
-    parser.add_argument('--conf', dest="conf", default=os.path.expanduser("~/opt/config/post_process.yaml"),
+    parser.add_argument('--conf', default=os.path.expanduser("~/opt/config/post_process.yaml"),
                         help='configuration file path. default is ~/opt/config/post_process.yaml')
+    parser.add_argument('--oconf', default=os.path.expanduser("~/conf/orderportal_cred.yaml"),
+                        help='Credentials for order portal')
     parser.add_argument('--log', '-l', dest="log", default=os.path.expanduser("~/psul_validation.log"),
                         help='log file path. default is ~/psul_validation.log')
     parser.add_argument('--result', '-r', dest="resultfile", default=os.path.expanduser("~/psul_validations/{}_psul_validation.out".format(datetime.datetime.now().isoformat())),

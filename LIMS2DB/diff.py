@@ -3,7 +3,7 @@ from LIMS2DB.utils import setupLog
 from genologics_sql.utils import get_session, get_configuration
 
 
-def diff_project_objects(pj_id, couch, logfile):
+def diff_project_objects(pj_id, couch, logfile, oconf):
     # Import is put here to defer circular imports
     from LIMS2DB.classes import ProjectSQL
     proj_db = couch['projects']
@@ -24,7 +24,7 @@ def diff_project_objects(pj_id, couch, logfile):
 
     session = get_session()
     host = get_configuration()['url']
-    new_project = ProjectSQL(session, log, pj_id, host, couch)
+    new_project = ProjectSQL(session, log, pj_id, host, couch, oconf)
 
     fediff = diff_objects(old_project, new_project.obj)
 
