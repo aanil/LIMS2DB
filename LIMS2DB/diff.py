@@ -22,6 +22,7 @@ def diff_project_objects(pj_id, couch, logfile, oconf):
     old_project.pop('modification_time', None)
     old_project.pop('creation_time', None)
     old_project['details'].pop('running_notes', None)
+    old_project['details'].pop('snic_checked', None)
 
     session = get_session()
     host = get_configuration()['url']
