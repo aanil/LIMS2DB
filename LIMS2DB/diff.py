@@ -1,6 +1,7 @@
 
 from LIMS2DB.utils import setupLog
 from genologics_sql.utils import get_session, get_configuration
+import six.moves.http_client as http_client
 
 
 def diff_project_objects(pj_id, couch, proj_db, logfile, oconf):
@@ -15,6 +16,8 @@ def diff_project_objects(pj_id, couch, proj_db, logfile, oconf):
     except (KeyError, IndexError):
         log.error("No such project {}".format(pj_id))
         return None
+    except http_client.BadStatusLine:
+        log.error("BadStatusLine received after large project")
 
     old_project = proj_db.get(old_project_couchid)
     old_project.pop('_id', None)
