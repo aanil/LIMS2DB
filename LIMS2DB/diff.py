@@ -11,13 +11,23 @@ def diff_project_objects(pj_id, couch, proj_db, logfile, oconf):
 
     view = proj_db.view('projects/lims_followed')
 
+    def fetch_project(pj_id):
+        try:
+            old_project_couchid = view[pj_id].rows[0].value
+        except (KeyError, IndexError):
+            log.error("No such project {}".format(pj_id))
+            return None
+        return old_project_couchid
+
     try:
-        old_project_couchid = view[pj_id].rows[0].value
-    except (KeyError, IndexError):
-        log.error("No such project {}".format(pj_id))
-        return None
+        old_project_couchid = fetch_project(pj_id)
     except http_client.BadStatusLine:
         log.error("BadStatusLine received after large project")
+        # Retry
+        old_project_couchid = fetch_project(pj_id)
+
+    if old_project_couchid is None:
+        return None
 
     old_project = proj_db.get(old_project_couchid)
     old_project.pop('_id', None)
