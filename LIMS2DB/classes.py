@@ -1079,6 +1079,10 @@ class ProjectSQL:
                         status_fields['status'] = 'Ongoing'
                         status_fields['ongoing'] = True
                         status_fields['open'] = True
+                    elif self.obj.get('project_summary', {}).get('queued'):
+                        status_fields['status'] = 'Ongoing'
+                        status_fields['ongoing'] = True
+                        status_fields['open'] = True
                     else:
                         status_fields['status'] = 'Reception Control'
                         status_fields['reception_control'] = True
