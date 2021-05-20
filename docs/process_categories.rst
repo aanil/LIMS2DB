@@ -160,6 +160,7 @@ ID  process Name
 1705 Library preparation (Chromium Genome v2)
 2060 Visium Library Construction
 2105 Amplification and Purification
+2206 Amplify by PCR and Add Index Tags
 === =======================================
 
 
@@ -285,6 +286,7 @@ ID  process Name
 2104 Selection, cDNA Synthesis and Library Construction
 2154 PCR1 (Amplicon)
 2155 PCR2 (Amplicon)
+2205 Adapter ligation and reverse transcription
 === =======================================
 
 
