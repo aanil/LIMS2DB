@@ -14,9 +14,8 @@ from genologics_sql.utils import get_session, get_configuration
 from genologics_sql.tables import Project as DBProject
 from LIMS2DB.classes import ProjectSQL
 
-from pprint import pprint
-
 import yaml
+import json
 import logging
 import logging.handlers
 import multiprocessing as mp
@@ -64,9 +63,9 @@ def main(options):
         else:
             if output_f is not None:
                 with open(output_f, 'w') as f:
-                    pprint(P.obj, stream=f)
+                    f.write(json.dumps(P.obj))
             else:
-                pprint(P.obj)
+                print(json.dumps(P.obj))
 
     else:
         projects = create_projects_list(options, lims_db, mainlims, mainlog)
