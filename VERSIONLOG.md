@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20210525.2
+Fix issue with error message
+
 ## 20210525.1
 Use safeloader for yaml
 

@@ -25,7 +25,7 @@ def main(args):
         try:
             close_date = Project(lims=lims, id=project_id).close_date
         except HTTPError as e:
-            if '404: Project not found' in e.message:
+            if '404: Project not found' in str(e):
                 log.error('Project '+project_id+' not found in LIMS')
                 continue
         if close_date is not None:
