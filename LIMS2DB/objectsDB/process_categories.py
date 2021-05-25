@@ -71,7 +71,8 @@ PREPSTART = {
     '2058' : 'Permeabilization and Second Strand Synthesis',
     '2104' : 'Selection, cDNA Synthesis and Library Construction',
     '2154' : 'PCR1 (Amplicon)',
-    '2155' : 'PCR2 (Amplicon)'}
+    '2155' : 'PCR2 (Amplicon)',
+    '2205' : 'Adapter ligation and reverse transcription'}
 PREPEND = {
     '109' : 'CA Purification',
     '111' : 'Amplify Captured Libraries to Add Index Tags (SS XT) 4.0',
@@ -85,7 +86,8 @@ PREPEND = {
     '1554' : 'Purification',
     '1705' : 'Library preparation (Chromium Genome v2)',
     '2060' : 'Visium Library Construction',
-    '2105' : 'Amplification and Purification'}
+    '2105' : 'Amplification and Purification',
+    '2206' : 'Amplify by PCR and Add Index Tags'}
 LIBVAL = {
     '17' : 'Bioanalyzer QC (Library Validation) 4.0',
     '20' : 'CaliperGX QC (DNA)',
