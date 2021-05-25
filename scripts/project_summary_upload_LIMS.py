@@ -47,7 +47,7 @@ def main(options):
     oconf = None
     try:
         with open(options.oconf, 'r') as ocf:
-            oconf = yaml.load(ocf)['order_portal']
+            oconf = yaml.load(ocf, Loader=yaml.SafeLoader)['order_portal']
     except Exception as e:
         mainlog.warn("Loading orderportal config {} failed due to {}, so order information "
                      "for project will not be updated".format(options.oconf, e))
