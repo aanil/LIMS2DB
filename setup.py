@@ -1,6 +1,4 @@
 from setuptools import setup, find_packages
-import sys
-import os
 import glob
 import subprocess
 
@@ -17,11 +15,6 @@ setup(name = "LIMS2DB",
     author = "Maya Brandi, Denis Moreno",
     author_email = "maya.brandi@scilifelab.se, denis.moreno@scilifelab.se",
     description = "Fetching data from Genologics LIMS and pushing it to statusdb",
+    install_requires = install_requires,
     packages=find_packages(),
     scripts = glob.glob('scripts/*.py'))
-
-try:
-    from LIMS2DB.objectsDB import make_process_category_doc
-except ImportError:
-    from .LIMS2DB.objectsDB import make_process_category_doc
-make_process_category_doc.make_doc()
