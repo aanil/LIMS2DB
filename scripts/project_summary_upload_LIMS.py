@@ -274,8 +274,8 @@ if __name__ == '__main__':
                         default=False, help=("Upload all Lims projects into couchDB."
                                              "Don't use together with -f flag."))
     parser.add_argument("-c", "--conf", default=os.path.join(
-                        os.environ['HOME'], 'opt/config/post_process.yaml'),
-                        help="Config file.  Default: ~/opt/config/post_process.yaml")
+                        os.environ['HOME'], 'conf/post_process.yaml'),
+                        help="Config file.  Default: ~/conf/LIMS2DB/post_process.yaml")
     parser.add_argument("--oconf", default=os.path.join(
                         os.environ['HOME'], '.ngi_config/orderportal_cred.yaml'),
                         help="Orderportal config file. Default: ~/.ngi_config/orderportal_cred.yaml")
