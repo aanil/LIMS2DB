@@ -38,7 +38,7 @@ def main(args):
 
     #read the configuration
     with open(args.conf) as conf_file:
-        conf=yaml.load(conf_file)
+        conf=yaml.load(conf_file, Loader=yaml.SafeLoader)
 
 
     couch=setupServer(conf)

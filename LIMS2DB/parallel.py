@@ -156,7 +156,7 @@ def processWSULSQL(args, queue, logqueue):
     work=True
     session=get_session()
     with open(args.conf) as conf_file:
-        conf=yaml.load(conf_file)
+        conf=yaml.load(conf_file, Loader=yaml.SafeLoader)
     couch=lutils.setupServer(conf)
     db=couch["worksets"]
     procName = mp.current_process().name

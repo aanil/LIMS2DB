@@ -16,7 +16,7 @@ def main(args):
     lims_db = get_session()
     lims = Lims(BASEURI,USERNAME,PASSWORD)
     with open(args.conf) as cf:
-        db_conf = yaml.load(cf)
+        db_conf = yaml.load(cf, Loader=yaml.SafeLoader)
         couch = setupServer(db_conf)
     db = couch["expected_yields"]
     postgres_string="{} hours".format(args.hours)

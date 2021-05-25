@@ -17,7 +17,7 @@ def main(args):
         step=session.query(Process).filter_by(luid=args.ws).one()
         ws=lclasses.Workset_SQL(session, log, step)
         with open(args.conf) as conf_file:
-            conf=yaml.load(conf_file)
+            conf=yaml.load(conf_file, Loader=yaml.SafeLoader)
         couch=lutils.setupServer(conf)
         db=couch["worksets"]
         doc={}
