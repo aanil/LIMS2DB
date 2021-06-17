@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20210617.1
+Support additional 10X index types
+
 ## 20210525.2
 Fix issue with error message
 

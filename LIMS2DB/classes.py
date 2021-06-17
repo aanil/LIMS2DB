@@ -214,7 +214,7 @@ class Workset_SQL:
         barcode=''
         bcp = re.compile("[ATCG\-]{4,}")
         TENX_PAT = re.compile("SI-(?:GA|NA)-[A-H][1-9][0-2]?")
-        ST_PAT = re.compile("SI-(?:TT|NT|NN)-[A-H][1-9][0-2]?")
+        ST_PAT = re.compile("SI-(?:TT|NT|NN|TN)-[A-H][1-9][0-2]?")
         SMARTSEQ_PAT = re.compile('SMARTSEQ[1-9]?-[1-9][0-9]?[A-P]')
         if "NoIndex" in chain:
             return chain
@@ -1025,7 +1025,7 @@ class ProjectSQL:
         barcode=''
         bcp = re.compile("[ATCG\-\_]{4,}")
         TENX_PAT = re.compile("SI-(?:GA|NA)-[A-H][1-9][0-2]?")
-        ST_PAT = re.compile("SI-(?:TT|NT|NN)-[A-H][1-9][0-2]?")
+        ST_PAT = re.compile("SI-(?:TT|NT|NN|TN)-[A-H][1-9][0-2]?")
         SMARTSEQ_PAT = re.compile('SMARTSEQ[1-9]?-[1-9][0-9]?[A-P]')
         if "NoIndex" in chain:
             return chain
