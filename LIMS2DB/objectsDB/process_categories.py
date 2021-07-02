@@ -72,7 +72,8 @@ PREPSTART = {
     '2104' : 'Selection, cDNA Synthesis and Library Construction',
     '2154' : 'PCR1 (Amplicon)',
     '2155' : 'PCR2 (Amplicon)',
-    '2205' : 'Adapter ligation and reverse transcription'}
+    '2205' : 'Adapter ligation and reverse transcription',
+    '2254' : 'ONT End-Prep and Cleanup'}
 PREPEND = {
     '109' : 'CA Purification',
     '111' : 'Amplify Captured Libraries to Add Index Tags (SS XT) 4.0',
@@ -87,7 +88,8 @@ PREPEND = {
     '1705' : 'Library preparation (Chromium Genome v2)',
     '2060' : 'Visium Library Construction',
     '2105' : 'Amplification and Purification',
-    '2206' : 'Amplify by PCR and Add Index Tags'}
+    '2206' : 'Amplify by PCR and Add Index Tags',
+    '2258' : 'ONT Adapter Ligation and Cleanup'}
 LIBVAL = {
     '17' : 'Bioanalyzer QC (Library Validation) 4.0',
     '20' : 'CaliperGX QC (DNA)',
@@ -129,7 +131,10 @@ SEQUENCING = {
     '714': 'Illumina Sequencing (HiSeq X) 1.0',
     '1306' : 'Load Sample and Sequencing (MinION) 1.0',
     '1454': 'AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)',
-    '1908' : 'Illumina Sequencing (NextSeq) v1.0'}
+    '1908' : 'Illumina Sequencing (NextSeq) v1.0',
+    '2260' : 'MinION Sequencing',
+    '2261' : 'Flongle Sequencing',
+    '2262' : 'PromethION Sequencing'}
 WORKSET = {
     '204' : 'Setup Workset/Plate'}
 SUMMARY = {

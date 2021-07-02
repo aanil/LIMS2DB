@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20210702.1
+Define prepstart, prepend and sequencing for the ONT protocol
+
 ## 20210617.1
 Support additional 10X index types
 
