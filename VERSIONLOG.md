@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20210707.1
+Adjust classes.py so that sample well location can be reported before RC
+
 ## 20210702.1
 Define prepstart, prepend and sequencing for the ONT protocol
 

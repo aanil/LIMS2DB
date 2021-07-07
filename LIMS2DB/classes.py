@@ -533,6 +533,20 @@ class ProjectSQL:
             self.get_library_preps(sample)
 
     def get_initial_qc(self, sample):
+        self.obj['samples'][sample.name]['initial_qc'] = {}
+        # Get initial artifact for given sample
+        query = "select art.* from artifact art \
+            inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
+            inner join sample sa on sa.processid=asm.processid \
+            where sa.processid = {sapid} and art.isoriginal=True".format(sapid=sample.processid)
+        try:
+            initial_artifact = self.session.query(Artifact).from_statement(text(query)).one()
+            self.obj['samples'][sample.name]['initial_plate_id'] = initial_artifact.containerplacement.container.luid
+            self.obj['samples'][sample.name]['well_location'] = initial_artifact.containerplacement.api_string
+            self.obj['samples'][sample.name]['initial_qc']['initial_qc_status'] = initial_artifact.qc_flag
+            self.obj['samples'][sample.name]['initial_qc'].update(self.make_normalized_dict(initial_artifact.udf_dict))
+        except NoResultFound:
+            self.log.info("did not find the initial artifact of sample {}".format(sample.name))
         # get all initial QC processes for sample
         query = "select pr.* from process pr \
                 inner join processiotracker piot on piot.processid=pr.processid \
@@ -544,7 +558,6 @@ class ProjectSQL:
             oldest_qc = self.session.query(Process).from_statement(text(query)).first()
             if not oldest_qc:
                 return None
-            self.obj['samples'][sample.name]['initial_qc'] = {}
             try:
                 self.obj['samples'][sample.name]['initial_qc']['start_date'] = oldest_qc.daterun.strftime('%Y-%m-%d')
                 self.obj['samples'][sample.name]['first_initial_qc_start_date'] = oldest_qc.daterun.strftime('%Y-%m-%d')
@@ -579,19 +592,6 @@ class ProjectSQL:
                 self.log.info("Didnt find an aggregate for Initial QC of sample {}".format(sample.name))
         except AttributeError:
             self.log.info("Did not find any initial QC for sample {}".format(sample.name))
-        # Get initial artifact for given sample
-        query = "select art.* from artifact art \
-            inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
-            inner join sample sa on sa.processid=asm.processid \
-            where sa.processid = {sapid} and art.isoriginal=True".format(sapid=sample.processid)
-        try:
-            initial_artifact = self.session.query(Artifact).from_statement(text(query)).one()
-            self.obj['samples'][sample.name]['initial_plate_id'] = initial_artifact.containerplacement.container.luid
-            self.obj['samples'][sample.name]['well_location'] = initial_artifact.containerplacement.api_string
-            self.obj['samples'][sample.name]['initial_qc']['initial_qc_status'] = initial_artifact.qc_flag
-            self.obj['samples'][sample.name]['initial_qc'].update(self.make_normalized_dict(initial_artifact.udf_dict))
-        except NoResultFound:
-            self.log.info("did not find the initial artifact of sample {}".format(sample.name))
         # get GlsFile for output artifact of a Fragment Analyzer process where its input is the initial artifact of a given sample
         query = "select gf.* from glsfile gf \
             inner join resultfile rf on rf.glsfileid=gf.fileid \
