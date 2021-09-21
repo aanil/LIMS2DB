@@ -5,7 +5,10 @@ import LIMS2DB.classes as lclasses
 import LIMS2DB.utils as lutils
 import multiprocessing as mp
 import statusdb.db as sdb
-import Queue
+try:
+	import queue as Queue
+except ImportError:
+	import Queue
 import genologics_sql.tables as gt
 
 from genologics.entities import Process
@@ -60,13 +63,13 @@ def processWSUL(options, queue, logqueue):
                     ws.obj=lutils.merge(ws.obj, remote_doc)
                     ws.obj['_id'] = doc_id
                     ws.obj['_rev'] = doc_rev
-                    mycouch.db[doc_id] = ws.obj 
+                    mycouch.db[doc_id] = ws.obj
                     proclog.info("updating {0}".format(ws.obj['name']))
                 else:
                     proclog.info("not modifying {0}".format(ws.obj['name']))
             elif len(view[ws.obj['name']].rows) == 0:
                 #it is a new doc, upload it
-                mycouch.save(ws.obj) 
+                mycouch.save(ws.obj)
                 proclog.info("saving {0}".format(ws.obj['name']))
             else:
                 proclog.warn("more than one row with name {0} found".format(ws.obj['name']))
@@ -87,12 +90,12 @@ def masterProcess(options,wslist, mainlims, logger):
     else:
         procs_nb = options.procs
 
-    #spawn a pool of processes, and pass them queue instance 
+    #spawn a pool of processes, and pass them queue instance
     for i in range(procs_nb):
         p = mp.Process(target=processWSUL, args=(options,worksetQueue, logQueue))
         p.start()
         childs.append(p)
-    #populate queue with data   
+    #populate queue with data
     #CHEATING
     if options.queue:
         worksetQueue.put(options.queue)
@@ -100,7 +103,7 @@ def masterProcess(options,wslist, mainlims, logger):
     for ws in orderedwslist:
         worksetQueue.put(ws.id)
 
-    #wait on the queue until everything has been processed     
+    #wait on the queue until everything has been processed
     notDone=True
     while notDone:
         try:
@@ -129,16 +132,16 @@ def masterProcessSQL(args ,wslist, logger):
     else:
         procs_nb = args.procs
 
-    #spawn a pool of processes, and pass them queue instance 
+    #spawn a pool of processes, and pass them queue instance
     for i in range(procs_nb):
         p = mp.Process(target=processWSULSQL, args=(args,worksetQueue, logQueue))
         p.start()
         childs.append(p)
-    #populate queue with data   
+    #populate queue with data
     for ws in wslist:
         worksetQueue.put(ws.processid)
 
-    #wait on the queue until everything has been processed     
+    #wait on the queue until everything has been processed
     notDone=True
     while notDone:
         try:
@@ -153,7 +156,7 @@ def processWSULSQL(args, queue, logqueue):
     work=True
     session=get_session()
     with open(args.conf) as conf_file:
-        conf=yaml.load(conf_file)
+        conf=yaml.load(conf_file, Loader=yaml.SafeLoader)
     couch=lutils.setupServer(conf)
     db=couch["worksets"]
     procName = mp.current_process().name
@@ -256,6 +259,3 @@ class QueueHandler(logging.Handler):
             self.enqueue(self.prepare(record))
         except Exception:
             self.handleError(record)
-                  
-
-

@@ -8,7 +8,9 @@ from datetime import datetime
 
 import LIMS2DB.objectsDB.process_categories as pc_cg
 import re
-import httplib
+import six
+import six.moves.http_client as http_client
+
 
 class Workset:
 
@@ -164,37 +166,37 @@ class LimsCrawler:
                 if o.type == "Analyte" and (self.samples.intersection(o.samples)):
                     nextsteps.update(self.lims.get_processes(inputartifactlimsid=o.id))
         for step in nextsteps:
-            if step.type.name in pc_cg.PREPREPSTART.values():
+            if step.type.name in list(pc_cg.PREPREPSTART.values()):
                 self.preprepstart.add(step)
-            elif step.type.name in pc_cg.PREPSTART.values():
+            elif step.type.name in list(pc_cg.PREPSTART.values()):
                 self.prepstart.add(step)
-            elif step.type.name in pc_cg.PREPEND.values():
+            elif step.type.name in list(pc_cg.PREPEND.values()):
                 self.prepend.add(step)
-            elif step.type.name in pc_cg.LIBVAL.values():
+            elif step.type.name in list(pc_cg.LIBVAL.values()):
                 self.libval.add(step)
-            elif step.type.name in pc_cg.AGRLIBVAL.values():
+            elif step.type.name in list(pc_cg.AGRLIBVAL.values()):
                 self.libaggre.add(step)
-            elif step.type.name in pc_cg.SEQUENCING.values():
+            elif step.type.name in list(pc_cg.SEQUENCING.values()):
                 self.seq.add(step)
-            elif step.type.name in pc_cg.DEMULTIPLEX.values():
+            elif step.type.name in list(pc_cg.DEMULTIPLEX.values()):
                 self.demux.add(step)
-            elif step.type.name in pc_cg.INITALQCFINISHEDLIB.values():
+            elif step.type.name in list(pc_cg.INITALQCFINISHEDLIB.values()):
                 self.finlibinitqc.add(step)
-            elif step.type.name in pc_cg.INITALQC.values():
+            elif step.type.name in list(pc_cg.INITALQC.values()):
                 self.initqc.add(step)
-            elif step.type.name in pc_cg.AGRINITQC.values():
+            elif step.type.name in list(pc_cg.AGRINITQC.values()):
                 self.initaggr.add(step)
-            elif step.type.name in pc_cg.POOLING.values():
+            elif step.type.name in list(pc_cg.POOLING.values()):
                 self.pooling.add(step)
-            elif step.type.name in pc_cg.DILSTART.values():
+            elif step.type.name in list(pc_cg.DILSTART.values()):
                 self.dilstart.add(step)
-            elif step.type.name in pc_cg.SUMMARY.values():
+            elif step.type.name in list(pc_cg.SUMMARY.values()):
                 self.projsum.add(step)
-            elif step.type.name in pc_cg.CALIPER.values():
+            elif step.type.name in list(pc_cg.CALIPER.values()):
                 self.caliper.add(step)
 
             # if the step has analytes as outputs
-            if filter(lambda x: x.type == "Analyte", step.all_outputs()):
+            if [x for x in step.all_outputs() if x.type == "Analyte"]:
                 self.crawl(starting_step=step)
 
 
@@ -212,7 +214,7 @@ class Workset_SQL:
         barcode=''
         bcp = re.compile("[ATCG\-]{4,}")
         TENX_PAT = re.compile("SI-(?:GA|NA)-[A-H][1-9][0-2]?")
-        ST_PAT = re.compile("SI-(?:TT|NT|NN)-[A-H][1-9][0-2]?")
+        ST_PAT = re.compile("SI-(?:TT|NT|NN|TN)-[A-H][1-9][0-2]?")
         SMARTSEQ_PAT = re.compile('SMARTSEQ[1-9]?-[1-9][0-9]?[A-P]')
         if "NoIndex" in chain:
             return chain
@@ -293,7 +295,7 @@ class Workset_SQL:
             query = "select pc.* from process pc \
                     inner join processiotracker piot on piot.processid=pc.processid \
                     inner join artifact_ancestor_map aam on aam.artifactid=piot.inputartifactid \
-                    where pc.typeid in ({agr_qc}) and aam.ancestorartifactid={out_art} order by daterun;".format(agr_qc=",".join(pc_cg.AGRLIBVAL.keys()), out_art=out.artifactid)
+                    where pc.typeid in ({agr_qc}) and aam.ancestorartifactid={out_art} order by daterun;".format(agr_qc=",".join(list(pc_cg.AGRLIBVAL.keys())), out_art=out.artifactid)
 
             aggregates = self.session.query(Process).from_statement(text(query)).all()
 
@@ -346,7 +348,7 @@ class Workset_SQL:
             query = "select pc.* from process pc \
                     inner join processiotracker piot on piot.processid=pc.processid \
                     inner join artifact_ancestor_map aam on aam.artifactid=piot.inputartifactid \
-                    where pc.typeid in ({seq}) and aam.ancestorartifactid={out_art} order by daterun;".format(seq=",".join(pc_cg.SEQUENCING.keys()), out_art=out.artifactid)
+                    where pc.typeid in ({seq}) and aam.ancestorartifactid={out_art} order by daterun;".format(seq=",".join(list(pc_cg.SEQUENCING.keys())), out_art=out.artifactid)
 
             sequencing = self.session.query(Process).from_statement(text(query)).all()
             for seq in sequencing:
@@ -396,7 +398,7 @@ class ProjectSQL:
         # When running for a single project, sometimes the connection is lost so retry
         try:
             self.couch['projects']
-        except httplib.BadStatusLine:
+        except http_client.BadStatusLine:
             self.log.warning("Access to couch failed before trying to save new doc for project {}".format(self.pid))
             pass
         db = self.couch['projects']
@@ -467,7 +469,7 @@ class ProjectSQL:
             inner join processiotracker piot on piot.processid=pr.processid \
             inner join artifact_sample_map asm on piot.inputartifactid=asm.artifactid \
             inner join sample sa on sa.processid=asm.processid \
-            where sa.projectid = {pjid} and pr.typeid={tid} order by createddate desc limit 1;".format(pjid=self.project.projectid, tid=pc_cg.SUMMARY.keys()[0])
+            where sa.projectid = {pjid} and pr.typeid={tid} order by createddate desc limit 1;".format(pjid=self.project.projectid, tid=list(pc_cg.SUMMARY.keys())[0])
         try:
             pjs = self.session.query(Process).from_statement(text(query)).one()
             self.obj['project_summary'] = self.make_normalized_dict(pjs.udf_dict)
@@ -507,7 +509,7 @@ class ProjectSQL:
                                'project_desc', 'project_pi_email']}]
                 for fk in filter_keys:
                     if isinstance(fk, dict):
-                        for k,vals in fk.iteritems():
+                        for k,vals in fk.items():
                             if k not in proj_order_info:
                                 proj_order_info[k] = {}
                             for vk in vals:
@@ -531,18 +533,31 @@ class ProjectSQL:
             self.get_library_preps(sample)
 
     def get_initial_qc(self, sample):
+        self.obj['samples'][sample.name]['initial_qc'] = {}
+        # Get initial artifact for given sample
+        query = "select art.* from artifact art \
+            inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
+            inner join sample sa on sa.processid=asm.processid \
+            where sa.processid = {sapid} and art.isoriginal=True".format(sapid=sample.processid)
+        try:
+            initial_artifact = self.session.query(Artifact).from_statement(text(query)).one()
+            self.obj['samples'][sample.name]['initial_plate_id'] = initial_artifact.containerplacement.container.luid
+            self.obj['samples'][sample.name]['well_location'] = initial_artifact.containerplacement.api_string
+            self.obj['samples'][sample.name]['initial_qc']['initial_qc_status'] = initial_artifact.qc_flag
+            self.obj['samples'][sample.name]['initial_qc'].update(self.make_normalized_dict(initial_artifact.udf_dict))
+        except NoResultFound:
+            self.log.info("did not find the initial artifact of sample {}".format(sample.name))
         # get all initial QC processes for sample
         query = "select pr.* from process pr \
                 inner join processiotracker piot on piot.processid=pr.processid \
                 inner join artifact_sample_map asm on piot.inputartifactid=asm.artifactid \
                 inner join sample sa on sa.processid=asm.processid \
                 where sa.processid = {sapid} and pr.typeid in ({tid}) \
-                order by pr.daterun;".format(sapid=sample.processid, tid=','.join(pc_cg.INITALQC.keys() + pc_cg.INITALQCFINISHEDLIB.keys()))
+                order by pr.daterun;".format(sapid=sample.processid, tid=','.join(list(pc_cg.INITALQC.keys()) + list(pc_cg.INITALQCFINISHEDLIB.keys())))
         try:
             oldest_qc = self.session.query(Process).from_statement(text(query)).first()
             if not oldest_qc:
                 return None
-            self.obj['samples'][sample.name]['initial_qc'] = {}
             try:
                 self.obj['samples'][sample.name]['initial_qc']['start_date'] = oldest_qc.daterun.strftime('%Y-%m-%d')
                 self.obj['samples'][sample.name]['first_initial_qc_start_date'] = oldest_qc.daterun.strftime('%Y-%m-%d')
@@ -565,7 +580,7 @@ class ProjectSQL:
                 inner join artifact_sample_map asm on piot.inputartifactid=asm.artifactid \
                 inner join sample sa on sa.processid=asm.processid \
                 where sa.processid = {sapid} and pr.typeid in ({tid}) \
-                order by pr.daterun desc;".format(sapid=sample.processid, tid=','.join(pc_cg.AGRINITQC.keys()))
+                order by pr.daterun desc;".format(sapid=sample.processid, tid=','.join(list(pc_cg.AGRINITQC.keys())))
             try:
                 youngest_aggregate = self.session.query(Process).from_statement(text(query)).first()
                 try:
@@ -577,19 +592,6 @@ class ProjectSQL:
                 self.log.info("Didnt find an aggregate for Initial QC of sample {}".format(sample.name))
         except AttributeError:
             self.log.info("Did not find any initial QC for sample {}".format(sample.name))
-        # Get initial artifact for given sample
-        query = "select art.* from artifact art \
-            inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
-            inner join sample sa on sa.processid=asm.processid \
-            where sa.processid = {sapid} and art.isoriginal=True".format(sapid=sample.processid)
-        try:
-            initial_artifact = self.session.query(Artifact).from_statement(text(query)).one()
-            self.obj['samples'][sample.name]['initial_plate_id'] = initial_artifact.containerplacement.container.luid
-            self.obj['samples'][sample.name]['well_location'] = initial_artifact.containerplacement.api_string
-            self.obj['samples'][sample.name]['initial_qc']['initial_qc_status'] = initial_artifact.qc_flag
-            self.obj['samples'][sample.name]['initial_qc'].update(self.make_normalized_dict(initial_artifact.udf_dict))
-        except NoResultFound:
-            self.log.info("did not find the initial artifact of sample {}".format(sample.name))
         # get GlsFile for output artifact of a Fragment Analyzer process where its input is the initial artifact of a given sample
         query = "select gf.* from glsfile gf \
             inner join resultfile rf on rf.glsfileid=gf.fileid \
@@ -601,7 +603,7 @@ class ProjectSQL:
             inner join process pr on piot.processid=pr.processid \
             inner join sample sa on sa.processid=asm.processid \
             where sa.processid = {sapid} and pr.typeid in ({tid}) and art2.isoriginal=True and art.name like '%Fragment Analyzer%{sname}' \
-            order by pr.daterun desc;".format(sapid=sample.processid, tid=','.join(pc_cg.FRAGMENT_ANALYZER.keys()), sname=sample.name)
+            order by pr.daterun desc;".format(sapid=sample.processid, tid=','.join(list(pc_cg.FRAGMENT_ANALYZER.keys())), sname=sample.name)
         frag_an_file = self.session.query(GlsFile).from_statement(text(query)).first()
         if frag_an_file:
             self.obj['samples'][sample.name]['initial_qc']['frag_an_image'] = "https://{host}/api/v2/files/40-{sid}".format(host=self.host, sid=frag_an_file.fileid)
@@ -618,7 +620,7 @@ class ProjectSQL:
             inner join process pr on piot.processid=pr.processid \
             inner join sample sa on sa.processid=asm.processid \
             where sa.processid = {sapid} and pr.typeid in ({tid}) and art2.isoriginal=True and art.name like '%CaliperGX%{sname}' \
-            order by pr.daterun desc;".format(sapid=sample.processid, tid=','.join(pc_cg.CALIPER.keys()), sname=sample.name)
+            order by pr.daterun desc;".format(sapid=sample.processid, tid=','.join(list(pc_cg.CALIPER.keys())), sname=sample.name)
         caliper_file = self.session.query(GlsFile).from_statement(text(query)).first()
         if caliper_file:
             self.obj['samples'][sample.name]['initial_qc']['caliper_image'] = "sftp://{host}/home/glsftp/{uri}".format(host=self.host, uri=caliper_file.contenturi)
@@ -632,7 +634,7 @@ class ProjectSQL:
                 inner join artifact_sample_map asm on piot.inputartifactid=asm.artifactid \
                 inner join sample sa on sa.processid=asm.processid \
                 where sa.processid = {sapid} and pr.typeid in ({tid}) \
-                order by pr.daterun;".format(sapid=sample.processid, tid=','.join(pc_cg.WORKSET.keys() + pc_cg.PREPSTARTFINLIB.keys() + ['117']))  # Applications Generic Process
+                order by pr.daterun;".format(sapid=sample.processid, tid=','.join(list(pc_cg.WORKSET.keys()) + list(pc_cg.PREPSTARTFINLIB.keys()) + ['117']))  # Applications Generic Process
         lp_starts = self.session.query(Process).from_statement(text(query)).all()
         prepid = 64
         for one_libprep in lp_starts:
@@ -694,7 +696,7 @@ class ProjectSQL:
                     self.log.info("no prepend for sample {} prep {}".format(sample.name, one_libprep.processid))
 
                 try:
-                    agrlibvals = get_children_processes(self.session, one_libprep.processid, pc_cg.AGRLIBVAL.keys(), sample.processid, 'daterun desc')
+                    agrlibvals = get_children_processes(self.session, one_libprep.processid, list(pc_cg.AGRLIBVAL.keys()), sample.processid, 'daterun desc')
                     agrlibval, agrlibval_art = (None, None)
                     for agrlv in agrlibvals:
                         # for small rna (and maybe others), there is more than one agrlibval, and I should not get the latest one,
@@ -813,7 +815,7 @@ class ProjectSQL:
                         query = "select pr.* from process pr \
                             inner join processiotracker piot on piot.processid=pr.processid \
                             where pr.typeid in ({dem}) and piot.inputartifactid={iaid} \
-                            order by pr.daterun;".format(dem=",".join(pc_cg.LIBVAL.keys()), iaid=inp_artifact.artifactid)
+                            order by pr.daterun;".format(dem=",".join(list(pc_cg.LIBVAL.keys())), iaid=inp_artifact.artifactid)
                         libvals = self.session.query(Process).from_statement(text(query)).all()
                         try:
                             self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date'] = libvals[0].daterun.strftime("%Y-%m-%d")
@@ -835,7 +837,7 @@ class ProjectSQL:
                             inner join process pr on piot.processid=pr.processid \
                             inner join sample sa on sa.processid=asm.processid \
                             where sa.processid = {sapid} and pr.typeid in ({tid}) and art2.artifactid={inpid} and art.name like '%CaliperGX%{sname}' \
-                            order by pr.daterun desc;".format(sapid=sample.processid, inpid=inp_artifact.artifactid, tid=','.join(pc_cg.CALIPER.keys()), sname=sample.name)
+                            order by pr.daterun desc;".format(sapid=sample.processid, inpid=inp_artifact.artifactid, tid=','.join(list(pc_cg.CALIPER.keys())), sname=sample.name)
                         try:
                             caliper_file = self.session.query(GlsFile).from_statement(text(query)).first()
                             self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['caliper_image'] = "sftp://{host}/home/glsftp/{uri}".format(host=self.host, uri=caliper_file.contenturi)
@@ -924,7 +926,7 @@ class ProjectSQL:
                     inner join artifact_sample_map asm on piot.inputartifactid=asm.artifactid \
                     inner join sample sa on sa.processid=asm.processid \
                     where sa.processid = {sapid} and pr.typeid in ({tid}) \
-                    order by pr.daterun;".format(sapid=sample.processid, tid=','.join(pc_cg.PREPREPSTART.keys()))
+                    order by pr.daterun;".format(sapid=sample.processid, tid=','.join(list(pc_cg.PREPREPSTART.keys())))
                 try:
                     preprep = self.session.query(Process).from_statement(text(query)).first()
                     self.obj['samples'][sample.name]['library_prep'][prepname]['pre_prep_start_date'] = preprep.daterun.strftime("%Y-%m-%d")
@@ -935,12 +937,12 @@ class ProjectSQL:
                     self.log.info("Did not find a preprep for sample {}".format(sample.name))
 
                 # get seqruns
-                seqs = get_children_processes(self.session, one_libprep.processid, pc_cg.SEQUENCING.keys(), sample=sample.processid)
+                seqs = get_children_processes(self.session, one_libprep.processid, list(pc_cg.SEQUENCING.keys()), sample=sample.processid)
                 for seq in seqs:
                     if 'sample_run_metrics' not in self.obj['samples'][sample.name]['library_prep'][prepname]:
                         self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'] = {}
-                    seqstarts = get_processes_in_history(self.session, seq.processid, pc_cg.SEQSTART.keys(), sample=sample.processid)
-                    dilstarts = get_processes_in_history(self.session, seq.processid, pc_cg.DILSTART.keys(), sample=sample.processid)
+                    seqstarts = get_processes_in_history(self.session, seq.processid, list(pc_cg.SEQSTART.keys()), sample=sample.processid)
+                    dilstarts = get_processes_in_history(self.session, seq.processid, list(pc_cg.DILSTART.keys()), sample=sample.processid)
                     # get all the input artifacts of the seqrun that match our sample and our libprep
                     query = "select art.* from artifact art \
                     inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
@@ -981,7 +983,7 @@ class ProjectSQL:
                             # get the associated demultiplexing step
                             query = "select pr.* from process pr \
                                     inner join processiotracker piot on piot.processid=pr.processid \
-                                    where pr.typeid={dem} and piot.inputartifactid={iaid};".format(dem=pc_cg.DEMULTIPLEX.keys()[0], iaid=art.artifactid)
+                                    where pr.typeid={dem} and piot.inputartifactid={iaid};".format(dem=list(pc_cg.DEMULTIPLEX.keys())[0], iaid=art.artifactid)
                             try:
                                 dem = self.session.query(Process).from_statement(text(query)).one()
                                 try:
@@ -1023,7 +1025,7 @@ class ProjectSQL:
         barcode=''
         bcp = re.compile("[ATCG\-\_]{4,}")
         TENX_PAT = re.compile("SI-(?:GA|NA)-[A-H][1-9][0-2]?")
-        ST_PAT = re.compile("SI-(?:TT|NT|NN)-[A-H][1-9][0-2]?")
+        ST_PAT = re.compile("SI-(?:TT|NT|NN|TN)-[A-H][1-9][0-2]?")
         SMARTSEQ_PAT = re.compile('SMARTSEQ[1-9]?-[1-9][0-9]?[A-P]')
         if "NoIndex" in chain:
             return chain
