@@ -478,14 +478,22 @@ class ProjectSQL:
 
     def get_escalations(self):
         # get EscalationEvents from Project
-        query = "select distinct esc.* from escalationevent esc \
+        query = "select distinct esc.processid, r_t.firstname || ' ' || r_t.lastname as requester, r_r.firstname || ' ' || r_r.lastname as reviewer \
+                from escalationevent esc \
                 inner join processiotracker piot on piot.processid=esc.processid \
                 inner join artifact_sample_map asm on piot.inputartifactid=asm.artifactid \
                 inner join sample sa on sa.processid=asm.processid \
+                inner join principals pr_r on pr_r.principalid = esc.reviewerid \
+                inner join principals pr_t on pr_t.principalid = esc.ownerid \
+                inner join researcher r_r on r_r.researcherid = pr_r.researcherid \
+                inner join researcher r_t on r_t.researcherid = pr_t.researcherid \
                 where esc.reviewdate is NULL and sa.projectid = {pjid};".format(pjid=self.project.projectid)
         escalations = self.session.query(EscalationEvent).from_statement(text(query)).all()
         if escalations:
-            self.obj['escalations'] = [str(esc.processid) for esc in escalations]
+            esc_list = []
+            for esc in escalations:
+                esc_list.append([str(esc.processid), str(esc.requester), str(esc.reviewer)])
+            self.obj['escalations'] = esc_list
 
     def make_normalized_dict(self, d):
         ret = {}

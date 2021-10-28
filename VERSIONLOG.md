@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20211028.1
+Refactor escalations to report processid, requester and reviewer
+
 ## 20210707.1
 Adjust classes.py so that sample well location can be reported before RC
 
