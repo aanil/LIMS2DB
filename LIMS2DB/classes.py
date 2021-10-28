@@ -1077,7 +1077,7 @@ class ProjectSQL:
                     if self.obj.get('escalations'):
                         status_fields['need_review'] = True
 
-                    if proj_details.get('queued'):
+                    if proj_details.get('queued') or self.obj.get('project_summary', {}).get('queued'):
                         status_fields['status'] = 'Ongoing'
                         status_fields['ongoing'] = True
                         status_fields['open'] = True
