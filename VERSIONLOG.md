@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20211028.2
+Fix bugs
+
 ## 20211028.1
 Refactor escalations to report processid, requester and reviewer
 
