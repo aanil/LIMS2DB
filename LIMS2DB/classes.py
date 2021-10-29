@@ -485,7 +485,17 @@ class ProjectSQL:
                 where esc.reviewdate is NULL and sa.projectid = {pjid};".format(pjid=self.project.projectid)
         escalations = self.session.query(EscalationEvent).from_statement(text(query)).all()
         if escalations:
-            self.obj['escalations'] = [str(esc.processid) for esc in escalations]
+            esc_list = []
+            for esc in escalations:
+                # get requester and reviewer
+                query = "select distinct r.* \
+                        from researcher r \
+                        inner join principals pr on pr.researcherid=r.researcherid \
+                        where pr.principalid={requesterid};"
+                requester = self.session.query(Researcher).from_statement(text(query.format(requesterid=esc.ownerid))).all()[0]
+                reviewer = self.session.query(Researcher).from_statement(text(query.format(requesterid=esc.reviewerid))).all()[0]
+                esc_list.append([str(esc.processid), "{} {}".format(requester.firstname, requester.lastname), "{} {}".format(reviewer.firstname, reviewer.lastname)])
+            self.obj['escalations'] = esc_list
 
     def make_normalized_dict(self, d):
         ret = {}
