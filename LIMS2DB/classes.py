@@ -491,13 +491,9 @@ class ProjectSQL:
                 query = "select distinct r.* \
                         from researcher r \
                         inner join principals pr on pr.researcherid=r.researcherid \
-                        where pr.principalid={requesterid};".format(requesterid=esc.ownerid)
-                requester = self.session.query(Researcher).from_statement(text(query)).all()[0]
-                query = "select distinct r.* \
-                        from researcher r \
-                        inner join principals pr on pr.researcherid=r.researcherid \
-                        where pr.principalid={requesterid};".format(requesterid=esc.reviewerid)
-                reviewer = self.session.query(Researcher).from_statement(text(query)).all()[0]
+                        where pr.principalid={requesterid};"
+                requester = self.session.query(Researcher).from_statement(text(query.format(requesterid=esc.ownerid))).all()[0]
+                reviewer = self.session.query(Researcher).from_statement(text(query.format(requesterid=esc.reviewerid))).all()[0]
                 esc_list.append([str(esc.processid), "{} {}".format(requester.firstname, requester.lastname), "{} {}".format(reviewer.firstname, reviewer.lastname)])
             self.obj['escalations'] = esc_list
 

@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20211029.1
+Refactor based on comments from AA
+
 ## 20211028.2
 Fix bugs
 
