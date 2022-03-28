@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20220326.1
+Define preprepstart and prepstart for the OmniC protocol
+
 ## 20211029.1
 Refactor based on comments from AA
 

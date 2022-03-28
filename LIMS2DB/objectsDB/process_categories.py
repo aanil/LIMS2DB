@@ -30,7 +30,8 @@ PREPREPSTART = {
     '304' : 'Adapter ligation and reverse transcription (TruSeq small RNA) 1.0',
     '1104' : 'RAD-seq Library Indexing v1.0',
     '1706' : 'GEM Generation (Chromium Genome v2)',
-    '2054' : 'Sectioning and HE Staining'}
+    '2054' : 'Sectioning and HE Staining',
+    '2355' : 'Crosslinking & Digestion'}
 POOLING = {
     '42' : 'Library Pooling (Illumina SBS) 4.0',
     '43' : 'Library Pooling (MiSeq) 4.0',
@@ -73,7 +74,8 @@ PREPSTART = {
     '2154' : 'PCR1 (Amplicon)',
     '2155' : 'PCR2 (Amplicon)',
     '2205' : 'Adapter ligation and reverse transcription',
-    '2254' : 'ONT End-Prep and Cleanup'}
+    '2254' : 'ONT End-Prep and Cleanup',
+    '2360' : 'Library Preparation & Amplification'}
 PREPEND = {
     '109' : 'CA Purification',
     '111' : 'Amplify Captured Libraries to Add Index Tags (SS XT) 4.0',
