@@ -138,6 +138,7 @@ SEQUENCING = {
     '2261' : 'Flongle Sequencing',
     '2262' : 'PromethION Sequencing'}
 WORKSET = {
+    '117' : 'Applications Generic Process',
     '204' : 'Setup Workset/Plate'}
 SUMMARY = {
     '356' : 'Project Summary 1.3'}

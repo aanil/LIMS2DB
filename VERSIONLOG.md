@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20220329.1
+Also report workset prepared in the Applications Generic Protocol; Replace old sequencing step IDs
+
 ## 20220326.1
 Define preprepstart and prepstart for the OmniC protocol
 
