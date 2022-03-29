@@ -31,13 +31,13 @@ def main(args):
 
 
     elif args.recent:
-         recent_processes=get_last_modified_processes(session,[8,204,38,714,46], args.interval)
+         recent_processes=get_last_modified_processes(session,[8,46,117,204,1454,1908], args.interval)
          processes_to_update=set()
          for p in recent_processes:
-             if p.typeid==204 and p.daterun:#will only catch finished setup workset plate
+             if p.typeid in [117, 204] and p.daterun:#will only catch finished setup workset plate
                  processes_to_update.add(p)
              else:
-                 processes_to_update.update(get_processes_in_history(session, p.processid, [204]))
+                 processes_to_update.update(get_processes_in_history(session, p.processid, [117, 204]))
 
          log.info("the following processes will be updated : {0}".format(processes_to_update))
          lpar.masterProcessSQL(args, processes_to_update, log)
