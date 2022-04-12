@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20220412.1
+Change 10X index pattern name
+
 ## 20220329.1
 Also report workset prepared in the Applications Generic Protocol; Replace old sequencing step IDs
 
