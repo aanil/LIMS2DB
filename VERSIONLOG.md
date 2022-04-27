@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20220427.1
+Support additional 10X index types
+
 ## 20220412.1
 Change 10X index pattern name
 
