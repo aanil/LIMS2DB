@@ -596,7 +596,7 @@ class ProjectSQL:
                 try:
                     self.obj['samples'][sample.name]['initial_qc']['finish_date'] = youngest_aggregate.daterun.strftime('%Y-%m-%d')
                 except AttributeError:
-                    self.obj['samples'][sample.name]['initial_qc']['finish_date'] = youngest_aggregate.createddate.strftime('%Y-%m-%d')
+                    pass
                 self.obj['samples'][sample.name]['initial_qc']['initials'] = youngest_aggregate.technician.researcher.initials
             except AttributeError:
                 self.log.info("Didnt find an aggregate for Initial QC of sample {}".format(sample.name))
@@ -769,7 +769,7 @@ class ProjectSQL:
                     try:
                         self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['finish_date'] = agrlibval.daterun.strftime("%Y-%m-%d")
                     except AttributeError:
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['finish_date'] = agrlibval.createddate.strftime("%Y-%m-%d")
+                        pass
                     self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['initials'] = agrlibval.technician.researcher.initials
                     # get input artifact of a given process that belongs to sample and descends from one_lp_art
                     query = "select art.* from artifact art \
@@ -999,7 +999,7 @@ class ProjectSQL:
                                 try:
                                     self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished'] = dem.daterun.strftime("%Y-%m-%d")
                                 except AttributeError:
-                                    self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished'] = dem.createddate.strftime("%Y-%m-%d")
+                                    pass
 
                                 # get output resultfile named like the sample of a Demultiplex step
                                 query = "select art.* from artifact art \
