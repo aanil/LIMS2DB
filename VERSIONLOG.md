@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+##20220610.1
+Convert statusdb urls to https
+
 ## 20220427.1
 Support additional 10X index types
 
