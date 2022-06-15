@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20220615.1
+Re-define prepstart for the HiC protocol
+
 ##20220610.1
 Convert statusdb urls to https
 
