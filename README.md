@@ -33,7 +33,6 @@ statusdb:
     url: couchdb_url
     username: some_name
     password: some_password
-    port: couchdb_port
 ```
 
 #### `~/.genolosql.yaml`
