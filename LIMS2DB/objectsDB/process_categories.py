@@ -30,6 +30,7 @@ PREPREPSTART = {
     '304' : 'Adapter ligation and reverse transcription (TruSeq small RNA) 1.0',
     '1104' : 'RAD-seq Library Indexing v1.0',
     '1706' : 'GEM Generation (Chromium Genome v2)',
+    '1861' : 'Chromatin capture, digestion, end ligation and crosslink reversal (HiC) 1.0',
     '2054' : 'Sectioning and HE Staining',
     '2355' : 'Crosslinking & Digestion'}
 POOLING = {
@@ -68,7 +69,7 @@ PREPSTART = {
     '1404' : 'Fragmentation & cDNA synthesis (SMARTer Pico) 4.0',
     '1705' : 'Library preparation (Chromium Genome v2)',
     '1856' : 'Sample Crosslinking',
-    '1861' : 'Chromatin capture, digestion, end ligation and crosslink reversal (HiC) 1.0',
+    '1859' : 'End repair, adapter ligation, ligation capture and Index PCR (HiC)',
     '2058' : 'Permeabilization and Second Strand Synthesis',
     '2104' : 'Selection, cDNA Synthesis and Library Construction',
     '2154' : 'PCR1 (Amplicon)',
