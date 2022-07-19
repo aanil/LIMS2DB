@@ -71,5 +71,10 @@ def upload_to_couch(couch, runid, lims_data):
             doc=db.get(row.value)
 
         if doc:
+            running_notes = {}
+            if 'lims_data' in doc and 'container_running_notes' in doc['lims_data']:
+                running_notes = doc['lims_data'].pop('container_running_notes')
             doc['lims_data']=lims_data
+            if running_notes:
+                doc['lims_data']['container_running_notes'] = running_notes
             db.save(doc)
