@@ -28,17 +28,6 @@ def create_lims_data_obj(session, pro):
     if pc_cg.SEQUENCING.get(str(pro.typeid), '') in ['MiSeq Run (MiSeq) 4.0']:
         obj['run_type'] = pro.udf_dict['Run Type']
 
-    # Update container running notes
-    try:
-        cont_note = {}
-        for cudf in cont.udfs:
-            if cudf.udfname == "Notes":
-                cont_note.update(ast.literal_eval(cudf.udfvalue))
-        if  cont_note:
-            obj['container_running_notes'] = cont_note
-    except TypeError as e:
-        logging.exception(e)
-        pass
 
 
     if pc_cg.SEQUENCING.get(str(pro.typeid), '') in ['AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)', 'Illumina Sequencing (NextSeq) v1.0']:
