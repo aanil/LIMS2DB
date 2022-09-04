@@ -852,6 +852,16 @@ class ProjectSQL:
                             self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['frag_an_image'] = "https://{host}/api/v2/files/40-{sid}".format(host=self.host, sid=frag_an_file.fileid)
                         else:
                             self.log.info("Did not find a libprep Fragment Analyzer for sample {}".format(sample.name))
+                        #Get Ratio(%) from Fragment Analyzer QC
+                        query = "select art.* from artifact art \
+                            inner join artifact_sample_map asm on art.artifactid=asm.artifactid \
+                            inner join sample sa on sa.processid=asm.processid \
+                            where sa.processid={sapid} and art.name like 'Fragment Analyzer%{sname}';".format(sapid=sample.processid, sname=sample.name)
+                        frag_an_artifact = self.session.query(Artifact).from_statement(text(query)).all()[0]
+                        if frag_an_artifact:
+                            frag_an_ratio = frag_an_artifact.udf_dict.get('Ratio (%)', '')
+                            if frag_an_ratio:
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['frag_an_ratio'] = frag_an_ratio
                         # get GlsFile for output artifact of a Caliper process where its input is given
                         query = "select gf.* from glsfile gf \
                             inner join resultfile rf on rf.glsfileid=gf.fileid \
