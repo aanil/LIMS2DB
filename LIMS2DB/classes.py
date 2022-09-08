@@ -857,9 +857,9 @@ class ProjectSQL:
                             inner join artifact_sample_map asm on art.artifactid=asm.artifactid \
                             inner join sample sa on sa.processid=asm.processid \
                             where sa.processid={sapid} and art.name like 'Fragment Analyzer%{sname}';".format(sapid=sample.processid, sname=sample.name)
-                        frag_an_artifact = self.session.query(Artifact).from_statement(text(query)).all()[0]
+                        frag_an_artifact = self.session.query(Artifact).from_statement(text(query)).all()
                         if frag_an_artifact:
-                            frag_an_ratio = frag_an_artifact.udf_dict.get('Ratio (%)', '')
+                            frag_an_ratio = frag_an_artifact[0].udf_dict.get('Ratio (%)', '')
                             if frag_an_ratio:
                                 self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['frag_an_ratio'] = frag_an_ratio
                         # get GlsFile for output artifact of a Caliper process where its input is given
