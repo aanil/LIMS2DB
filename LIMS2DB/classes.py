@@ -637,6 +637,17 @@ class ProjectSQL:
         else:
             self.log.info("Did not find an initial QC Caliper for sample {}".format(sample.name))
 
+        # get Concentration", Volume (ul) and Amount (ng) from Aggregate QC (DNA) 4.0 step if it exists
+        query = "select art.* from artifact art \
+            inner join processiotracker piot on piot.inputartifactid=art.artifactid \
+            inner join process pr on pr.processid=piot.processid \
+            where art.name='{sname}' and pr.typeid={tid};".format(sname=sample.name, tid=[x[0] for x in AGRINITQC.items() if x[1]=='Aggregate QC (DNA) 4.0'][0])
+        analyte_artifact = self.session.query(Artifact).from_statement(text(query)).first()
+        if analyte_artifact:
+            self.obj['samples'][sample.name]['initial_qc']['Aggregate QC (DNA) Concentration'] = analyte_artifact.udf_dict.get('Concentration', '')
+            self.obj['samples'][sample.name]['initial_qc']['Aggregate QC (DNA) Volume (ul)'] = analyte_artifact.udf_dict.get('Volume (ul)', '')
+            self.obj['samples'][sample.name]['initial_qc']['Aggregate QC (DNA) Amount (ng)'] = analyte_artifact.udf_dict.get('Amount (ng)', '')
+
     def get_library_preps(self, sample):
         # first steps are either SetupWorksetPlate or Library Pooling Finished Libraries
         query = "select pr.* from process pr \
