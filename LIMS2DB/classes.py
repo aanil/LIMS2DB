@@ -641,12 +641,12 @@ class ProjectSQL:
         query = "select art.* from artifact art \
             inner join processiotracker piot on piot.inputartifactid=art.artifactid \
             inner join process pr on pr.processid=piot.processid \
-            where art.name='{sname}' and pr.typeid={tid};".format(sname=sample.name, tid=[x[0] for x in AGRINITQC.items() if x[1]=='Aggregate QC (DNA) 4.0'][0])
+            where art.name='{sname}' and pr.typeid={tid};".format(sname=sample.name, tid=[x[0] for x in pc_cg.AGRINITQC.items() if x[1]=='Aggregate QC (DNA) 4.0'][0])
         analyte_artifact = self.session.query(Artifact).from_statement(text(query)).first()
         if analyte_artifact:
-            self.obj['samples'][sample.name]['initial_qc']['Aggregate QC (DNA) Concentration'] = analyte_artifact.udf_dict.get('Concentration', '')
-            self.obj['samples'][sample.name]['initial_qc']['Aggregate QC (DNA) Volume (ul)'] = analyte_artifact.udf_dict.get('Volume (ul)', '')
-            self.obj['samples'][sample.name]['initial_qc']['Aggregate QC (DNA) Amount (ng)'] = analyte_artifact.udf_dict.get('Amount (ng)', '')
+            self.obj['samples'][sample.name]['initial_qc']['aggregate_qc_dna_concentration'] = analyte_artifact.udf_dict.get('Concentration', '')
+            self.obj['samples'][sample.name]['initial_qc']['aggregate_qc_dna_volume'] = analyte_artifact.udf_dict.get('Volume (ul)', '')
+            self.obj['samples'][sample.name]['initial_qc']['aggregate_qc_dna_amount'] = analyte_artifact.udf_dict.get('Amount (ng)', '')
 
     def get_library_preps(self, sample):
         # first steps are either SetupWorksetPlate or Library Pooling Finished Libraries
