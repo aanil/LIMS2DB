@@ -500,7 +500,7 @@ class ProjectSQL:
     def make_normalized_dict(self, d):
         ret = {}
         for kv in d.items():
-            key = kv[0].lower().replace(" ", "_").replace('.', '').replace('(', '').replace(')', '').replace('%', '')strip('_')
+            key = kv[0].lower().replace(" ", "_").replace('.', '')
             ret[key] = kv[1]
         return ret
 
