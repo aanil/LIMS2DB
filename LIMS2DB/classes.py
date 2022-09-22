@@ -645,8 +645,8 @@ class ProjectSQL:
         analyte_artifact = self.session.query(Artifact).from_statement(text(query)).first()
         if analyte_artifact:
             self.obj['samples'][sample.name]['initial_qc']['aggregate_qc_dna_concentration'] = analyte_artifact.udf_dict.get('Concentration', '')
-            self.obj['samples'][sample.name]['initial_qc']['aggregate_qc_dna_volume'] = analyte_artifact.udf_dict.get('Volume (ul)', '')
-            self.obj['samples'][sample.name]['initial_qc']['aggregate_qc_dna_amount'] = analyte_artifact.udf_dict.get('Amount (ng)', '')
+            self.obj['samples'][sample.name]['initial_qc']['aggregate_qc_dna_volume_ul'] = analyte_artifact.udf_dict.get('Volume (ul)', '')
+            self.obj['samples'][sample.name]['initial_qc']['aggregate_qc_dna_amount_ng'] = analyte_artifact.udf_dict.get('Amount (ng)', '')
 
     def get_library_preps(self, sample):
         # first steps are either SetupWorksetPlate or Library Pooling Finished Libraries
