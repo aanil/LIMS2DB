@@ -48,18 +48,9 @@ class Workset:
         for p in crawler.projects:
             pjs[p.id] = {}
             pjs[p.id]['name'] = p.name
-            try:
-                pjs[p.id]['library'] = p.udf['Library construction method']
-            except KeyError:
-                pjs[p.id]['library'] = None
-            try:
-                pjs[p.id]['library_option'] = p.udf['Library prep option']
-            except KeyError:
-                pjs[p.id]['library_option'] = None
-            try:
-                pjs[p.id]['application'] = p.udf['Application']
-            except KeyError:
-                pjs[p.id]['application'] = None
+            pjs[p.id]['library'] = p.udf.get('Library construction method', None)
+            pjs[p.id]['library_option'] = p.udf.get('Library prep option', None)
+            pjs[p.id]['application'] = p.udf.get('Application', None)
             try:
                 pjs[p.id]['sequencing_setup'] = "{} {}".format(p.udf['Sequencing platform'], p.udf['Sequencing setup'])
             except KeyError:
@@ -71,10 +62,7 @@ class Workset:
                     pjs[p.id]['samples'][sample.name] = {}
                     pjs[p.id]['samples'][sample.name]['library'] = {}
                     pjs[p.id]['samples'][sample.name]['sequencing'] = {}
-                    try:
-                        pjs[p.id]['samples'][sample.name]['customer_name'] = sample.udf['Customer Name']
-                    except KeyError:
-                        pjs[p.id]['samples'][sample.name]['customer_name'] = None
+                    pjs[p.id]['samples'][sample.name]['customer_name'] = sample.udf.get('Customer Name', None)
 
                     pjs[p.id]['samples'][sample.name]['rec_ctrl'] = {}
                     for i in crawler.starting_proc.all_inputs():
