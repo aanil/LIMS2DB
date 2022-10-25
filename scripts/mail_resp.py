@@ -5,7 +5,9 @@ from genologics.lims import *
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from datetime import *
 from email.mime.text import MIMEText
+from statusdb.db.utils import load_couch_server
 
+import os
 import smtplib
 import argparse
 
@@ -15,6 +17,8 @@ def main(args):
     sixMonthsAgo=date.today()-timedelta(weeks=26);
     yesterday=date.today()-timedelta(days=1)
     pjs=lims.get_projects(open_date=sixMonthsAgo.strftime("%Y-%m-%d"))
+    statusdb =  load_couch_server(args.conf)
+    proj_id_view = statusdb['projects'].view("project/project_id")
 
     operator="par.lundin@scilifelab.se"
     summary={}
@@ -104,17 +108,18 @@ def main(args):
 
 
             if completed:#If we actually have stuff to mail
-                ps=lims.get_processes(projectname=p.name, type='Project Summary 1.3')
-                for oneps in ps:#there should be only one project summary per project anyway.
-                    if 'Bioinfo responsible' in oneps.udf  :
-                        bfr=oneps.udf['Bioinfo responsible']
+                doc = statusdb['projects'].get(proj_id_view[p.id].rows[0].value)
+                if 'project_coordinator' in doc['details']:
+                    pc=doc['details']['project_coordinator']
+                    summary[pc]=completed
+                if 'project_summary' in doc:
+                    if 'bioinfo_responsible' in doc['project_summary']:
+                        bfr=doc['project_summary']['bioinfo_responsible']
                         summary[bfr]=completed
-                    if 'Lab responsible' in oneps.udf:
-                        lbr=oneps.udf['Lab responsible']
+                    if 'lab_responsible' in doc['project_summary']:
+                        lbr=doc['project_summary']['lab_responsible']
                         summary[lbr]=completed
-                    if 'Project coordinator' in p.udf:
-                        pc=p.udf['Project coordinator']
-                        summary[pc]=completed
+
 
     control=''
     for resp in summary:
@@ -165,7 +170,11 @@ for the projects you are described as "Lab responsible", "Bioinfo Responsible" o
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='mail the modifications in the lims for the last day to the responsibles declared in project summary')
+    parser.add_argument("-c", "--conf", default=os.path.join(
+                        os.environ['HOME'], 'conf/LIMS2DB/post_process.yaml'),
+                        help="Config file.  Default: ~/conf/LIMS2DB/post_process.yaml")
     parser.add_argument('--test', '-t', dest='test', action="store_true",help='print and don\'t send mails')
+
     args = parser.parse_args()
 
 

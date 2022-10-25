@@ -637,6 +637,7 @@ class ProjectSQL:
         else:
             self.log.info("Did not find an initial QC Caliper for sample {}".format(sample.name))
 
+
     def get_library_preps(self, sample):
         # first steps are either SetupWorksetPlate or Library Pooling Finished Libraries
         query = "select pr.* from process pr \
@@ -835,7 +836,33 @@ class ProjectSQL:
                                 self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date'] = agrlibval.daterun.strftime("%Y-%m-%d")
                             except AttributeError:
                                 self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['start_date'] = agrlibval.createddate.strftime("%Y-%m-%d")
-
+                        # get GlsFile for output artifact of a Fragment Analyzer process where its input is the initial artifact of a given sample
+                        query = "select gf.* from glsfile gf \
+                            inner join resultfile rf on rf.glsfileid=gf.fileid \
+                            inner join artifact art on rf.artifactid=art.artifactid \
+                            inner join outputmapping om on art.artifactid=om.outputartifactid \
+                            inner join processiotracker piot on piot.trackerid=om.trackerid \
+                            inner join artifact art2 on piot.inputartifactid=art2.artifactid \
+                            inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
+                            inner join process pr on piot.processid=pr.processid \
+                            inner join sample sa on sa.processid=asm.processid \
+                            where sa.processid = {sapid} and pr.typeid in ({tid}) and art2.artifactid={inpid} and art.name like '%Fragment Analyzer%{sname}' \
+                            order by pr.daterun desc;".format(sapid=sample.processid, tid=','.join(list(pc_cg.FRAGMENT_ANALYZER.keys())), inpid=inp_artifact.artifactid, sname=sample.name)
+                        frag_an_file = self.session.query(GlsFile).from_statement(text(query)).first()
+                        if frag_an_file:
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['frag_an_image'] = "https://{host}/api/v2/files/40-{sid}".format(host=self.host, sid=frag_an_file.fileid)
+                        else:
+                            self.log.info("Did not find a libprep Fragment Analyzer for sample {}".format(sample.name))
+                        #Get Ratio(%) from Fragment Analyzer QC
+                        query = "select art.* from artifact art \
+                            inner join artifact_sample_map asm on art.artifactid=asm.artifactid \
+                            inner join sample sa on sa.processid=asm.processid \
+                            where sa.processid={sapid} and art.name like 'Fragment Analyzer%{sname}';".format(sapid=sample.processid, sname=sample.name)
+                        frag_an_artifact = self.session.query(Artifact).from_statement(text(query)).all()
+                        if frag_an_artifact:
+                            frag_an_ratio = frag_an_artifact[0].udf_dict.get('Ratio (%)', '')
+                            if frag_an_ratio:
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['library_validation'][agrlibval.luid]['frag_an_ratio'] = frag_an_ratio
                         # get GlsFile for output artifact of a Caliper process where its input is given
                         query = "select gf.* from glsfile gf \
                             inner join resultfile rf on rf.glsfileid=gf.fileid \
