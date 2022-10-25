@@ -53,6 +53,10 @@ class Workset:
             except KeyError:
                 pjs[p.id]['library'] = None
             try:
+                pjs[p.id]['library_option'] = p.udf['Library prep option']
+            except KeyError:
+                pjs[p.id]['library_option'] = None
+            try:
                 pjs[p.id]['application'] = p.udf['Application']
             except KeyError:
                 pjs[p.id]['application'] = None
