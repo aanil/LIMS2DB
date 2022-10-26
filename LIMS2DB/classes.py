@@ -273,6 +273,7 @@ class Workset_SQL:
                 self.obj['projects'][project.luid] = {'application': project.udf_dict.get('Application'),
                                                       'name': project.name,
                                                       'library': project.udf_dict.get('Library construction method'),
+                                                      'library_option': project.udf_dict.get('Library prep option'),
                                                       'sequencing_setup': "{} {}".format(project.udf_dict.get('Sequencing platform'), project.udf_dict.get('Sequencing setup')),
                                                       'samples': {}}
                 if project.closedate:

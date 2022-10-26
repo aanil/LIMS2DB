@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20221025.1
+Add Library prep option to workset key list
+
 ## 20220615.1
 Re-define prepstart for the HiC protocol
 
