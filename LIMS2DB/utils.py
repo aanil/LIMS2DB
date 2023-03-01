@@ -3,6 +3,8 @@ import logging
 import logging.handlers
 import traceback
 import couchdb
+from email.mime.text import MIMEText
+import smtplib
 
 #merges d2 in d1, keeps values from d1
 def merge(d1, d2):
@@ -43,3 +45,20 @@ def setupServer(conf):
     db_conf = conf['statusdb']
     url="https://{0}:{1}@{2}".format(db_conf['username'], db_conf['password'], db_conf['url'])
     return couchdb.Server(url)
+
+def send_mail(subject, content, receiver):
+    """Sends an email.
+    :param str subject: Subject for the email
+    :param str content: Content of the email
+    :param str receiver: Address to send the email
+    """
+    if not receiver:
+        raise SystemExit('No receiver was given to send mail')
+    msg = MIMEText(content)
+    msg['Subject'] = f'LIMS2DB notification - {subject}'
+    msg['From'] = 'LIMS2DB@scilifelab.se'
+    msg['To'] = receiver
+
+    s = smtplib.SMTP('localhost')
+    s.sendmail('LIMS2DB', [receiver], msg.as_string())
+    s.quit()
