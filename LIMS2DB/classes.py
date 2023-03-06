@@ -5,6 +5,7 @@ from requests import get as rget
 from sqlalchemy import text
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from datetime import datetime
+from LIMS2DB.utils import send_mail
 
 import LIMS2DB.objectsDB.process_categories as pc_cg
 import re
@@ -435,6 +436,11 @@ class ProjectSQL:
 
                 self.log.info("Trying to save new doc for project {}".format(self.pid))
                 db.save(self.obj)
+                if self.obj.get('details', {}).get('type', '') == 'Application':
+                    if 'key  details contract_received' in diffs.keys():
+                        contract_received = diffs['key  details contract_received'][1]
+                        msg = f'Contract received for applications project {self.obj["project_name"]}({self.obj["project_id"]}) on {contract_received}.'
+                        send_mail(f'Contract received for GA Project {self.obj["project_name"]}', msg, 'ngi_ga_projects@scilifelab.se')
             else:
                 self.log.info("No modifications found for project {}".format(self.pid))
 
@@ -443,6 +449,9 @@ class ProjectSQL:
             self.obj['modification_time'] = self.obj['creation_time']
             self.log.info("Trying to save new doc for project {}".format(self.pid))
             db.save(self.obj)
+            if self.obj.get('details', {}).get('type', '') == 'Application':
+                msg = f'New applications project created {self.obj["project_name"]}({self.obj["project_id"]}).'
+                send_mail(f'GA Project created {self.obj["project_name"]}', msg, 'ngi_ga_projects@scilifelab.se')
 
     def get_project_level(self):
         self.obj['entity_type'] = "project_summary"
