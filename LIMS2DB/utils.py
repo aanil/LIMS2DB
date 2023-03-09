@@ -54,7 +54,7 @@ def send_mail(subject, content, receiver):
     """
     if not receiver:
         raise SystemExit('No receiver was given to send mail')
-    msg = MIMEText(content)
+    msg = MIMEText(content, 'html')
     msg['Subject'] = f'LIMS2DB notification - {subject}'
     msg['From'] = 'LIMS2DB@scilifelab.se'
     msg['To'] = receiver
