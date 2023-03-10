@@ -384,6 +384,7 @@ class ProjectSQL:
         self.session = session
         self.couch = couch
         self.oconf = oconf
+        self.genstat_proj_url = "https://genomics-status.scilifelab.se/project/"
         self.obj = {}
         self.project = self.session.query(Project).filter(Project.luid == self.pid).one()
         self.build()
@@ -439,7 +440,9 @@ class ProjectSQL:
                 if self.obj.get('details', {}).get('type', '') == 'Application':
                     if 'key  details contract_received' in diffs.keys():
                         contract_received = diffs['key  details contract_received'][1]
-                        msg = f'Contract received for applications project {self.obj["project_name"]}({self.obj["project_id"]}) on {contract_received}.'
+                        genstat_url = f'{self.genstat_proj_url}{self.obj["project_id"]}'
+                        msg = 'Contract received for applications project '
+                        msg += f'<a href="{genstat_url}">{self.obj["project_name"]}({self.obj["project_id"]})</a> on {contract_received}.'
                         send_mail(f'Contract received for GA Project {self.obj["project_name"]}', msg, 'ngi_ga_projects@scilifelab.se')
             else:
                 self.log.info("No modifications found for project {}".format(self.pid))
@@ -450,7 +453,9 @@ class ProjectSQL:
             self.log.info("Trying to save new doc for project {}".format(self.pid))
             db.save(self.obj)
             if self.obj.get('details', {}).get('type', '') == 'Application':
-                msg = f'New applications project created {self.obj["project_name"]}({self.obj["project_id"]}).'
+                genstat_url = f'{self.genstat_proj_url}{self.obj["project_id"]}'
+                msg = 'New applications project created '
+                msg += f'<a href="{genstat_url}">{self.obj["project_name"]}({self.obj["project_id"]})</a>.'
                 send_mail(f'GA Project created {self.obj["project_name"]}', msg, 'ngi_ga_projects@scilifelab.se')
 
     def get_project_level(self):
