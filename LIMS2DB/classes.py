@@ -268,6 +268,7 @@ class Workset_SQL:
         for inp in input_arts:
             sample = inp.samples[0]
             project = sample.project
+            close_date = ''
             if not project:
                 project_luid = 'Control'
                 application = 'Control'
