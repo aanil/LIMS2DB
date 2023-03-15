@@ -5,6 +5,7 @@ from requests import get as rget
 from sqlalchemy import text
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from datetime import datetime
+from LIMS2DB.utils import send_mail
 
 import LIMS2DB.objectsDB.process_categories as pc_cg
 import re
@@ -383,6 +384,7 @@ class ProjectSQL:
         self.session = session
         self.couch = couch
         self.oconf = oconf
+        self.genstat_proj_url = "https://genomics-status.scilifelab.se/project/"
         self.obj = {}
         self.project = self.session.query(Project).filter(Project.luid == self.pid).one()
         self.build()
@@ -407,33 +409,41 @@ class ProjectSQL:
         for row in view[self.pid]:
             doc = db.get(row.id)
         if doc:
-            my_id = doc.pop('_id', None)
-            my_rev = doc.pop('_rev', None)
-            my_mod = doc.pop('modification_time', None)
-            my_crea = doc.pop('creation_time', None)
-            my_staged_files = doc.pop('staged_files', None)
-            my_running_notes = doc['details'].pop('running_notes', None)
-            my_snic_check = doc['details'].pop('snic_checked', None)
+            fields_saved = ['_id', '_rev', 'modification_time', 'creation_time', 'staged_files', 'agreement_doc_id',
+                            'invoice_spec_generated', 'invoice_spec_downloaded']
+            details_saved = ['running_notes', 'snic_checked', 'latest_sticky_note']
+
+            fields_added_back = {}
+            details_added_back = {}
+
+            for field in fields_saved:
+                fields_added_back[field] = doc.pop(field, None)
+
+            for field in details_saved:
+                details_added_back[field] = doc['details'].pop(field, None)
+
             diffs = diff_objects(doc, self.obj)
             if diffs:
-                self.obj['_id'] = my_id
-                self.obj['_rev'] = my_rev
-                self.obj['creation_time'] = my_crea
+                for field in fields_added_back:
+                    if update_modification_time and field == 'modification_time':
+                        self.obj[field] = datetime.now().isoformat()
+                        continue
+                    if fields_added_back[field]:
+                        self.obj[field] = fields_added_back[field]
 
-                if update_modification_time:
-                    self.obj['modification_time'] = datetime.now().isoformat()
-                else:
-                    self.obj['modification_time'] = my_mod
-
-                if my_staged_files:
-                    self.obj['staged_files'] = my_staged_files
-                if my_running_notes:
-                    self.obj['details']['running_notes'] = my_running_notes
-                if my_snic_check:
-                    self.obj['details']['snic_checked'] = my_snic_check
+                for field in details_added_back:
+                    if details_added_back[field]:
+                        self.obj['details'][field] = details_added_back[field]
 
                 self.log.info("Trying to save new doc for project {}".format(self.pid))
                 db.save(self.obj)
+                if self.obj.get('details', {}).get('type', '') == 'Application':
+                    if 'key  details contract_received' in diffs.keys():
+                        contract_received = diffs['key  details contract_received'][1]
+                        genstat_url = f'{self.genstat_proj_url}{self.obj["project_id"]}'
+                        msg = 'Contract received for applications project '
+                        msg += f'<a href="{genstat_url}">{self.obj["project_name"]}({self.obj["project_id"]})</a> on {contract_received}.'
+                        send_mail(f'Contract received for GA Project {self.obj["project_name"]}', msg, 'ngi_ga_projects@scilifelab.se')
             else:
                 self.log.info("No modifications found for project {}".format(self.pid))
 
@@ -442,6 +452,11 @@ class ProjectSQL:
             self.obj['modification_time'] = self.obj['creation_time']
             self.log.info("Trying to save new doc for project {}".format(self.pid))
             db.save(self.obj)
+            if self.obj.get('details', {}).get('type', '') == 'Application':
+                genstat_url = f'{self.genstat_proj_url}{self.obj["project_id"]}'
+                msg = 'New applications project created '
+                msg += f'<a href="{genstat_url}">{self.obj["project_name"]}({self.obj["project_id"]})</a>.'
+                send_mail(f'GA Project created {self.obj["project_name"]}', msg, 'ngi_ga_projects@scilifelab.se')
 
     def get_project_level(self):
         self.obj['entity_type'] = "project_summary"
