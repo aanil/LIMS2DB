@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20230315.1
+Include control info for workset
+
 ## 20221025.1
 Add Library prep option to workset key list
 
