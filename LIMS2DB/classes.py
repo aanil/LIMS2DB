@@ -279,7 +279,7 @@ class Workset_SQL:
             else:
                 project_luid = project.luid
                 application = project.udf_dict.get('Application')
-                name = project.name,
+                name = project.name
                 library = project.udf_dict.get('Library construction method')
                 library_option = project.udf_dict.get('Library prep option')
                 sequencing_setup = "{} {}".format(project.udf_dict.get('Sequencing platform'), project.udf_dict.get('Sequencing setup'))
