@@ -269,22 +269,30 @@ class Workset_SQL:
             sample = inp.samples[0]
             project = sample.project
             if not project:
-                continue  # control samples do not have projects
-            if project.luid not in self.obj['projects']:
-                self.obj['projects'][project.luid] = {'application': project.udf_dict.get('Application'),
+                project_luid = 'Control'
+                if 'Control' not in self.obj['projects']:
+                    self.obj['projects'][project_luid]=  {'application': 'Control',
+                                                          'name': 'Control',
+                                                          'library': '',
+                                                          'library_option': '',
+                                                          'sequencing_setup': '',
+                                                          'samples': {}}
+            elif project.luid not in self.obj['projects']:
+                project_luid = project.luid
+                self.obj['projects'][project_luid] = {'application': project.udf_dict.get('Application'),
                                                       'name': project.name,
                                                       'library': project.udf_dict.get('Library construction method'),
                                                       'library_option': project.udf_dict.get('Library prep option'),
                                                       'sequencing_setup': "{} {}".format(project.udf_dict.get('Sequencing platform'), project.udf_dict.get('Sequencing setup')),
                                                       'samples': {}}
                 if project.closedate:
-                    self.obj['projects'][project.luid]['close_date'] = project.closedate.strftime("%Y-%m-%d")
-            if sample.name not in self.obj['projects'][project.luid]['samples']:
-                self.obj['projects'][project.luid]['samples'][sample.name] = {'customer_name': sample.udf_dict.get('Customer Name'),
+                    self.obj['projects'][project_luid]['close_date'] = project.closedate.strftime("%Y-%m-%d")
+            if sample.name not in self.obj['projects'][project_luid]['samples']:
+                self.obj['projects'][project_luid]['samples'][sample.name] = {'customer_name': sample.udf_dict.get('Customer Name'),
                                                                               'sequencing_status': 'UNKNOWN', 'library_status': 'UNKNOWN',
                                                                               'rec_ctrl': {}, 'library': {}, 'sequencing': {}}
 
-            self.obj['projects'][project.luid]['samples'][sample.name]['rec_ctrl']['status'] = inp.qc_flag
+            self.obj['projects'][project_luid]['samples'][sample.name]['rec_ctrl']['status'] = inp.qc_flag
 
             query = "select art.* from artifact art \
             inner join outputmapping om on om.outputartifactid=art.artifactid \
@@ -292,7 +300,7 @@ class Workset_SQL:
             where piot.inputartifactid={inp_art} and art.artifacttypeid=2 and piot.processid={start_id};".format(inp_art=inp.artifactid, start_id=self.start.processid)
 
             out = self.session.query(Artifact).from_statement(text(query)).one()
-            self.obj['projects'][project.luid]['samples'][sample.name]['location'] = out.containerplacement.api_string
+            self.obj['projects'][project_luid]['samples'][sample.name]['location'] = out.containerplacement.api_string
 
             query = "select pc.* from process pc \
                     inner join processiotracker piot on piot.processid=pc.processid \
@@ -302,15 +310,15 @@ class Workset_SQL:
             aggregates = self.session.query(Process).from_statement(text(query)).all()
 
             for agr in aggregates:
-                self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid] = {}
-                self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['id'] = agr.luid
-                self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['name'] = agr.protocolnameused
+                self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid] = {}
+                self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['id'] = agr.luid
+                self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['name'] = agr.protocolnameused
                 if agr.daterun is not None:
-                    self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['date'] = agr.daterun.strftime("%Y-%m-%d")
+                    self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['date'] = agr.daterun.strftime("%Y-%m-%d")
                     if not self.obj['last_aggregate'] or datetime.strptime(self.obj['last_aggregate'], '%Y-%m-%d') < agr.daterun:
                         self.obj['last_aggregate'] = agr.daterun.strftime("%Y-%m-%d")
                 else:
-                    self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['date'] = None
+                    self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['date'] = None
 
                 query = "select art.* from artifact art \
                         inner join processiotracker piot on piot.inputartifactid=art.artifactid \
@@ -319,18 +327,18 @@ class Workset_SQL:
 
                 agr_inp = self.session.query(Artifact).from_statement(text(query)).one()
                 if agr.typeid == 806 and agr_inp.qc_flag == "UNKNOWN":
-                    self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['status'] = agr_inp.udf_dict.get("NeoPrep Machine QC")
-                    self.obj['projects'][project.luid]['samples'][sample.name]['library_status'] = agr_inp.udf_dict.get("NeoPrep Machine QC")
+                    self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['status'] = agr_inp.udf_dict.get("NeoPrep Machine QC")
+                    self.obj['projects'][project_luid]['samples'][sample.name]['library_status'] = agr_inp.udf_dict.get("NeoPrep Machine QC")
                 else:
-                    self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['status'] = agr_inp.qc_flag
-                    self.obj['projects'][project.luid]['samples'][sample.name]['library_status'] = agr_inp.qc_flag
-                self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['art'] = agr_inp.luid
+                    self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['status'] = agr_inp.qc_flag
+                    self.obj['projects'][project_luid]['samples'][sample.name]['library_status'] = agr_inp.qc_flag
+                self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['art'] = agr_inp.luid
                 if 'Molar Conc. (nM)' in agr_inp.udf_dict:
-                    self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['concentration'] = "{0:.2f} nM".format(agr_inp.udf_dict['Molar Conc. (nM)'])
+                    self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['concentration'] = "{0:.2f} nM".format(agr_inp.udf_dict['Molar Conc. (nM)'])
                 elif 'Concentration' in agr_inp.udf_dict and 'Conc. Units' in agr_inp.udf_dict:
-                    self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['concentration'] = "{0:.2f} {1}".format(agr_inp.udf_dict['Concentration'], agr_inp.udf_dict['Conc. Units'])
+                    self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['concentration'] = "{0:.2f} {1}".format(agr_inp.udf_dict['Concentration'], agr_inp.udf_dict['Conc. Units'])
                 if 'Size (bp)' in agr_inp.udf_dict:
-                    self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['size'] = round(agr_inp.udf_dict['Size (bp)'], 2)
+                    self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['size'] = round(agr_inp.udf_dict['Size (bp)'], 2)
 
                 #Grabbing indexes
                 # Get all artifacts for given sample
@@ -343,7 +351,7 @@ class Workset_SQL:
                     for art in artifacts:
                             if art.reagentlabels is not None and len(art.reagentlabels) == 1:
                                 #If there are more than one reagent label, then I can't guess which one is the right one : the artifact is probably a pool
-                                self.obj['projects'][project.luid]['samples'][sample.name]['library'][agr.luid]['index']=self.extract_barcode(art.reagentlabels[0].name)
+                                self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['index']=self.extract_barcode(art.reagentlabels[0].name)
                 except AssertionError:
                     pass
 
@@ -355,8 +363,8 @@ class Workset_SQL:
             sequencing = self.session.query(Process).from_statement(text(query)).all()
             for seq in sequencing:
                 if seq.daterun is not None:
-                    self.obj['projects'][project.luid]['samples'][sample.name]['sequencing'][seq.luid] = {}
-                    self.obj['projects'][project.luid]['samples'][sample.name]['sequencing'][seq.luid]['date'] = seq.daterun.strftime("%Y-%m-%d")
+                    self.obj['projects'][project_luid]['samples'][sample.name]['sequencing'][seq.luid] = {}
+                    self.obj['projects'][project_luid]['samples'][sample.name]['sequencing'][seq.luid]['date'] = seq.daterun.strftime("%Y-%m-%d")
 
                     query = "select art.* from artifact art \
                             inner join processiotracker piot on piot.inputartifactid=art.artifactid \
@@ -369,9 +377,9 @@ class Workset_SQL:
                         if seq_qc_flag != 'FAILED':  # failed stops sequencing update
                             seq_qc_flag = seq_inp.qc_flag
 
-                    self.obj['projects'][project.luid]['samples'][sample.name]['sequencing'][seq.luid]['status'] = seq_qc_flag
+                    self.obj['projects'][project_luid]['samples'][sample.name]['sequencing'][seq.luid]['status'] = seq_qc_flag
                     # updates every time until the latest one, because of the order by in fetching sequencing processes.
-                    self.obj['projects'][project.luid]['samples'][sample.name]['sequencing_status'] = seq_qc_flag
+                    self.obj['projects'][project_luid]['samples'][sample.name]['sequencing_status'] = seq_qc_flag
 
 
 class ProjectSQL:
