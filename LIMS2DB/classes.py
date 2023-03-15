@@ -270,23 +270,29 @@ class Workset_SQL:
             project = sample.project
             if not project:
                 project_luid = 'Control'
-                if 'Control' not in self.obj['projects']:
-                    self.obj['projects'][project_luid]=  {'application': 'Control',
-                                                          'name': 'Control',
-                                                          'library': '',
-                                                          'library_option': '',
-                                                          'sequencing_setup': '',
-                                                          'samples': {}}
-            elif project.luid not in self.obj['projects']:
+                application = 'Control'
+                name = 'Control'
+                library = ''
+                library_option = ''
+                sequencing_setup = ''
+            else:
                 project_luid = project.luid
-                self.obj['projects'][project_luid] = {'application': project.udf_dict.get('Application'),
-                                                      'name': project.name,
-                                                      'library': project.udf_dict.get('Library construction method'),
-                                                      'library_option': project.udf_dict.get('Library prep option'),
-                                                      'sequencing_setup': "{} {}".format(project.udf_dict.get('Sequencing platform'), project.udf_dict.get('Sequencing setup')),
-                                                      'samples': {}}
+                application = project.udf_dict.get('Application')
+                name = project.name,
+                library = project.udf_dict.get('Library construction method')
+                library_option = project.udf_dict.get('Library prep option')
+                sequencing_setup = "{} {}".format(project.udf_dict.get('Sequencing platform'), project.udf_dict.get('Sequencing setup'))
                 if project.closedate:
-                    self.obj['projects'][project_luid]['close_date'] = project.closedate.strftime("%Y-%m-%d")
+                    close_date = project.closedate.strftime("%Y-%m-%d")
+            if project_luid not in self.obj['projects']:
+                self.obj['projects'][project_luid]=  {'application': application,
+                                                      'name': name,
+                                                      'library': library,
+                                                      'library_option': library_option,
+                                                      'sequencing_setup': sequencing_setup,
+                                                      'samples': {}}
+                if close_date:
+                    self.obj['projects'][project_luid]['close_date'] = close_date
             if sample.name not in self.obj['projects'][project_luid]['samples']:
                 self.obj['projects'][project_luid]['samples'][sample.name] = {'customer_name': sample.udf_dict.get('Customer Name'),
                                                                               'sequencing_status': 'UNKNOWN', 'library_status': 'UNKNOWN',
