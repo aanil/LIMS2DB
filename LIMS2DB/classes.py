@@ -269,13 +269,14 @@ class Workset_SQL:
             sample = inp.samples[0]
             project = sample.project
             if not project:
-                project_luid = 'P000'
-                self.obj['projects'][project_luid]=    {'application': 'Control',
-                                                      'name': 'Control',
-                                                      'library': '',
-                                                      'library_option': '',
-                                                      'sequencing_setup': '',
-                                                      'samples': {}}
+                project_luid = 'Control'
+                if 'Control' not in self.obj['projects']:
+                    self.obj['projects'][project_luid]=  {'application': 'Control',
+                                                          'name': 'Control',
+                                                          'library': '',
+                                                          'library_option': '',
+                                                          'sequencing_setup': '',
+                                                          'samples': {}}
             elif project.luid not in self.obj['projects']:
                 project_luid = project.luid
                 self.obj['projects'][project_luid] = {'application': project.udf_dict.get('Application'),
