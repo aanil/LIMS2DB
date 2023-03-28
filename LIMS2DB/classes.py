@@ -457,14 +457,14 @@ class ProjectSQL:
                         genstat_url = f'{self.genstat_proj_url}{self.obj["project_id"]}'
                         if diffs['key  details contract_received'][1] == 'missing':
                             old_contract_received = diffs['key  details contract_received'][0]
-                            msg = f'Contract received on {old_contract_received} changed for applications project '
+                            msg = f'Contract received on {old_contract_received} deleted for applications project '
                             msg += f'<a href="{genstat_url}">{self.obj["project_name"]}({self.obj["project_id"]})</a>.'
                         else:
                             contract_received = diffs['key  details contract_received'][1]
                             msg = 'Contract received for applications project '
                             msg += f'<a href="{genstat_url}">{self.obj["project_name"]}({self.obj["project_id"]})</a> on {contract_received}.'
 
-                        send_mail(f'Contract update for GA Project {self.obj["project_name"]}', msg, 'ngi_ga_projects@scilifelab.se')
+                        send_mail(f'Contract updated for GA Project {self.obj["project_name"]}', msg, 'ngi_ga_projects@scilifelab.se')
             else:
                 self.log.info("No modifications found for project {}".format(self.pid))
 
