@@ -454,11 +454,17 @@ class ProjectSQL:
                 db.save(self.obj)
                 if self.obj.get('details', {}).get('type', '') == 'Application':
                     if 'key  details contract_received' in diffs.keys():
-                        contract_received = diffs['key  details contract_received'][1]
                         genstat_url = f'{self.genstat_proj_url}{self.obj["project_id"]}'
-                        msg = 'Contract received for applications project '
-                        msg += f'<a href="{genstat_url}">{self.obj["project_name"]}({self.obj["project_id"]})</a> on {contract_received}.'
-                        send_mail(f'Contract received for GA Project {self.obj["project_name"]}', msg, 'ngi_ga_projects@scilifelab.se')
+                        if diffs['key  details contract_received'][1] == 'missing':
+                            old_contract_received = diffs['key  details contract_received'][0]
+                            msg = f'Contract received on {old_contract_received} deleted for applications project '
+                            msg += f'<a href="{genstat_url}">{self.obj["project_name"]}({self.obj["project_id"]})</a>.'
+                        else:
+                            contract_received = diffs['key  details contract_received'][1]
+                            msg = 'Contract received for applications project '
+                            msg += f'<a href="{genstat_url}">{self.obj["project_name"]}({self.obj["project_id"]})</a> on {contract_received}.'
+
+                        send_mail(f'Contract updated for GA Project {self.obj["project_name"]}', msg, 'ngi_ga_projects@scilifelab.se')
             else:
                 self.log.info("No modifications found for project {}".format(self.pid))
 
@@ -493,6 +499,9 @@ class ProjectSQL:
         self.obj['details'] = self.make_normalized_dict(self.project.udf_dict)
         rem_run_note_udf = self.obj['details'].pop('running_notes', None)
         self.obj['order_details'] = self.get_project_order()
+        lims_priority = {1: 'Low', 5: 'Standard', 10: 'High'} #as defined in LIMS
+        if self.project.priority:
+            self.obj['priority'] = lims_priority.get(self.project.priority, None)
 
     def get_project_summary(self):
         # get project summaries from project
