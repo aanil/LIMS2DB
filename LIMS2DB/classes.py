@@ -499,6 +499,9 @@ class ProjectSQL:
         self.obj['details'] = self.make_normalized_dict(self.project.udf_dict)
         rem_run_note_udf = self.obj['details'].pop('running_notes', None)
         self.obj['order_details'] = self.get_project_order()
+        lims_priority = {1: 'Low', 5: 'Standard', 10: 'High'} #as defined in LIMS
+        if self.project.priority:
+            self.obj['priority'] = lims_priority.get(self.project.priority, None)
 
     def get_project_summary(self):
         # get project summaries from project
