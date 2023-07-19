@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20230719.1
+Support NovaSeqXPlus
+
 ## 20230315.1
 Include control info for workset
 

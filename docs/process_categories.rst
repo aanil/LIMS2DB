@@ -23,6 +23,7 @@ ID  process Name
 1306  Load Sample and Sequencing (MinION) 1.0
 1458  Load to Flowcell (NovaSeq 6000 v2.0)
 1910  Load to Flowcell (NextSeq v1.0)
+2614  Load to Flowcell (NovaSeqXPlus) v1.0
 === =======================================
 
 
@@ -116,6 +117,8 @@ ID  process Name
 1507 Library Pooling (NovaSeq) v2.0
 1906 Pre-Pooling (NextSeq) v1.0
 1907 Library Pooling (NextSeq) v1.0
+2605 Pre-Pooling (NovaSeqXPlus) v1.0
+2611 Make Bulk Pool (NovaSeqXPlus) v1.0
 === =======================================
 
 
@@ -180,6 +183,7 @@ ID  process Name
 715	Library Normalization (HiSeq X) 1.0
 1505	Library Normalization (NovaSeq) v2.0
 1905  Library Normalization (NextSeq) v1.0
+2617  Library Normalization (NovaSeqXPlus) v1.0
 === =======================================
 
 
@@ -252,6 +256,7 @@ ID  process Name
 2260  MinION Sequencing
 2261  Flongle Sequencing
 2262  PromethION Sequencing
+2612  NovaSeqXPlus Run v1.0
 === =======================================
 
 
