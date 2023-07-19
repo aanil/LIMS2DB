@@ -50,7 +50,9 @@ POOLING = {
     '1506' : 'Pre-Pooling (NovaSeq) v2.0',
     '1507' : 'Library Pooling (NovaSeq) v2.0',
     '1906' : 'Pre-Pooling (NextSeq) v1.0',
-    '1907' : 'Library Pooling (NextSeq) v1.0'}
+    '1907' : 'Library Pooling (NextSeq) v1.0',
+    '2605' : 'Pre-Pooling (NovaSeqXPlus) v1.0',
+    '2611' : 'Make Bulk Pool (NovaSeqXPlus) v1.0'}
 PREPSTARTFINLIB = {
     '255' : 'Library Pooling (Finished Libraries) 4.0'}
 PREPSTART = {
@@ -121,13 +123,15 @@ SEQSTART = {
     '710' :'Cluster Generation (HiSeq X) 1.0',
     '1306' : 'Load Sample and Sequencing (MinION) 1.0',
     '1458' : 'Load to Flowcell (NovaSeq 6000 v2.0)',
-    '1910' : 'Load to Flowcell (NextSeq v1.0)'}
+    '1910' : 'Load to Flowcell (NextSeq v1.0)',
+    '2614' : 'Load to Flowcell (NovaSeqXPlus) v1.0'}
 DILSTART = {
     '39' : 'Library Normalization (Illumina SBS) 4.0',
     '40' : 'Library Normalization (MiSeq) 4.0',
     '715': 'Library Normalization (HiSeq X) 1.0',
     '1505': 'Library Normalization (NovaSeq) v2.0',
-    '1905' : 'Library Normalization (NextSeq) v1.0'}
+    '1905' : 'Library Normalization (NextSeq) v1.0',
+    '2617' : 'Library Normalization (NovaSeqXPlus) v1.0'}
 SEQUENCING = {
     '38' : 'Illumina Sequencing (Illumina SBS) 4.0',
     '46' : 'MiSeq Run (MiSeq) 4.0',
@@ -137,7 +141,8 @@ SEQUENCING = {
     '1908' : 'Illumina Sequencing (NextSeq) v1.0',
     '2260' : 'MinION Sequencing',
     '2261' : 'Flongle Sequencing',
-    '2262' : 'PromethION Sequencing'}
+    '2262' : 'PromethION Sequencing',
+    '2612' : 'NovaSeqXPlus Run v1.0'}
 WORKSET = {
     '117' : 'Applications Generic Process',
     '204' : 'Setup Workset/Plate'}
