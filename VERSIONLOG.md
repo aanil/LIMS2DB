@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20231011.1
+Add support for Illumina DNA PCR-free protocol
+
 ## 20230719.1
 Support NovaSeqXPlus
 

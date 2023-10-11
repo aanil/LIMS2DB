@@ -78,7 +78,8 @@ PREPSTART = {
     '2155' : 'PCR2 (Amplicon)',
     '2205' : 'Adapter ligation and reverse transcription',
     '2254' : 'ONT End-Prep and Cleanup',
-    '2360' : 'Library Preparation & Amplification'}
+    '2360' : 'Library Preparation & Amplification',
+    '2705' : 'Illumina DNA PCR-free Library Construction'}
 PREPEND = {
     '109' : 'CA Purification',
     '111' : 'Amplify Captured Libraries to Add Index Tags (SS XT) 4.0',
@@ -94,7 +95,8 @@ PREPEND = {
     '2060' : 'Visium Library Construction',
     '2105' : 'Amplification and Purification',
     '2206' : 'Amplify by PCR and Add Index Tags',
-    '2258' : 'ONT Adapter Ligation and Cleanup'}
+    '2258' : 'ONT Adapter Ligation and Cleanup',
+    '2705' : 'Illumina DNA PCR-free Library Construction'}
 LIBVAL = {
     '17' : 'Bioanalyzer QC (Library Validation) 4.0',
     '20' : 'CaliperGX QC (DNA)',
