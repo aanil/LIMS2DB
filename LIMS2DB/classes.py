@@ -781,7 +781,7 @@ class ProjectSQL:
                         query = "select distinct pro.* from process pro \
                                  inner join processiotracker piot on piot.processid = pro.processid \
                                  inner join artifact_ancestor_map aam on piot.inputartifactid = aam.artifactid \
-                                 where pro.typeid in (38,46,714,1454) and aam.ancestorartifactid = {lib_art}".format(lib_art=agrlibval_art.artifactid)
+                                 where pro.typeid in (38,46,714,1454,1908,2612) and aam.ancestorartifactid = {lib_art}".format(lib_art=agrlibval_art.artifactid)
                         seq_fcs = self.session.query(Process).from_statement(text(query)).all()
                         for seq in seq_fcs:
                             seq_fc_id = seq.udf_dict.get("Run ID")

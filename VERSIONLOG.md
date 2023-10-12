@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20231012.1
+Add missing sequencing step IDs
+
 ## 20231011.1
 Add support for Illumina DNA PCR-free protocol
 

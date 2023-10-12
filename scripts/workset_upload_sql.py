@@ -31,7 +31,7 @@ def main(args):
 
 
     elif args.recent:
-         recent_processes=get_last_modified_processes(session,[8,46,117,204,1454,1908], args.interval)
+         recent_processes=get_last_modified_processes(session,[8,46,117,204,1454,1908,2612], args.interval)
          processes_to_update=set()
          for p in recent_processes:
              if p.typeid in [117, 204] and p.daterun:#will only catch finished setup workset plate
