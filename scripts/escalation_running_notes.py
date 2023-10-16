@@ -31,7 +31,7 @@ def main(args):
                     where principalid=:pid;"
         return session.query(tbls.Researcher).from_statement(text(query)).params(pid=userid).first()
 
-    def make_esc_running_note(researcher, reviewer, comment, date, processid, project, review_ask):
+    def make_esc_running_note(researcher, reviewer, comment, date, processid, project, step_name, review_ask):
         created_time = date.astimezone(datetime.timezone.utc)
         lims_link = "[LIMS](https://ngi-lims-prod.scilifelab.se/clarity/work-complete/{0})".format(processid)
         researcher_name = f"{researcher.firstname} {researcher.lastname}"
@@ -46,7 +46,7 @@ def main(args):
                     '_id': f'P{project}:{datetime.datetime.timestamp(created_time)}',
                     'user': researcher_name,
                     'email': researcher.email,
-                    'note': f"Comment from Aggregate QC ({lims_link}) ({comment_detail}): \n{comment}",
+                    'note': f"Comment from {step_name} ({lims_link}) ({comment_detail}): \n{comment}",
                     'categories': ['Lab', 'Decision'],
                     'note_type': 'project',
                     'parent': f'P{project}',
@@ -117,9 +117,15 @@ def main(args):
         ).all()
 
     for (escalation, sample) in escalations:
+        step_name = session.execute('select ps.name '
+                                    'from escalationevent esc, process pr, protocolstep ps '
+                                    'where esc.processid=pr.processid and pr.protocolstepid=ps.stepid '
+                                    f'and esc.processid={escalation.processid};'
+                                    ).first()[0]
         owner = get_researcher(escalation.ownerid)
         reviewer = get_researcher(escalation.reviewerid)
-        escnote = make_esc_running_note(owner, reviewer, escalation.escalationcomment, escalation.escalationdate, escalation.processid, sample.projectid, True)
+        escnote = make_esc_running_note(owner, reviewer, escalation.escalationcomment, escalation.escalationdate, 
+                                        escalation.processid, sample.projectid, step_name, True)
 
         if update_note_db(escnote):
             email_proj_coord(sample.projectid, escnote, escalation.escalationdate)
@@ -129,7 +135,8 @@ def main(args):
                 comment= '[No comments]'
             else:
                 comment = escalation.reviewcomment
-            revnote = make_esc_running_note(reviewer, None, comment, escalation.reviewdate, escalation.processid, sample.projectid, False)
+            revnote = make_esc_running_note(reviewer, None, comment, escalation.reviewdate, escalation.processid, 
+                                            sample.projectid, step_name,False)
             if update_note_db(revnote):
                 email_proj_coord(sample.projectid, revnote, escalation.reviewdate)
 
