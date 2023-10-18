@@ -40,14 +40,16 @@ def main(args):
             reviewer_name = f"{reviewer.firstname} {reviewer.lastname}"
         if review_ask:
             comment_detail = f'**{researcher_name} asked for review from {reviewer_name}**'
+            categories = ['Lab']
         else:
             comment_detail = f'**Reviewer {researcher_name} replied**'
+            categories = ['Administration', 'Decision']
         newNote = {
                     '_id': f'P{project}:{datetime.datetime.timestamp(created_time)}',
                     'user': researcher_name,
                     'email': researcher.email,
                     'note': f"Comment from {step_name} ({lims_link}) ({comment_detail}): \n{comment}",
-                    'categories': ['Lab', 'Decision'],
+                    'categories': categories,
                     'note_type': 'project',
                     'parent': f'P{project}',
                     'created_at_utc': created_time.isoformat(),
