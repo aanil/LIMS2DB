@@ -33,7 +33,8 @@ def main(args):
 
     def make_esc_running_note(researcher, reviewer, comment, date, processid, project, step_name, review_ask):
         created_time = date.astimezone(datetime.timezone.utc)
-        lims_link = "[LIMS](https://ngi-lims-prod.scilifelab.se/clarity/work-complete/{0})".format(processid)
+        #Apparently inserting raw html works in markdown
+        lims_link = f"<a href='https://ngi-lims-prod.scilifelab.se/clarity/work-complete/{processid}' target='_blank'>LIMS</a>"
         researcher_name = f"{researcher.firstname} {researcher.lastname}"
 
         if reviewer:
