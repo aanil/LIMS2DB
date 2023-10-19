@@ -79,6 +79,8 @@ PREPSTART = {
     '2205' : 'Adapter ligation and reverse transcription',
     '2254' : 'ONT End-Prep and Cleanup',
     '2360' : 'Library Preparation & Amplification',
+    '2656' : 'Deparafinization, H&E, Tissue Imaging',
+    '2657' : 'Fixation, H&E, Tissue Imaging',
     '2705' : 'Illumina DNA PCR-free Library Construction'}
 PREPEND = {
     '109' : 'CA Purification',
@@ -96,6 +98,7 @@ PREPEND = {
     '2105' : 'Amplification and Purification',
     '2206' : 'Amplify by PCR and Add Index Tags',
     '2258' : 'ONT Adapter Ligation and Cleanup',
+    '2663' : 'Probe-based Library Construction',
     '2705' : 'Illumina DNA PCR-free Library Construction'}
 LIBVAL = {
     '17' : 'Bioanalyzer QC (Library Validation) 4.0',
@@ -147,7 +150,9 @@ SEQUENCING = {
     '2612' : 'NovaSeqXPlus Run v1.0'}
 WORKSET = {
     '117' : 'Applications Generic Process',
-    '204' : 'Setup Workset/Plate'}
+    '204' : 'Setup Workset/Plate',
+    '2656' : 'Deparafinization, H&E, Tissue Imaging',
+    '2657' : 'Fixation, H&E, Tissue Imaging'}
 SUMMARY = {
     '356' : 'Project Summary 1.3'}
 DEMULTIPLEX={

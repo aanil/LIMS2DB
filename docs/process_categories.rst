@@ -143,6 +143,8 @@ ID  process Name
 === =======================================
 117	Applications Generic Process
 204	Setup Workset/Plate
+2656 Deparafinization, H&E, Tissue Imaging
+2657 Fixation, H&E, Tissue Imaging
 === =======================================
 
 
@@ -168,6 +170,7 @@ ID  process Name
 2105 Amplification and Purification
 2206 Amplify by PCR and Add Index Tags
 2258 ONT Adapter Ligation and Cleanup
+2663 Probe-based Library Construction
 2705 Illumina DNA PCR-free Library Construction
 === =======================================
 
@@ -302,6 +305,8 @@ ID  process Name
 2205 Adapter ligation and reverse transcription
 2254 ONT End-Prep and Cleanup
 2360 Library Preparation & Amplification
+2656 Deparafinization, H&E, Tissue Imaging
+2657 Fixation, H&E, Tissue Imaging
 2705 Illumina DNA PCR-free Library Construction
 === =======================================
 

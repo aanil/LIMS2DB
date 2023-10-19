@@ -10,6 +10,8 @@ import LIMS2DB.objectsDB.process_categories as pc_cg
 
 from sqlalchemy import text
 
+
+
 def create_lims_data_obj(session, pro):
     obj={}
     obj['step_id']=pro.luid
@@ -59,8 +61,7 @@ def create_lims_data_obj(session, pro):
     return obj
 
 def get_sequencing_steps(session, interval="24 hours"):
-    #38, 46, 714, 1454, 1908 are hiseq, miseq, hiseqX, novaseq and nextseq sequencing
-    return get_last_modified_processes(session, [38,714, 1454, 46, 1908, 2612], interval)
+    return get_last_modified_processes(session, list(pc_cg.SEQUENCING.keys()), interval)
 
 def upload_to_couch(couch, runid, lims_data):
     for dbname in ['flowcells', 'x_flowcells']:
