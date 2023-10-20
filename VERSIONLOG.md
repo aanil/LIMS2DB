@@ -1,5 +1,12 @@
 # LIMS2DB Version Log
 
+## 20231019.2
+Clear hardcoded step ids
+
+## 20231019.1
+
+Add support for CytAssist Library Prep protocol
+
 ## 20231018.1
 
 Add script to convert review comment in the Aggregate QC steps to running notes

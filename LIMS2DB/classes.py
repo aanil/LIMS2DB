@@ -685,7 +685,7 @@ class ProjectSQL:
                 inner join artifact_sample_map asm on piot.inputartifactid=asm.artifactid \
                 inner join sample sa on sa.processid=asm.processid \
                 where sa.processid = {sapid} and pr.typeid in ({tid}) \
-                order by pr.daterun;".format(sapid=sample.processid, tid=','.join(list(pc_cg.WORKSET.keys()) + list(pc_cg.PREPSTARTFINLIB.keys()) + ['117']))  # Applications Generic Process
+                order by pr.daterun;".format(sapid=sample.processid, tid=','.join(list(pc_cg.WORKSET.keys()) + list(pc_cg.PREPSTARTFINLIB.keys())))  # Applications Generic Process
         lp_starts = self.session.query(Process).from_statement(text(query)).all()
         prepid = 64
         for one_libprep in lp_starts:
@@ -730,7 +730,7 @@ class ProjectSQL:
                         pass
                 except IndexError:
                     self.log.info("No libstart found for sample {}".format(sample.name))
-                    if one_libprep.typeid == 117:
+                    if one_libprep.typeid in list(pc_cg.WORKSET.keys()):
                         if "first_prep_start_date" not in self.obj['samples'][sample.name] or \
                                 datetime.strptime(self.obj['samples'][sample.name]['first_prep_start_date'], "%Y-%m-%d") > one_libprep.daterun:
                             self.obj['samples'][sample.name]['first_prep_start_date'] = one_libprep.daterun.strftime("%Y-%m-%d")
@@ -781,7 +781,7 @@ class ProjectSQL:
                         query = "select distinct pro.* from process pro \
                                  inner join processiotracker piot on piot.processid = pro.processid \
                                  inner join artifact_ancestor_map aam on piot.inputartifactid = aam.artifactid \
-                                 where pro.typeid in (38,46,714,1454,1908,2612) and aam.ancestorartifactid = {lib_art}".format(lib_art=agrlibval_art.artifactid)
+                                 where pro.typeid in ({seq_step_id}) and aam.ancestorartifactid = {lib_art}".format(seq_step_id=','.join(pc_cg.SEQUENCING.keys()), lib_art=agrlibval_art.artifactid)
                         seq_fcs = self.session.query(Process).from_statement(text(query)).all()
                         for seq in seq_fcs:
                             seq_fc_id = seq.udf_dict.get("Run ID")
