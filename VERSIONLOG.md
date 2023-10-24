@@ -1,5 +1,8 @@
 # LIMS2DB Version Log
 
+## 20231024.1
+Support workset with multiple replicates of the same sample
+
 ## 20231019.2
 Clear hardcoded step ids
 
