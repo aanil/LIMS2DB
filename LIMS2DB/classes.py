@@ -312,8 +312,11 @@ class Workset_SQL:
             rep_counter = 1
             for out in outs:
                 if len(outs) > 1:
+                    if self.obj['projects'][project_luid]['samples'].get(sample.name):
+                        org_sample_obj = self.obj['projects'][project_luid]['samples'][sample.name]
+                        del self.obj['projects'][project_luid]['samples'][sample.name]
                     sample_name = sample.name + '_' + str(rep_counter)
-                    self.obj['projects'][project_luid]['samples'][sample_name] = self.obj['projects'][project_luid]['samples'].pop(sample.name)
+                    self.obj['projects'][project_luid]['samples'][sample_name] = org_sample_obj.copy()
                     rep_counter += 1
                 else:
                     sample_name = sample.name
