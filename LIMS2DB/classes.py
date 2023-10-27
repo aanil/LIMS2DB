@@ -11,6 +11,7 @@ import LIMS2DB.objectsDB.process_categories as pc_cg
 import re
 import six
 import six.moves.http_client as http_client
+import copy
 
 
 class Workset:
@@ -313,10 +314,10 @@ class Workset_SQL:
             for out in outs:
                 if len(outs) > 1:
                     if self.obj['projects'][project_luid]['samples'].get(sample.name):
-                        org_sample_obj = self.obj['projects'][project_luid]['samples'][sample.name]
+                        org_sample_obj = copy.deepcopy(self.obj['projects'][project_luid]['samples'][sample.name])
                         del self.obj['projects'][project_luid]['samples'][sample.name]
                     sample_name = sample.name + '_' + str(rep_counter)
-                    self.obj['projects'][project_luid]['samples'][sample_name] = org_sample_obj.copy()
+                    self.obj['projects'][project_luid]['samples'][sample_name] = copy.deepcopy(org_sample_obj)
                     rep_counter += 1
                 else:
                     sample_name = sample.name
@@ -361,18 +362,13 @@ class Workset_SQL:
                     if 'Size (bp)' in agr_inp.udf_dict:
                         self.obj['projects'][project_luid]['samples'][sample_name]['library'][agr.luid]['size'] = round(agr_inp.udf_dict['Size (bp)'], 2)
 
-                    #Grabbing indexes
-                    # Get all artifacts for given sample
-                    query = "select art.* from artifact art \
-                        inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
-                        inner join sample sa on sa.processid=asm.processid \
-                        where sa.processid = {sapid};".format(sapid=sample.processid)
+                    # Fetch index (reagent_label) information
                     try:
                         artifacts = self.session.query(Artifact).from_statement(text(query)).all()
                         for art in artifacts:
-                                if art.reagentlabels is not None and len(art.reagentlabels) == 1:
-                                    #If there are more than one reagent label, then I can't guess which one is the right one : the artifact is probably a pool
-                                    self.obj['projects'][project_luid]['samples'][sample_name]['library'][agr.luid]['index']=self.extract_barcode(art.reagentlabels[0].name)
+                            if art.reagentlabels is not None and len(art.reagentlabels) == 1:
+                                #If there are more than one reagent label, then I can't guess which one is the right one : the artifact is probably a pool
+                                self.obj['projects'][project_luid]['samples'][sample_name]['library'][agr.luid]['index']=self.extract_barcode(art.reagentlabels[0].name)
                     except AssertionError:
                         pass
 
