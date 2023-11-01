@@ -1,12 +1,19 @@
 # LIMS2DB Version Log
 
+## 20231101.1
+
+Add key names for new UDFs for setup ws
+
 ## 20231027.1
+
 Fix bug with sample reference and index errors
 
 ## 20231024.1
+
 Support workset with multiple replicates of the same sample
 
 ## 20231019.2
+
 Clear hardcoded step ids
 
 ## 20231019.1

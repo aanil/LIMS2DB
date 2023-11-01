@@ -992,19 +992,9 @@ class ProjectSQL:
                     out_artifact = self.session.query(Artifact).from_statement(text(query)).all()[0]
                     self.obj['samples'][sample.name]['library_prep'][prepname]['workset_name'] = out_artifact.containerplacement.container.name
                     self.obj['samples'][sample.name]['library_prep'][prepname]['amount_taken_(ng)'] = out_artifact.udf_dict.get("Amount taken (ng)")
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['amount_for_prep_(ng)'] = out_artifact.udf_dict.get("Amount for prep (ng)")
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['amount_taken_from_plate_(ng)'] = out_artifact.udf_dict.get("Amount taken from plate (ng)")
                     self.obj['samples'][sample.name]['library_prep'][prepname]['volume_(ul)'] = out_artifact.udf_dict.get("Total Volume (uL)")
-                    # Legacy nextera special case
-                    if not out_artifact.udf_dict.get("Amount taken (ng)"):
-                        # get the output art of the tagmentation step
-                        query = "select art.* from artifact art \
-                                inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
-                                inner join outputmapping om on om.outputartifactid=art.artifactid \
-                                inner join processiotracker piot on piot.trackerid=om.trackerid \
-                                inner join process pr on pr.processid=piot.processid \
-                                inner join artifact_ancestor_map aam on aam.artifactid=art.artifactid \
-                                where asm.processid={sid} and pr.typeid=605 and aam.ancestorartifactid={out_art}".format(sid=sample.processid, out_art=out_artifact.artifactid)
-                        tag_out_art = self.session.query(Artifact).from_statement(text(query)).one()
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['amount_taken_(ng)'] = tag_out_art.udf_dict.get("Amount taken (ng)")
 
                 except NoResultFound:
                     self.log.info("Did not find the output the Setup Workset Plate for sample {}".format(sample.name))
