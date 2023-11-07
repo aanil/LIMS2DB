@@ -70,7 +70,8 @@ def main(args):
             if '_rev' in dict_note.keys():
                 del dict_note['_rev']
             if not dict_note==note:
-                db.save(note)
+                note_existing.update(note)
+                db.save(note_existing)
                 updated = True
         else:
             db.save(note)
