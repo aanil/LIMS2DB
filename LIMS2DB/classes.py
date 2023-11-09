@@ -450,6 +450,13 @@ class ProjectSQL:
                     if details_added_back[field]:
                         self.obj['details'][field] = details_added_back[field]
 
+                # Don't overwrite order portal details if have not been able to fetch them this round
+                if self.obj["order_details"] == {} and doc["order_details"] != {}:
+                    self.log.warn(
+                        "Preventing order details to be overwritten since no details were fetched from order portal this round"
+                    )
+                    self.obj["order_details"] = doc["order_details"]
+
                 self.log.info("Trying to save new doc for project {}".format(self.pid))
                 db.save(self.obj)
                 if self.obj.get('details', {}).get('type', '') == 'Application':
