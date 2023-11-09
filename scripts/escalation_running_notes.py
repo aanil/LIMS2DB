@@ -58,16 +58,20 @@ def main(args):
                     'projects': [f'P{project}']
                     }
         return newNote
-    
+
     def update_note_db(note):
         updated = False
         note_existing = db.get(note['_id'])
+        if '_rev' in note.keys():
+            del note['_rev']
 
         if note_existing:
             dict_note = dict(note_existing)
-            del dict_note['_rev']
+            if '_rev' in dict_note.keys():
+                del dict_note['_rev']
             if not dict_note==note:
-                db.save(note)
+                note_existing.update(note)
+                db.save(note_existing)
                 updated = True
         else:
             db.save(note)
@@ -95,7 +99,7 @@ def main(args):
             '</div></div></blockquote></body></html>')
 
         send_mail(f'[LIMS] Running Note:P{project}, {res.name}', html, proj_coord.email)
- 
+
     esc = aliased(tbls.EscalationEvent)
     sa = aliased(tbls.Sample)
     piot = aliased(tbls.ProcessIOTracker)
@@ -127,7 +131,7 @@ def main(args):
                                     ).first()[0]
         owner = get_researcher(escalation.ownerid)
         reviewer = get_researcher(escalation.reviewerid)
-        escnote = make_esc_running_note(owner, reviewer, escalation.escalationcomment, escalation.escalationdate, 
+        escnote = make_esc_running_note(owner, reviewer, escalation.escalationcomment, escalation.escalationdate,
                                         escalation.processid, sample.projectid, step_name, True)
 
         if update_note_db(escnote):
@@ -138,7 +142,7 @@ def main(args):
                 comment= '[No comments]'
             else:
                 comment = escalation.reviewcomment
-            revnote = make_esc_running_note(reviewer, None, comment, escalation.reviewdate, escalation.processid, 
+            revnote = make_esc_running_note(reviewer, None, comment, escalation.reviewdate, escalation.processid,
                                             sample.projectid, step_name,False)
             if update_note_db(revnote):
                 email_proj_coord(sample.projectid, revnote, escalation.reviewdate)

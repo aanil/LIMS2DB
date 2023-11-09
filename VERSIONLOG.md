@@ -1,5 +1,9 @@
 # LIMS2DB Version Log
 
+## 20231106.1
+
+Fix document update conflict error with escalation RN
+
 ## 20231101.1
 
 Add key names for new UDFs for setup ws
