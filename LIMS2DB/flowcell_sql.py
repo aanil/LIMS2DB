@@ -10,6 +10,8 @@ import LIMS2DB.objectsDB.process_categories as pc_cg
 
 from sqlalchemy import text
 
+
+
 def create_lims_data_obj(session, pro):
     obj={}
     obj['step_id']=pro.luid
@@ -30,7 +32,7 @@ def create_lims_data_obj(session, pro):
 
 
 
-    if pc_cg.SEQUENCING.get(str(pro.typeid), '') in ['AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)', 'Illumina Sequencing (NextSeq) v1.0']:
+    if pc_cg.SEQUENCING.get(str(pro.typeid), '') in ['AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)', 'Illumina Sequencing (NextSeq) v1.0', 'NovaSeqXPlus Run v1.0']:
         #NovaSeq flowcell have the individual stats as output artifact
         query = "select art.* from artifact art \
                  inner join outputmapping omap on omap.outputartifactid=art.artifactid \
@@ -45,7 +47,7 @@ def create_lims_data_obj(session, pro):
     obj['run_summary']={}
     arts=session.query(Artifact).from_statement(text(query)).all()
     for art in arts:
-        if pc_cg.SEQUENCING.get(str(pro.typeid), '') in ['AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)', 'Illumina Sequencing (NextSeq) v1.0']:
+        if pc_cg.SEQUENCING.get(str(pro.typeid), '') in ['AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)', 'Illumina Sequencing (NextSeq) v1.0', 'NovaSeqXPlus Run v1.0']:
             lane = art.name.replace("Lane ", "")
         else:
             lane=art.containerplacement.api_string.split(":")[0]
@@ -59,8 +61,7 @@ def create_lims_data_obj(session, pro):
     return obj
 
 def get_sequencing_steps(session, interval="24 hours"):
-    #38, 46, 714, 1454, 1908 are hiseq, miseq, hiseqX, novaseq and nextseq sequencing
-    return get_last_modified_processes(session, [38,714, 1454, 46, 1908], interval)
+    return get_last_modified_processes(session, list(pc_cg.SEQUENCING.keys()), interval)
 
 def upload_to_couch(couch, runid, lims_data):
     for dbname in ['flowcells', 'x_flowcells']:

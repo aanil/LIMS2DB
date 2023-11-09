@@ -11,6 +11,7 @@ import LIMS2DB.objectsDB.process_categories as pc_cg
 import re
 import six
 import six.moves.http_client as http_client
+import copy
 
 
 class Workset:
@@ -306,87 +307,97 @@ class Workset_SQL:
             inner join processiotracker piot on piot.trackerid=om.trackerid \
             where piot.inputartifactid={inp_art} and art.artifacttypeid=2 and piot.processid={start_id};".format(inp_art=inp.artifactid, start_id=self.start.processid)
 
-            out = self.session.query(Artifact).from_statement(text(query)).one()
-            self.obj['projects'][project_luid]['samples'][sample.name]['location'] = out.containerplacement.api_string
-
-            query = "select pc.* from process pc \
-                    inner join processiotracker piot on piot.processid=pc.processid \
-                    inner join artifact_ancestor_map aam on aam.artifactid=piot.inputartifactid \
-                    where pc.typeid in ({agr_qc}) and aam.ancestorartifactid={out_art} order by daterun;".format(agr_qc=",".join(list(pc_cg.AGRLIBVAL.keys())), out_art=out.artifactid)
-
-            aggregates = self.session.query(Process).from_statement(text(query)).all()
-
-            for agr in aggregates:
-                self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid] = {}
-                self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['id'] = agr.luid
-                self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['name'] = agr.protocolnameused
-                if agr.daterun is not None:
-                    self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['date'] = agr.daterun.strftime("%Y-%m-%d")
-                    if not self.obj['last_aggregate'] or datetime.strptime(self.obj['last_aggregate'], '%Y-%m-%d') < agr.daterun:
-                        self.obj['last_aggregate'] = agr.daterun.strftime("%Y-%m-%d")
+            # When one input artifact generates multiple output artifacts,
+            # expand the input artifact with postfix _1, _2, etc
+            outs = self.session.query(Artifact).from_statement(text(query)).all()
+            rep_counter = 1
+            for out in outs:
+                if len(outs) > 1:
+                    if self.obj['projects'][project_luid]['samples'].get(sample.name):
+                        org_sample_obj = copy.deepcopy(self.obj['projects'][project_luid]['samples'][sample.name])
+                        del self.obj['projects'][project_luid]['samples'][sample.name]
+                    sample_name = sample.name + '_' + str(rep_counter)
+                    self.obj['projects'][project_luid]['samples'][sample_name] = copy.deepcopy(org_sample_obj)
+                    rep_counter += 1
                 else:
-                    self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['date'] = None
+                    sample_name = sample.name
 
-                query = "select art.* from artifact art \
-                        inner join processiotracker piot on piot.inputartifactid=art.artifactid \
-                        inner join artifact_ancestor_map aam on aam.artifactid=art.artifactid \
-                        where piot.processid={processid} and aam.ancestorartifactid={ancestorid};".format(processid=agr.processid, ancestorid=out.artifactid)
+                self.obj['projects'][project_luid]['samples'][sample_name]['location'] = out.containerplacement.api_string
 
-                agr_inp = self.session.query(Artifact).from_statement(text(query)).one()
-                if agr.typeid == 806 and agr_inp.qc_flag == "UNKNOWN":
-                    self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['status'] = agr_inp.udf_dict.get("NeoPrep Machine QC")
-                    self.obj['projects'][project_luid]['samples'][sample.name]['library_status'] = agr_inp.udf_dict.get("NeoPrep Machine QC")
-                else:
-                    self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['status'] = agr_inp.qc_flag
-                    self.obj['projects'][project_luid]['samples'][sample.name]['library_status'] = agr_inp.qc_flag
-                self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['art'] = agr_inp.luid
-                if 'Molar Conc. (nM)' in agr_inp.udf_dict:
-                    self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['concentration'] = "{0:.2f} nM".format(agr_inp.udf_dict['Molar Conc. (nM)'])
-                elif 'Concentration' in agr_inp.udf_dict and 'Conc. Units' in agr_inp.udf_dict:
-                    self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['concentration'] = "{0:.2f} {1}".format(agr_inp.udf_dict['Concentration'], agr_inp.udf_dict['Conc. Units'])
-                if 'Size (bp)' in agr_inp.udf_dict:
-                    self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['size'] = round(agr_inp.udf_dict['Size (bp)'], 2)
+                query = "select pc.* from process pc \
+                        inner join processiotracker piot on piot.processid=pc.processid \
+                        inner join artifact_ancestor_map aam on aam.artifactid=piot.inputartifactid \
+                        where pc.typeid in ({agr_qc}) and aam.ancestorartifactid={out_art} order by daterun;".format(agr_qc=",".join(list(pc_cg.AGRLIBVAL.keys())), out_art=out.artifactid)
 
-                #Grabbing indexes
-                # Get all artifacts for given sample
-                query = "select art.* from artifact art \
-                    inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
-                    inner join sample sa on sa.processid=asm.processid \
-                    where sa.processid = {sapid};".format(sapid=sample.processid)
-                try:
-                    artifacts = self.session.query(Artifact).from_statement(text(query)).all()
-                    for art in artifacts:
-                            if art.reagentlabels is not None and len(art.reagentlabels) == 1:
-                                #If there are more than one reagent label, then I can't guess which one is the right one : the artifact is probably a pool
-                                self.obj['projects'][project_luid]['samples'][sample.name]['library'][agr.luid]['index']=self.extract_barcode(art.reagentlabels[0].name)
-                except AssertionError:
-                    pass
+                aggregates = self.session.query(Process).from_statement(text(query)).all()
 
-            query = "select pc.* from process pc \
-                    inner join processiotracker piot on piot.processid=pc.processid \
-                    inner join artifact_ancestor_map aam on aam.artifactid=piot.inputartifactid \
-                    where pc.typeid in ({seq}) and aam.ancestorartifactid={out_art} order by daterun;".format(seq=",".join(list(pc_cg.SEQUENCING.keys())), out_art=out.artifactid)
-
-            sequencing = self.session.query(Process).from_statement(text(query)).all()
-            for seq in sequencing:
-                if seq.daterun is not None:
-                    self.obj['projects'][project_luid]['samples'][sample.name]['sequencing'][seq.luid] = {}
-                    self.obj['projects'][project_luid]['samples'][sample.name]['sequencing'][seq.luid]['date'] = seq.daterun.strftime("%Y-%m-%d")
+                for agr in aggregates:
+                    self.obj['projects'][project_luid]['samples'][sample_name]['library'][agr.luid] = {}
+                    self.obj['projects'][project_luid]['samples'][sample_name]['library'][agr.luid]['id'] = agr.luid
+                    self.obj['projects'][project_luid]['samples'][sample_name]['library'][agr.luid]['name'] = agr.protocolnameused
+                    if agr.daterun is not None:
+                        self.obj['projects'][project_luid]['samples'][sample_name]['library'][agr.luid]['date'] = agr.daterun.strftime("%Y-%m-%d")
+                        if not self.obj['last_aggregate'] or datetime.strptime(self.obj['last_aggregate'], '%Y-%m-%d') < agr.daterun:
+                            self.obj['last_aggregate'] = agr.daterun.strftime("%Y-%m-%d")
+                    else:
+                        self.obj['projects'][project_luid]['samples'][sample_name]['library'][agr.luid]['date'] = None
 
                     query = "select art.* from artifact art \
                             inner join processiotracker piot on piot.inputartifactid=art.artifactid \
                             inner join artifact_ancestor_map aam on aam.artifactid=art.artifactid \
-                            where piot.processid={processid} and aam.ancestorartifactid={ancestorid};".format(processid=seq.processid, ancestorid=out.artifactid)
+                            where piot.processid={processid} and aam.ancestorartifactid={ancestorid};".format(processid=agr.processid, ancestorid=out.artifactid)
 
-                    seq_inputs = self.session.query(Artifact).from_statement(text(query)).all()
-                    seq_qc_flag = "UNKNOWN"
-                    for seq_inp in seq_inputs:
-                        if seq_qc_flag != 'FAILED':  # failed stops sequencing update
-                            seq_qc_flag = seq_inp.qc_flag
+                    agr_inp = self.session.query(Artifact).from_statement(text(query)).one()
+                    if agr.typeid == 806 and agr_inp.qc_flag == "UNKNOWN":
+                        self.obj['projects'][project_luid]['samples'][sample_name]['library'][agr.luid]['status'] = agr_inp.udf_dict.get("NeoPrep Machine QC")
+                        self.obj['projects'][project_luid]['samples'][sample_name]['library_status'] = agr_inp.udf_dict.get("NeoPrep Machine QC")
+                    else:
+                        self.obj['projects'][project_luid]['samples'][sample_name]['library'][agr.luid]['status'] = agr_inp.qc_flag
+                        self.obj['projects'][project_luid]['samples'][sample_name]['library_status'] = agr_inp.qc_flag
+                    self.obj['projects'][project_luid]['samples'][sample_name]['library'][agr.luid]['art'] = agr_inp.luid
+                    if 'Molar Conc. (nM)' in agr_inp.udf_dict:
+                        self.obj['projects'][project_luid]['samples'][sample_name]['library'][agr.luid]['concentration'] = "{0:.2f} nM".format(agr_inp.udf_dict['Molar Conc. (nM)'])
+                    elif 'Concentration' in agr_inp.udf_dict and 'Conc. Units' in agr_inp.udf_dict:
+                        self.obj['projects'][project_luid]['samples'][sample_name]['library'][agr.luid]['concentration'] = "{0:.2f} {1}".format(agr_inp.udf_dict['Concentration'], agr_inp.udf_dict['Conc. Units'])
+                    if 'Size (bp)' in agr_inp.udf_dict:
+                        self.obj['projects'][project_luid]['samples'][sample_name]['library'][agr.luid]['size'] = round(agr_inp.udf_dict['Size (bp)'], 2)
 
-                    self.obj['projects'][project_luid]['samples'][sample.name]['sequencing'][seq.luid]['status'] = seq_qc_flag
-                    # updates every time until the latest one, because of the order by in fetching sequencing processes.
-                    self.obj['projects'][project_luid]['samples'][sample.name]['sequencing_status'] = seq_qc_flag
+                    # Fetch index (reagent_label) information
+                    try:
+                        artifacts = self.session.query(Artifact).from_statement(text(query)).all()
+                        for art in artifacts:
+                            if art.reagentlabels is not None and len(art.reagentlabels) == 1:
+                                #If there are more than one reagent label, then I can't guess which one is the right one : the artifact is probably a pool
+                                self.obj['projects'][project_luid]['samples'][sample_name]['library'][agr.luid]['index']=self.extract_barcode(art.reagentlabels[0].name)
+                    except AssertionError:
+                        pass
+
+                query = "select pc.* from process pc \
+                        inner join processiotracker piot on piot.processid=pc.processid \
+                        inner join artifact_ancestor_map aam on aam.artifactid=piot.inputartifactid \
+                        where pc.typeid in ({seq}) and aam.ancestorartifactid={out_art} order by daterun;".format(seq=",".join(list(pc_cg.SEQUENCING.keys())), out_art=out.artifactid)
+
+                sequencing = self.session.query(Process).from_statement(text(query)).all()
+                for seq in sequencing:
+                    if seq.daterun is not None:
+                        self.obj['projects'][project_luid]['samples'][sample_name]['sequencing'][seq.luid] = {}
+                        self.obj['projects'][project_luid]['samples'][sample_name]['sequencing'][seq.luid]['date'] = seq.daterun.strftime("%Y-%m-%d")
+
+                        query = "select art.* from artifact art \
+                                inner join processiotracker piot on piot.inputartifactid=art.artifactid \
+                                inner join artifact_ancestor_map aam on aam.artifactid=art.artifactid \
+                                where piot.processid={processid} and aam.ancestorartifactid={ancestorid};".format(processid=seq.processid, ancestorid=out.artifactid)
+
+                        seq_inputs = self.session.query(Artifact).from_statement(text(query)).all()
+                        seq_qc_flag = "UNKNOWN"
+                        for seq_inp in seq_inputs:
+                            if seq_qc_flag != 'FAILED':  # failed stops sequencing update
+                                seq_qc_flag = seq_inp.qc_flag
+
+                        self.obj['projects'][project_luid]['samples'][sample_name]['sequencing'][seq.luid]['status'] = seq_qc_flag
+                        # updates every time until the latest one, because of the order by in fetching sequencing processes.
+                        self.obj['projects'][project_luid]['samples'][sample_name]['sequencing_status'] = seq_qc_flag
+
 
 
 class ProjectSQL:
@@ -461,11 +472,17 @@ class ProjectSQL:
                 db.save(self.obj)
                 if self.obj.get('details', {}).get('type', '') == 'Application':
                     if 'key  details contract_received' in diffs.keys():
-                        contract_received = diffs['key  details contract_received'][1]
                         genstat_url = f'{self.genstat_proj_url}{self.obj["project_id"]}'
-                        msg = 'Contract received for applications project '
-                        msg += f'<a href="{genstat_url}">{self.obj["project_name"]}({self.obj["project_id"]})</a> on {contract_received}.'
-                        send_mail(f'Contract received for GA Project {self.obj["project_name"]}', msg, 'ngi_ga_projects@scilifelab.se')
+                        if diffs['key  details contract_received'][1] == 'missing':
+                            old_contract_received = diffs['key  details contract_received'][0]
+                            msg = f'Contract received on {old_contract_received} deleted for applications project '
+                            msg += f'<a href="{genstat_url}">{self.obj["project_name"]}({self.obj["project_id"]})</a>.'
+                        else:
+                            contract_received = diffs['key  details contract_received'][1]
+                            msg = 'Contract received for applications project '
+                            msg += f'<a href="{genstat_url}">{self.obj["project_name"]}({self.obj["project_id"]})</a> on {contract_received}.'
+
+                        send_mail(f'Contract updated for GA Project {self.obj["project_name"]}', msg, 'ngi_ga_projects@scilifelab.se')
             else:
                 self.log.info("No modifications found for project {}".format(self.pid))
 
@@ -500,6 +517,9 @@ class ProjectSQL:
         self.obj['details'] = self.make_normalized_dict(self.project.udf_dict)
         rem_run_note_udf = self.obj['details'].pop('running_notes', None)
         self.obj['order_details'] = self.get_project_order()
+        lims_priority = {1: 'Low', 5: 'Standard', 10: 'High'} #as defined in LIMS
+        if self.project.priority:
+            self.obj['priority'] = lims_priority.get(self.project.priority, None)
 
     def get_project_summary(self):
         # get project summaries from project
@@ -683,7 +703,7 @@ class ProjectSQL:
                 inner join artifact_sample_map asm on piot.inputartifactid=asm.artifactid \
                 inner join sample sa on sa.processid=asm.processid \
                 where sa.processid = {sapid} and pr.typeid in ({tid}) \
-                order by pr.daterun;".format(sapid=sample.processid, tid=','.join(list(pc_cg.WORKSET.keys()) + list(pc_cg.PREPSTARTFINLIB.keys()) + ['117']))  # Applications Generic Process
+                order by pr.daterun;".format(sapid=sample.processid, tid=','.join(list(pc_cg.WORKSET.keys()) + list(pc_cg.PREPSTARTFINLIB.keys())))  # Applications Generic Process
         lp_starts = self.session.query(Process).from_statement(text(query)).all()
         prepid = 64
         for one_libprep in lp_starts:
@@ -728,7 +748,7 @@ class ProjectSQL:
                         pass
                 except IndexError:
                     self.log.info("No libstart found for sample {}".format(sample.name))
-                    if one_libprep.typeid == 117:
+                    if one_libprep.typeid in list(pc_cg.WORKSET.keys()):
                         if "first_prep_start_date" not in self.obj['samples'][sample.name] or \
                                 datetime.strptime(self.obj['samples'][sample.name]['first_prep_start_date'], "%Y-%m-%d") > one_libprep.daterun:
                             self.obj['samples'][sample.name]['first_prep_start_date'] = one_libprep.daterun.strftime("%Y-%m-%d")
@@ -779,7 +799,7 @@ class ProjectSQL:
                         query = "select distinct pro.* from process pro \
                                  inner join processiotracker piot on piot.processid = pro.processid \
                                  inner join artifact_ancestor_map aam on piot.inputartifactid = aam.artifactid \
-                                 where pro.typeid in (38,46,714,1454) and aam.ancestorartifactid = {lib_art}".format(lib_art=agrlibval_art.artifactid)
+                                 where pro.typeid in ({seq_step_id}) and aam.ancestorartifactid = {lib_art}".format(seq_step_id=','.join(pc_cg.SEQUENCING.keys()), lib_art=agrlibval_art.artifactid)
                         seq_fcs = self.session.query(Process).from_statement(text(query)).all()
                         for seq in seq_fcs:
                             seq_fc_id = seq.udf_dict.get("Run ID")
@@ -979,19 +999,9 @@ class ProjectSQL:
                     out_artifact = self.session.query(Artifact).from_statement(text(query)).all()[0]
                     self.obj['samples'][sample.name]['library_prep'][prepname]['workset_name'] = out_artifact.containerplacement.container.name
                     self.obj['samples'][sample.name]['library_prep'][prepname]['amount_taken_(ng)'] = out_artifact.udf_dict.get("Amount taken (ng)")
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['amount_for_prep_(ng)'] = out_artifact.udf_dict.get("Amount for prep (ng)")
+                    self.obj['samples'][sample.name]['library_prep'][prepname]['amount_taken_from_plate_(ng)'] = out_artifact.udf_dict.get("Amount taken from plate (ng)")
                     self.obj['samples'][sample.name]['library_prep'][prepname]['volume_(ul)'] = out_artifact.udf_dict.get("Total Volume (uL)")
-                    # Legacy nextera special case
-                    if not out_artifact.udf_dict.get("Amount taken (ng)"):
-                        # get the output art of the tagmentation step
-                        query = "select art.* from artifact art \
-                                inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
-                                inner join outputmapping om on om.outputartifactid=art.artifactid \
-                                inner join processiotracker piot on piot.trackerid=om.trackerid \
-                                inner join process pr on pr.processid=piot.processid \
-                                inner join artifact_ancestor_map aam on aam.artifactid=art.artifactid \
-                                where asm.processid={sid} and pr.typeid=605 and aam.ancestorartifactid={out_art}".format(sid=sample.processid, out_art=out_artifact.artifactid)
-                        tag_out_art = self.session.query(Artifact).from_statement(text(query)).one()
-                        self.obj['samples'][sample.name]['library_prep'][prepname]['amount_taken_(ng)'] = tag_out_art.udf_dict.get("Amount taken (ng)")
 
                 except NoResultFound:
                     self.log.info("Did not find the output the Setup Workset Plate for sample {}".format(sample.name))

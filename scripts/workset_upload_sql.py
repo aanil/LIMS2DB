@@ -3,6 +3,7 @@ import argparse
 import LIMS2DB.classes as lclasses
 import LIMS2DB.parallel as lpar
 import LIMS2DB.utils as lutils
+import LIMS2DB.objectsDB.process_categories as pc_cg
 
 from genologics_sql.tables import *
 from genologics_sql.utils import *
@@ -31,13 +32,13 @@ def main(args):
 
 
     elif args.recent:
-         recent_processes=get_last_modified_processes(session,[8,46,117,204,1454,1908], args.interval)
+         recent_processes=get_last_modified_processes(session,list(pc_cg.AGRLIBVAL.keys())+list(pc_cg.SEQUENCING.keys())+list(pc_cg.WORKSET.keys()), args.interval)
          processes_to_update=set()
          for p in recent_processes:
-             if p.typeid in [117, 204] and p.daterun:#will only catch finished setup workset plate
+             if p.typeid in list(pc_cg.WORKSET.keys()) and p.daterun:#will only catch finished setup workset plate
                  processes_to_update.add(p)
              else:
-                 processes_to_update.update(get_processes_in_history(session, p.processid, [117, 204]))
+                 processes_to_update.update(get_processes_in_history(session, p.processid, list(pc_cg.WORKSET.keys())))
 
          log.info("the following processes will be updated : {0}".format(processes_to_update))
          lpar.masterProcessSQL(args, processes_to_update, log)

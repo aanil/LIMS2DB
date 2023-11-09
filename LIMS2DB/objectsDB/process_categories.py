@@ -50,7 +50,9 @@ POOLING = {
     '1506' : 'Pre-Pooling (NovaSeq) v2.0',
     '1507' : 'Library Pooling (NovaSeq) v2.0',
     '1906' : 'Pre-Pooling (NextSeq) v1.0',
-    '1907' : 'Library Pooling (NextSeq) v1.0'}
+    '1907' : 'Library Pooling (NextSeq) v1.0',
+    '2605' : 'Pre-Pooling (NovaSeqXPlus) v1.0',
+    '2611' : 'Make Bulk Pool (NovaSeqXPlus) v1.0'}
 PREPSTARTFINLIB = {
     '255' : 'Library Pooling (Finished Libraries) 4.0'}
 PREPSTART = {
@@ -76,7 +78,10 @@ PREPSTART = {
     '2155' : 'PCR2 (Amplicon)',
     '2205' : 'Adapter ligation and reverse transcription',
     '2254' : 'ONT End-Prep and Cleanup',
-    '2360' : 'Library Preparation & Amplification'}
+    '2360' : 'Library Preparation & Amplification',
+    '2656' : 'Deparafinization, H&E, Tissue Imaging',
+    '2657' : 'Fixation, H&E, Tissue Imaging',
+    '2705' : 'Illumina DNA PCR-free Library Construction'}
 PREPEND = {
     '109' : 'CA Purification',
     '111' : 'Amplify Captured Libraries to Add Index Tags (SS XT) 4.0',
@@ -92,7 +97,9 @@ PREPEND = {
     '2060' : 'Visium Library Construction',
     '2105' : 'Amplification and Purification',
     '2206' : 'Amplify by PCR and Add Index Tags',
-    '2258' : 'ONT Adapter Ligation and Cleanup'}
+    '2258' : 'ONT Adapter Ligation and Cleanup',
+    '2663' : 'Probe-based Library Construction',
+    '2705' : 'Illumina DNA PCR-free Library Construction'}
 LIBVAL = {
     '17' : 'Bioanalyzer QC (Library Validation) 4.0',
     '20' : 'CaliperGX QC (DNA)',
@@ -121,13 +128,15 @@ SEQSTART = {
     '710' :'Cluster Generation (HiSeq X) 1.0',
     '1306' : 'Load Sample and Sequencing (MinION) 1.0',
     '1458' : 'Load to Flowcell (NovaSeq 6000 v2.0)',
-    '1910' : 'Load to Flowcell (NextSeq v1.0)'}
+    '1910' : 'Load to Flowcell (NextSeq v1.0)',
+    '2614' : 'Load to Flowcell (NovaSeqXPlus) v1.0'}
 DILSTART = {
     '39' : 'Library Normalization (Illumina SBS) 4.0',
     '40' : 'Library Normalization (MiSeq) 4.0',
     '715': 'Library Normalization (HiSeq X) 1.0',
     '1505': 'Library Normalization (NovaSeq) v2.0',
-    '1905' : 'Library Normalization (NextSeq) v1.0'}
+    '1905' : 'Library Normalization (NextSeq) v1.0',
+    '2617' : 'Library Normalization (NovaSeqXPlus) v1.0'}
 SEQUENCING = {
     '38' : 'Illumina Sequencing (Illumina SBS) 4.0',
     '46' : 'MiSeq Run (MiSeq) 4.0',
@@ -137,10 +146,13 @@ SEQUENCING = {
     '1908' : 'Illumina Sequencing (NextSeq) v1.0',
     '2260' : 'MinION Sequencing',
     '2261' : 'Flongle Sequencing',
-    '2262' : 'PromethION Sequencing'}
+    '2262' : 'PromethION Sequencing',
+    '2612' : 'NovaSeqXPlus Run v1.0'}
 WORKSET = {
     '117' : 'Applications Generic Process',
-    '204' : 'Setup Workset/Plate'}
+    '204' : 'Setup Workset/Plate',
+    '2656' : 'Deparafinization, H&E, Tissue Imaging',
+    '2657' : 'Fixation, H&E, Tissue Imaging'}
 SUMMARY = {
     '356' : 'Project Summary 1.3'}
 DEMULTIPLEX={
