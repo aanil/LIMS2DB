@@ -1,5 +1,9 @@
 # LIMS2DB Version Log
 
+## 20231109.1
+
+Avoid overwriting order details when fetching from order portal fails
+
 ## 20231106.1
 
 Fix document update conflict error with escalation RN
