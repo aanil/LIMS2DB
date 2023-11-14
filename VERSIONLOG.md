@@ -1,5 +1,9 @@
 # LIMS2DB Version Log
 
+## 20231114.1
+
+Fix bug of wrong data type
+
 ## 20231109.1
 
 Avoid overwriting order details when fetching from order portal fails
