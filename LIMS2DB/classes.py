@@ -748,7 +748,7 @@ class ProjectSQL:
                         pass
                 except IndexError:
                     self.log.info("No libstart found for sample {}".format(sample.name))
-                    if one_libprep.typeid in list(pc_cg.WORKSET.keys()):
+                    if str(one_libprep.typeid) in list(pc_cg.WORKSET.keys()):
                         if "first_prep_start_date" not in self.obj['samples'][sample.name] or \
                                 datetime.strptime(self.obj['samples'][sample.name]['first_prep_start_date'], "%Y-%m-%d") > one_libprep.daterun:
                             self.obj['samples'][sample.name]['first_prep_start_date'] = one_libprep.daterun.strftime("%Y-%m-%d")
