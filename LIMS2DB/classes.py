@@ -766,7 +766,7 @@ class ProjectSQL:
 
                 try:
                     agrlibvals = get_children_processes(self.session, one_libprep.processid, list(pc_cg.AGRLIBVAL.keys()), sample.processid, 'daterun desc')
-                    agrlibval, agrlibval_art = (None, None)
+                    agrlibval = None
                     for agrlv in agrlibvals:
                         # for small rna (and maybe others), there is more than one agrlibval, and I should not get the latest one,
                         # but the latest one that ran at sample level, not a pool level.
@@ -778,10 +778,6 @@ class ProjectSQL:
                             where sa.processid = {sapid} and piot.processid = {agrid}".format(sapid=sample.processid, agrid=agrlv.processid)
                         try:
                             inp_artifact = self.session.query(Artifact).from_statement(text(query)).first()
-
-                            # get appropriate artifact to fetch the seqruns
-                            if len(inp_artifact.samples) == 1 or str(one_libprep.typeid) in pc_cg.PREPSTARTFINLIB:
-                                agrlibval_art = inp_artifact
 
                             # Only skip the TruSeq small RNA protocol because we want the QC results of individual sample, not library pool
                             # For other protocols sample QC results should just copy the one of library pool
@@ -799,11 +795,11 @@ class ProjectSQL:
                         query = "select distinct pro.* from process pro \
                                  inner join processiotracker piot on piot.processid = pro.processid \
                                  inner join artifact_ancestor_map aam on piot.inputartifactid = aam.artifactid \
-                                 where pro.typeid in ({seq_step_id}) and aam.ancestorartifactid = {lib_art}".format(seq_step_id=','.join(pc_cg.SEQUENCING.keys()), lib_art=agrlibval_art.artifactid)
+                                 where pro.typeid in ({seq_step_id}) and aam.ancestorartifactid = {lib_art}".format(seq_step_id=','.join(pc_cg.SEQUENCING.keys()), lib_art=inp_artifact.artifactid)
                         seq_fcs = self.session.query(Process).from_statement(text(query)).all()
                         for seq in seq_fcs:
                             seq_fc_id = seq.udf_dict.get("Run ID")
-                            if seq_fc_id:
+                            if seq_fc_id and seq_fc_id not in self.obj['samples'][sample.name]['library_prep'][prepname]['sequenced_fc']:
                                 self.obj['samples'][sample.name]['library_prep'][prepname]['sequenced_fc'].append(seq_fc_id)
                     except Exception as e:
                         self.log.warn("Problem finding sequenced fc for sample {}".format(sample.name))
