@@ -476,11 +476,11 @@ class ProjectSQL:
                         if diffs['key  details contract_received'][1] == 'missing':
                             old_contract_received = diffs['key  details contract_received'][0]
                             msg = f'Contract received on {old_contract_received} deleted for applications project '
-                            msg += f'<a href="{genstat_url}">{self.obj["project_name"]}({self.obj["project_id"]})</a>.'
+                            msg += f'<a href="{genstat_url}">{self.obj["project_id"]}, {self.obj["project_name"]}</a>.'
                         else:
                             contract_received = diffs['key  details contract_received'][1]
                             msg = 'Contract received for applications project '
-                            msg += f'<a href="{genstat_url}">{self.obj["project_name"]}({self.obj["project_id"]})</a> on {contract_received}.'
+                            msg += f'<a href="{genstat_url}">{self.obj["project_id"]}, {self.obj["project_name"]}</a> on {contract_received}.'
 
                         send_mail(f'Contract updated for GA Project {self.obj["project_name"]}', msg, 'ngi_ga_projects@scilifelab.se')
             else:
@@ -494,7 +494,7 @@ class ProjectSQL:
             if self.obj.get('details', {}).get('type', '') == 'Application':
                 genstat_url = f'{self.genstat_proj_url}{self.obj["project_id"]}'
                 msg = 'New applications project created '
-                msg += f'<a href="{genstat_url}">{self.obj["project_name"]}({self.obj["project_id"]})</a>.'
+                msg += f'<a href="{genstat_url}">{self.obj["project_id"]}, {self.obj["project_name"]}</a>.'
                 send_mail(f'GA Project created {self.obj["project_name"]}', msg, 'ngi_ga_projects@scilifelab.se')
 
     def get_project_level(self):
