@@ -2,7 +2,7 @@
 
 ## 20231208.1
 
-Update msg format in GA porject mail
+Update msg format in GA project mail
 
 ## 20231204.1
 
