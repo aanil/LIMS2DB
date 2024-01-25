@@ -673,6 +673,23 @@ class ProjectSQL:
             where sa.processid = {sapid} and pr.typeid in ({tid}) and art2.isoriginal=True and art.name like '%Fragment Analyzer%{sname}' \
             order by pr.daterun desc;".format(sapid=sample.processid, tid=','.join(list(pc_cg.FRAGMENT_ANALYZER.keys())), sname=sample.name)
         frag_an_file = self.session.query(GlsFile).from_statement(text(query)).first()
+        # Special case for the OmniC Tissue and Lysate QC protocol
+        if not frag_an_file:
+            query = "select gf.* from glsfile gf \
+                inner join resultfile rf on rf.glsfileid=gf.fileid \
+                inner join artifact art on rf.artifactid=art.artifactid \
+                inner join outputmapping om on art.artifactid=om.outputartifactid \
+                inner join processiotracker piot on piot.trackerid=om.trackerid \
+                inner join artifact art2 on piot.inputartifactid=art2.artifactid \
+                inner join artifact_sample_map asm on art2.artifactid=asm.artifactid \
+                inner join sample sa on sa.processid=asm.processid \
+                inner join process pr on piot.processid=pr.processid \
+                inner join processtype pt on pt.typeid=pr.typeid \
+                inner join protocolstep ps on ps.processtypeid=pt.typeid \
+                inner join labprotocol lp on lp.protocolid=ps.protocolid \
+                where sa.processid = {sapid} and art.name like '%Fragment Analyzer%{sname}' and pr.typeid in ({tid}) and lp.protocolname = {lpname} \
+                order by pr.daterun desc;".format(sapid=sample.processid, tid=','.join(list(pc_cg.FRAGMENT_ANALYZER.keys())), sname=sample.name, lpname='Tissue and Lysate QC')
+            frag_an_file = self.session.query(GlsFile).from_statement(text(query)).first()
         if frag_an_file:
             self.obj['samples'][sample.name]['initial_qc']['frag_an_image'] = "https://{host}/api/v2/files/40-{sid}".format(host=self.host, sid=frag_an_file.fileid)
         else:

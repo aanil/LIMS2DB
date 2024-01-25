@@ -1,5 +1,9 @@
 # LIMS2DB Version Log
 
+## 20240125.1
+
+Fix FA image for the OmniC Tissue and Lysate QC protocol
+
 ## 20231208.1
 
 Update msg format in GA project mail
