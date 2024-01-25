@@ -1,5 +1,13 @@
 # LIMS2DB Version Log
 
+## 20231208.1
+
+Update msg format in GA project mail
+
+## 20231204.1
+
+Aggregate QC for in-house libraries can be on a pool too just like finished libraries to get correct sequenced FC
+
 ## 20231114.1
 
 Fix bug of wrong data type
