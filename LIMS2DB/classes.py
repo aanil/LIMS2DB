@@ -687,8 +687,8 @@ class ProjectSQL:
                 inner join processtype pt on pt.typeid=pr.typeid \
                 inner join protocolstep ps on ps.processtypeid=pt.typeid \
                 inner join labprotocol lp on lp.protocolid=ps.protocolid \
-                where sa.processid = {sapid} and art.name like '%Fragment Analyzer%{sname}' and pr.typeid in ({tid}) and lp.protocolname = {lpname} \
-                order by pr.daterun desc;".format(sapid=sample.processid, tid=','.join(list(pc_cg.FRAGMENT_ANALYZER.keys())), sname=sample.name, lpname='Tissue and Lysate QC')
+                where sa.processid = {sapid} and art.name like '%Fragment Analyzer%{sname}' and pr.typeid in ({tid}) and lp.protocolname='Tissue and Lysate QC' \
+                order by pr.daterun desc;".format(sapid=sample.processid, tid=','.join(list(pc_cg.FRAGMENT_ANALYZER.keys())), sname=sample.name)
             frag_an_file = self.session.query(GlsFile).from_statement(text(query)).first()
         if frag_an_file:
             self.obj['samples'][sample.name]['initial_qc']['frag_an_image'] = "https://{host}/api/v2/files/40-{sid}".format(host=self.host, sid=frag_an_file.fileid)
