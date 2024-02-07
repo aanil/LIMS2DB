@@ -1120,19 +1120,14 @@ class ProjectSQL:
                                 self.log.info("no demultiplexing found for sample {}, sequencing {}".format(sample.name, seq.processid))
                             except:
                                 self.log.info("no run id for sequencing process {}".format(seq.luid))     
-                        #if it is ONT
+                        # If it is ONT
                         else:
-                            run_id = art.udf_dict.get("ONT run name")
-                            date = run_id.split('_')[0]
-                            #Penultimate element of the run_id is the flowcell id
-                            fcid = run_id.split('_')[-2]
-                            lane = art.containerplacement.api_string.split(":")[0]
-                            samp_run_met_id = '_'.join([lane, date, fcid])
+                            run_name = art.udf_dict.get("ONT run name")
+                            date = run_name.split('_')[0]
+                            samp_run_met_id = run_name
                             self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id] = {}
-                            try:
-                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date'] = seqstarts[0].daterun.strftime("%Y-%m-%d")
-                            except AttributeError:
-                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date'] = seqstarts[0].createddate.strftime("%Y-%m-%d")         
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date'] = f"{date[:4]}-{date[4:6]}-{date[6:]}"      
+     
 
     def extract_barcode(self, chain):
         barcode=''
