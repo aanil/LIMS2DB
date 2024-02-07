@@ -129,6 +129,8 @@ SEQSTART = {
     '1306' : 'Load Sample and Sequencing (MinION) 1.0',
     '1458' : 'Load to Flowcell (NovaSeq 6000 v2.0)',
     '1910' : 'Load to Flowcell (NextSeq v1.0)',
+    '2460': 'ONT Start Sequencing v2.0',
+    '2558': 'ONT Process Started Runs',
     '2614' : 'Load to Flowcell (NovaSeqXPlus) v1.0'}
 DILSTART = {
     '39' : 'Library Normalization (Illumina SBS) 4.0',
@@ -147,6 +149,7 @@ SEQUENCING = {
     '2260' : 'MinION Sequencing',
     '2261' : 'Flongle Sequencing',
     '2262' : 'PromethION Sequencing',
+    '2559' : 'ONT Sequencing and Reloading v3.1',
     '2612' : 'NovaSeqXPlus Run v1.0'}
 WORKSET = {
     '117' : 'Applications Generic Process',
