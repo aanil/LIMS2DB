@@ -1052,72 +1052,82 @@ class ProjectSQL:
                     and aam.ancestorartifactid = {libpartid}".format(sapid=sample.processid, seqid=seq.processid, libpartid=one_libprep_art.artifactid)
                     inp_arts = self.session.query(Artifact).from_statement(text(query)).all()
                     for art in inp_arts:
-                        if seq.typeid == 46:
-                            # miseq
-                            lane = art.containerplacement.api_string.split(":")[1]
+                        #2559 is ONT
+                        if seq.typeid != 2559:
+                            if seq.typeid == 46:
+                                # miseq
+                                lane = art.containerplacement.api_string.split(":")[1]
+                            else:
+                                lane = art.containerplacement.api_string.split(":")[0]
+                            self.obj['sequencing_finished'] = seq.udf_dict.get('Finish Date')
+                            try:
+                                run_id = seq.udf_dict["Run ID"]
+                                date = run_id.split('_')[0]
+                                fcid = run_id.split('_')[3]
+                                seqrun_barcode = self.obj['samples'][sample.name]['library_prep'][prepname]['barcode']
+                                samp_run_met_id = '_'.join([lane, date, fcid, seqrun_barcode])
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id] = {}
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_finish_date'] = seq.udf_dict.get('Finish Date')
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['seq_qc_flag'] = art.qc_flag
+                                try:
+                                    self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date'] = seqstarts[0].daterun.strftime("%Y-%m-%d")
+                                except AttributeError:
+                                    self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date'] = seqstarts[0].createddate.strftime("%Y-%m-%d")
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sample_run_metrics_id'] = None  # Deprecated
+                                try:
+                                    self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dillution_and_pooling_start_date'] = dilstarts[0].daterun.strftime("%Y-%m-%d")
+                                except AttributeError:
+                                    self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dillution_and_pooling_start_date'] = dilstarts[0].createddate.strftime("%Y-%m-%d")
+                                except IndexError:
+                                    self.log.info("no dilution found for sequencing {} of sample {}".format(seq.processid, sample.name))
+                                # get the associated demultiplexing step
+                                query = "select pr.* from process pr \
+                                        inner join processiotracker piot on piot.processid=pr.processid \
+                                        where pr.typeid={dem} and piot.inputartifactid={iaid};".format(dem=list(pc_cg.DEMULTIPLEX.keys())[0], iaid=art.artifactid)
+                                try:
+                                    dem = self.session.query(Process).from_statement(text(query)).one()
+                                    try:
+                                        self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished'] = dem.daterun.strftime("%Y-%m-%d")
+                                    except AttributeError:
+                                        pass
+
+                                    # get output resultfile named like the sample of a Demultiplex step
+                                    query = "select art.* from artifact art \
+                                        inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
+                                        inner join outputmapping om on art.artifactid=om.outputartifactid \
+                                        inner join processiotracker piot on piot.trackerid=om.trackerid \
+                                        inner join sample sa on sa.processid=asm.processid \
+                                        inner join artifact_ancestor_map aam on art.artifactid= aam.artifactid \
+                                        where art.artifacttypeid = 1 \
+                                        and art.name like '%{saname}%' \
+                                        and sa.processid = {sapid} \
+                                        and piot.processid = {dem}\
+                                        and aam.ancestorartifactid = {artid};".format(saname=sample.name, sapid=sample.processid, dem=dem.processid, artid=art.artifactid)
+                                    out_arts = self.session.query(Artifact).from_statement(text(query)).all()
+                                    cumulated_flag = 'FAILED'
+                                    for art in out_arts:
+                                        if art.qc_flag == 'PASSED':
+                                            cumulated_flag = 'PASSED'
+
+                                    self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dem_qc_flag'] = cumulated_flag
+
+                                except NoResultFound:
+                                    try:
+                                        self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished'] = seq.daterun.strftime("%Y-%m-%d")
+                                    except AttributeError:
+                                        self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished'] = seq.createddate.strftime("%Y-%m-%d")
+
+                                self.log.info("no demultiplexing found for sample {}, sequencing {}".format(sample.name, seq.processid))
+                            except:
+                                self.log.info("no run id for sequencing process {}".format(seq.luid))     
+                        # If it is ONT
                         else:
-                            lane = art.containerplacement.api_string.split(":")[0]
-                        self.obj['sequencing_finished'] = seq.udf_dict.get('Finish Date')
-                        try:
-                            run_id = seq.udf_dict["Run ID"]
-                            date = run_id.split('_')[0]
-                            fcid = run_id.split('_')[3]
-                            seqrun_barcode = self.obj['samples'][sample.name]['library_prep'][prepname]['barcode']
-                            samp_run_met_id = '_'.join([lane, date, fcid, seqrun_barcode])
+                            run_name = art.udf_dict.get("ONT run name")
+                            date = run_name.split('_')[0]
+                            samp_run_met_id = run_name
                             self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id] = {}
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_finish_date'] = seq.udf_dict.get('Finish Date')
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['seq_qc_flag'] = art.qc_flag
-                            try:
-                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date'] = seqstarts[0].daterun.strftime("%Y-%m-%d")
-                            except AttributeError:
-                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date'] = seqstarts[0].createddate.strftime("%Y-%m-%d")
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sample_run_metrics_id'] = None  # Deprecated
-                            try:
-                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dillution_and_pooling_start_date'] = dilstarts[0].daterun.strftime("%Y-%m-%d")
-                            except AttributeError:
-                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dillution_and_pooling_start_date'] = dilstarts[0].createddate.strftime("%Y-%m-%d")
-                            except IndexError:
-                                self.log.info("no dilution found for sequencing {} of sample {}".format(seq.processid, sample.name))
-                            # get the associated demultiplexing step
-                            query = "select pr.* from process pr \
-                                    inner join processiotracker piot on piot.processid=pr.processid \
-                                    where pr.typeid={dem} and piot.inputartifactid={iaid};".format(dem=list(pc_cg.DEMULTIPLEX.keys())[0], iaid=art.artifactid)
-                            try:
-                                dem = self.session.query(Process).from_statement(text(query)).one()
-                                try:
-                                    self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished'] = dem.daterun.strftime("%Y-%m-%d")
-                                except AttributeError:
-                                    pass
-
-                                # get output resultfile named like the sample of a Demultiplex step
-                                query = "select art.* from artifact art \
-                                    inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
-                                    inner join outputmapping om on art.artifactid=om.outputartifactid \
-                                    inner join processiotracker piot on piot.trackerid=om.trackerid \
-                                    inner join sample sa on sa.processid=asm.processid \
-                                    inner join artifact_ancestor_map aam on art.artifactid= aam.artifactid \
-                                    where art.artifacttypeid = 1 \
-                                    and art.name like '%{saname}%' \
-                                    and sa.processid = {sapid} \
-                                    and piot.processid = {dem}\
-                                    and aam.ancestorartifactid = {artid};".format(saname=sample.name, sapid=sample.processid, dem=dem.processid, artid=art.artifactid)
-                                out_arts = self.session.query(Artifact).from_statement(text(query)).all()
-                                cumulated_flag = 'FAILED'
-                                for art in out_arts:
-                                    if art.qc_flag == 'PASSED':
-                                        cumulated_flag = 'PASSED'
-
-                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['dem_qc_flag'] = cumulated_flag
-
-                            except NoResultFound:
-                                try:
-                                    self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished'] = seq.daterun.strftime("%Y-%m-%d")
-                                except AttributeError:
-                                    self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_run_QC_finished'] = seq.createddate.strftime("%Y-%m-%d")
-
-                            self.log.info("no demultiplexing found for sample {}, sequencing {}".format(sample.name, seq.processid))
-                        except:
-                            self.log.info("no run id for sequencing process {}".format(seq.luid))
+                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date'] = f"{date[:4]}-{date[4:6]}-{date[6:]}"      
+     
 
     def extract_barcode(self, chain):
         barcode=''
