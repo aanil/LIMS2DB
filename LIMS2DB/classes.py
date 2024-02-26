@@ -1126,7 +1126,10 @@ class ProjectSQL:
                             date = run_name.split('_')[0]
                             samp_run_met_id = run_name
                             self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id] = {}
-                            self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date'] = f"{date[:4]}-{date[4:6]}-{date[6:]}"      
+                            try:
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date'] = seqstarts[0].daterun.strftime("%Y-%m-%d")
+                            except AttributeError:
+                                self.obj['samples'][sample.name]['library_prep'][prepname]['sample_run_metrics'][samp_run_met_id]['sequencing_start_date'] = seqstarts[0].createddate.strftime("%Y-%m-%d")   
      
 
     def extract_barcode(self, chain):
