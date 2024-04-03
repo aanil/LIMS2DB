@@ -436,7 +436,7 @@ class ProjectSQL:
             doc = db.get(row.id)
         if doc:
             fields_saved = ['_id', '_rev', 'modification_time', 'creation_time', 'staged_files', 'agreement_doc_id',
-                            'invoice_spec_generated', 'invoice_spec_downloaded']
+                            'invoice_spec_generated', 'invoice_spec_downloaded', 'delivery_projects']
             details_saved = ['running_notes', 'snic_checked', 'latest_sticky_note']
 
             fields_added_back = {}
