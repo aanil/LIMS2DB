@@ -1,5 +1,9 @@
 # LIMS2DB Version Log
 
+## 20240404.1
+
+Add support for Smart-seq3 v1.0 protocol
+
 ## 20240125.1
 
 Fix FA image for the OmniC Tissue and Lysate QC protocol

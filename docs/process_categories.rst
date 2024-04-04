@@ -174,6 +174,7 @@ ID  process Name
 2258 ONT Adapter Ligation and Cleanup
 2663 Probe-based Library Construction
 2705 Illumina DNA PCR-free Library Construction
+2813 Pooling and Purification
 === =======================================
 
 
@@ -311,6 +312,7 @@ ID  process Name
 2656 Deparafinization, H&E, Tissue Imaging
 2657 Fixation, H&E, Tissue Imaging
 2705 Illumina DNA PCR-free Library Construction
+2808 Lysis, RT and pre-Amp
 === =======================================
 
 
