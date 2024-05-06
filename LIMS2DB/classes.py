@@ -527,10 +527,14 @@ class ProjectSQL:
             inner join processiotracker piot on piot.processid=pr.processid \
             inner join artifact_sample_map asm on piot.inputartifactid=asm.artifactid \
             inner join sample sa on sa.processid=asm.processid \
-            where sa.projectid = {pjid} and pr.typeid={tid} order by createddate desc limit 1;".format(pjid=self.project.projectid, tid=list(pc_cg.SUMMARY.keys())[0])
+            where sa.projectid = {pjid} and pr.typeid={tid} order by createddate desc;".format(pjid=self.project.projectid, tid=list(pc_cg.SUMMARY.keys())[0])
         try:
-            pjs = self.session.query(Process).from_statement(text(query)).one()
-            self.obj['project_summary'] = self.make_normalized_dict(pjs.udf_dict)
+            pjs = self.session.query(Process).from_statement(text(query)).all()
+            self.obj['project_summary'] = self.make_normalized_dict(pjs[0].udf_dict)
+            self.obj['project_summary_links'] = []
+            for pj in pjs:
+                status = 'complete' if pj.workstatus == 'COMPLETE' else 'details'
+                self.obj['project_summary_links'].append(f"/clarity/work-{status}/{pj.processid}")
         except NoResultFound:
             self.log.info("No project summary found for project {}".format(self.project.projectid))
 
