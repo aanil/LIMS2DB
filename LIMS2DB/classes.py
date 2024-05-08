@@ -535,7 +535,7 @@ class ProjectSQL:
             for pj in pjs:
                 status = 'complete' if pj.workstatus == 'COMPLETE' else 'details'
                 self.obj['project_summary_links'].append(f"/clarity/work-{status}/{pj.processid}")
-        except NoResultFound:
+        except (NoResultFound, IndexError):
             self.log.info("No project summary found for project {}".format(self.project.projectid))
 
     def get_escalations(self):
