@@ -534,7 +534,7 @@ class ProjectSQL:
             self.obj['project_summary_links'] = []
             for pj in pjs:
                 status = 'complete' if pj.workstatus == 'COMPLETE' else 'details'
-                self.obj['project_summary_links'].append(f"/clarity/work-{status}/{pj.processid}")
+                self.obj['project_summary_links'].append((f"/clarity/work-{status}/{pj.processid}", pj.createddate.strftime("%Y-%m-%d")))
         except (NoResultFound, IndexError):
             self.log.info("No project summary found for project {}".format(self.project.projectid))
 
