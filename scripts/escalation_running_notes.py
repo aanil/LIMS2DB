@@ -122,7 +122,8 @@ def main(args):
         ).filter(
             esc.lastmodifieddate>f'{yesterday}'
         ).all()
-
+    
+    projects_already_seen = set()
     for (escalation, sample) in escalations:
         step_name = session.execute('select ps.name '
                                     'from escalationevent esc, process pr, protocolstep ps '
@@ -131,21 +132,23 @@ def main(args):
                                     ).first()[0]
         owner = get_researcher(escalation.ownerid)
         reviewer = get_researcher(escalation.reviewerid)
-        escnote = make_esc_running_note(owner, reviewer, escalation.escalationcomment, escalation.escalationdate,
-                                        escalation.processid, sample.projectid, step_name, True)
+        if sample.projectid and sample.projectid not in projects_already_seen:
+            projects_already_seen.add(sample.projectid)
+            escnote = make_esc_running_note(owner, reviewer, escalation.escalationcomment, escalation.escalationdate,
+                                            escalation.processid, sample.projectid, step_name, True)
 
-        if update_note_db(escnote):
-            email_proj_coord(sample.projectid, escnote, escalation.escalationdate)
+            if update_note_db(escnote):
+                email_proj_coord(sample.projectid, escnote, escalation.escalationdate)
 
-        if escalation.reviewdate:
-            if not escalation.reviewcomment:
-                comment= '[No comments]'
-            else:
-                comment = escalation.reviewcomment
-            revnote = make_esc_running_note(reviewer, None, comment, escalation.reviewdate, escalation.processid,
-                                            sample.projectid, step_name,False)
-            if update_note_db(revnote):
-                email_proj_coord(sample.projectid, revnote, escalation.reviewdate)
+            if escalation.reviewdate:
+                if not escalation.reviewcomment:
+                    comment= '[No comments]'
+                else:
+                    comment = escalation.reviewcomment
+                revnote = make_esc_running_note(reviewer, None, comment, escalation.reviewdate, escalation.processid,
+                                                sample.projectid, step_name,False)
+                if update_note_db(revnote):
+                    email_proj_coord(sample.projectid, revnote, escalation.reviewdate)
 
 
 if __name__ == '__main__':
