@@ -31,7 +31,7 @@ def main(args):
                     where principalid=:pid;"
         return session.query(tbls.Researcher).from_statement(text(query)).params(pid=userid).first()
 
-    def make_esc_running_note(researcher, reviewer, comment, date, processid, project, step_name, review_ask):
+    def make_esc_running_note(researcher, reviewer, comment, date, processid, project, step_name, review_ask, samples):
         created_time = date.astimezone(datetime.timezone.utc)
         #Apparently inserting raw html works in markdown
         lims_link = f"<a href='https://ngi-lims-prod.scilifelab.se/clarity/work-complete/{processid}' target='_blank'>LIMS</a>"
@@ -40,16 +40,17 @@ def main(args):
         if reviewer:
             reviewer_name = f"{reviewer.firstname} {reviewer.lastname}"
         if review_ask:
-            comment_detail = f'**{researcher_name} asked for review from {reviewer_name}**'
+            comment_detail = f'(**{researcher_name} asked for review from {reviewer_name}**)'
             categories = ['Lab']
         else:
-            comment_detail = f'**Reviewer {researcher_name} replied**'
+            comment_detail = f'(**Reviewer {researcher_name} replied**)'
             categories = ['Administration', 'Decision']
+        comment_detail = f'{comment_detail} \n **on samples:** {", ".join(samples)}'
         newNote = {
                     '_id': f'P{project}:{datetime.datetime.timestamp(created_time)}',
                     'user': researcher_name,
                     'email': researcher.email,
-                    'note': f"Comment from {step_name} ({lims_link}) ({comment_detail}): \n{comment}",
+                    'note': f"Comment from {step_name} ({lims_link}) {comment_detail} \n\n{comment}",
                     'categories': categories,
                     'note_type': 'project',
                     'parent': f'P{project}',
@@ -81,7 +82,10 @@ def main(args):
 
     def email_proj_coord(project, note, date):
         res = session.query(tbls.Project.name, tbls.Project.ownerid).filter(tbls.Project.projectid==project).first()
-        proj_coord = get_researcher(res.ownerid)
+        if res:
+            proj_coord = get_researcher(res.ownerid)
+        else:
+            proj_coord = "ngi-project-coordinators@scilifelab.se"
 
         time_in_format = datetime.datetime.strftime(date, "%a %b %d %Y, %I:%M:%S %p")
 
@@ -123,8 +127,10 @@ def main(args):
             esc.lastmodifieddate>f'{yesterday}'
         ).all()
     
-    projects_already_seen = set()
+    projects = {}
     for (escalation, sample) in escalations:
+        if not sample.projectid:
+            continue
         step_name = session.execute('select ps.name '
                                     'from escalationevent esc, process pr, protocolstep ps '
                                     'where esc.processid=pr.processid and pr.protocolstepid=ps.stepid '
@@ -132,23 +138,55 @@ def main(args):
                                     ).first()[0]
         owner = get_researcher(escalation.ownerid)
         reviewer = get_researcher(escalation.reviewerid)
-        if sample.projectid and sample.projectid not in projects_already_seen:
-            projects_already_seen.add(sample.projectid)
-            escnote = make_esc_running_note(owner, reviewer, escalation.escalationcomment, escalation.escalationdate,
-                                            escalation.processid, sample.projectid, step_name, True)
-
-            if update_note_db(escnote):
-                email_proj_coord(sample.projectid, escnote, escalation.escalationdate)
-
+        if sample.projectid in projects.keys() and escalation.eventid in projects[sample.projectid]:
+                projects[sample.projectid][escalation.eventid]['samples'].append(sample.name)
+        else:
+            projects[sample.projectid] = {escalation.eventid: {'samples': [sample.name], 
+                                                               'step': step_name,
+                                                               'escalationcomment': escalation.escalationcomment,
+                                                               'escalationdate': escalation.escalationdate,
+                                                               'escalationprocessid': escalation.processid,
+                                                               'owner': owner,
+                                                               'reviewer': reviewer,
+                                                               }
+                                            }
+            
             if escalation.reviewdate:
                 if not escalation.reviewcomment:
                     comment= '[No comments]'
                 else:
                     comment = escalation.reviewcomment
-                revnote = make_esc_running_note(reviewer, None, comment, escalation.reviewdate, escalation.processid,
-                                                sample.projectid, step_name,False)
+                projects[sample.projectid][escalation.eventid]['review'] = {'reviewdate': escalation.reviewdate,
+                                                                            'reviewcomment': comment,
+                                                                            }
+    for project in projects:
+        for esceventid in projects[project]:
+            escevent = projects[project][esceventid]
+            escnote = make_esc_running_note(escevent['owner'], 
+                                            escevent['reviewer'], 
+                                            escevent['escalationcomment'], 
+                                            escevent['escalationdate'],
+                                            escevent['escalationprocessid'], 
+                                            project, 
+                                            escevent['step'], 
+                                            True,
+                                            escevent['samples'])
+            if update_note_db(escnote):
+               email_proj_coord(project, escnote, escevent['escalationdate'])
+
+            if 'review' in escevent:
+                revnote = make_esc_running_note(escevent['reviewer'], 
+                                                None, 
+                                                escevent['review']['reviewcomment'], 
+                                                escevent['review']['reviewdate'],
+                                                escevent['escalationprocessid'], 
+                                                project, 
+                                                escevent['step'], 
+                                                False,
+                                                escevent['samples'])
+
                 if update_note_db(revnote):
-                    email_proj_coord(sample.projectid, revnote, escalation.reviewdate)
+                    email_proj_coord(project, revnote, escevent['review']['reviewdate'])
 
 
 if __name__ == '__main__':
