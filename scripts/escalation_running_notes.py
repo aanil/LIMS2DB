@@ -45,7 +45,7 @@ def main(args):
         else:
             comment_detail = f'(**Reviewer {researcher_name} replied**)'
             categories = ['Administration', 'Decision']
-        comment_detail = f'{comment_detail} \n **on samples:** {", ".join(samples)}'
+        comment_detail = f'{comment_detail} \n **on {len(samples)} samples:** {", ".join(samples)}'
         newNote = {
                     '_id': f'P{project}:{datetime.datetime.timestamp(created_time)}',
                     'user': researcher_name,
@@ -121,8 +121,6 @@ def main(args):
             asm, piot.inputartifactid == asm.columns['artifactid']
         ).join(
             sa, sa.processid == asm.columns['processid']
-        ).distinct(
-            esc.eventid, sa.projectid
         ).filter(
             esc.lastmodifieddate>f'{yesterday}'
         ).all()
