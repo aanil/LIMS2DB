@@ -1,6 +1,6 @@
 """ Script to update projects from LIMS
     to corresponding orders in Order Portal."""
-from genologics.lims import *
+from genologics.lims import Lims, Project
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics_sql import queries
 import genologics_sql.utils
@@ -20,12 +20,13 @@ class Order_Portal_APIs(object):
         self.log = log
         self.lims = Lims(BASEURI, USERNAME, PASSWORD)
 
-    def update_order_internal_id(self, open_date, dry_run):
-        pjs = self.lims.get_projects(open_date=open_date.strftime('%Y-%m-%d'))
+    def update_order_internal_id(self, open_date, dry_run, project_id):
+        if project_id:
+            pjs = [Project(self.lims, id=project_id)]
+        else:
+            pjs = self.lims.get_projects(open_date=open_date.strftime('%Y-%m-%d'))
         for project in pjs:
             if project.open_date:
-                project_ngi_identifier=project.id
-                project_ngi_name=project.name
                 try:
                     ORDER_ID = project.udf['Portal ID']
                 except KeyError:
@@ -33,21 +34,23 @@ class Order_Portal_APIs(object):
                 if not ORDER_ID.startswith('NGI'):
                     continue
 
-                url = '{base}/api/v1/order/{id}'.format(base=self.base_url, id=ORDER_ID)
+                url = f'{self.base_url}/api/v1/order/{ORDER_ID}'
                 data = {'fields': {'project_ngi_name': project.name, 'project_ngi_identifier': project.id}}
                 if not dry_run:
                     response = requests.post(url, headers=self.headers, json=data)
                     assert response.status_code == 200, (response.status_code, response.reason)
 
-                    self.log.info('Updated internal id for order: {} - {}'.format(ORDER_ID, project.id))
+                    self.log.info(f'Updated internal id for order: {ORDER_ID} - {project.id}')
                 else:
-                    print('Dry run: {} Updated internal id for order: {} - {}'.format(date.today(), ORDER_ID, project.id))
+                    print(f'Dry run: {date.today()} Updated internal id for order: {ORDER_ID} - {project.id}')
 
-    def update_order_status(self, to_date, dry_run):
+    def update_order_status(self, project_id, dry_run):
         lims_db = genologics_sql.utils.get_session()
-        pjs = queries.get_last_modified_projectids(lims_db, '24 hours')
-        yesterday = (to_date-timedelta(days=1)).strftime('%Y-%m-%d')
-        today = to_date.strftime('%Y-%m-%d')
+        pjs=set()
+        if project_id:
+            pjs.add(project_id)
+        else:
+            pjs = queries.get_last_modified_projectids(lims_db, '25 hours')
         for p in pjs:
             project = Project(self.lims, id=p)
             try:
@@ -56,7 +59,7 @@ class Order_Portal_APIs(object):
                 continue
             if not ORDER_ID.startswith('NGI'):
                 continue            
-            url = '{base}/api/v1/order/{id}'.format(base=self.base_url, id=ORDER_ID)
+            url = f'{self.base_url}/api/v1/order/{ORDER_ID}'
             response = requests.get(url, headers=self.headers)
             data = ''
             try:
@@ -64,18 +67,19 @@ class Order_Portal_APIs(object):
             except ValueError: #In case a portal id does not exit on lims, skip the proj
                 continue
             url = ''
-            status = ''
 
-            if (data['status'] == 'accepted' and
-                    project.udf.get('Queued') and
-                    not project.close_date):
-                url = data['links']['processing']['href']
-                status_set = 'processing'
-            if data['status'] == 'processing':
-                if project.udf.get('Aborted') and (project.udf.get('Aborted') == today or project.udf.get('Aborted') == yesterday):
+            if data['status'] == 'accepted':
+                if project.udf.get('Aborted'):
                     url = data['links']['aborted']['href']
                     status_set = 'aborted'
-                elif project.close_date and (project.close_date == today or project.close_date == yesterday):
+                elif project.udf.get('Queued') and not project.close_date:
+                    url = data['links']['processing']['href']
+                    status_set = 'processing'
+            if data['status'] == 'processing':
+                if project.udf.get('Aborted'):
+                    url = data['links']['aborted']['href']
+                    status_set = 'aborted'
+                elif project.close_date:
                     url = data['links']['closed']['href']
                     status_set = 'closed'
             if url:
@@ -83,9 +87,9 @@ class Order_Portal_APIs(object):
                     #Order portal sends a mail to user on status change
                     response = requests.post(url, headers=self.headers)
                     assert response.status_code == 200, (response.status_code, response.reason)
-                    self.log.info('Updated status for order {} from {} to {}'.format(ORDER_ID, data['status'], status_set))
+                    self.log.info(f'Updated status for order {ORDER_ID} from {data["status"]} to {status_set}')
                 else:
-                    print('Dry run: {} Updated status for order {} from {} to {}'.format(date.today(), ORDER_ID, data['status'], status_set))
+                    print(f'Dry run: {date.today()} Updated status for order {ORDER_ID} from {data["status"]} to {status_set}')
 
 if __name__ == '__main__':
 
@@ -99,6 +103,8 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--dryrun',
                       action='store_true', dest='dryrun', default=False,
                       help='dry run: no changes stored')
+    parser.add_argument('-p', '--projectid', dest='project_id', default=None,
+                      help='Internal ID of the order to update')
     args = parser.parse_args()
     log = lutils.setupLog('orderlogger', args.logfile)
 
@@ -110,6 +116,6 @@ if __name__ == '__main__':
     ord_port_apis = Order_Portal_APIs(OP_BASE_URL, headers, log)
 
     if args.option == 'OrderStatus':
-        ord_port_apis.update_order_status(date.today(), args.dryrun)
+        ord_port_apis.update_order_status(args.project_id, args.dryrun)
     elif args.option == 'OrderInternalID':
-        ord_port_apis.update_order_internal_id(date.today()-timedelta(days=1), args.dryrun)
+        ord_port_apis.update_order_internal_id(date.today()-timedelta(days=1), args.dryrun, args.project_id)
