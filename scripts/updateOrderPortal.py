@@ -26,23 +26,28 @@ class Order_Portal_APIs(object):
         else:
             pjs = self.lims.get_projects(open_date=open_date.strftime('%Y-%m-%d'))
         for project in pjs:
-            if project.open_date:
-                try:
-                    ORDER_ID = project.udf['Portal ID']
-                except KeyError:
-                    continue
-                if not ORDER_ID.startswith('NGI'):
-                    continue
+            try: 
+                pname = project.name
+            except requests.exceptions.HTTPError: #project does not exist in LIMS
+                self.log.info(f'Project {project.id} not found in LIMS')
+                continue
 
-                url = f'{self.base_url}/api/v1/order/{ORDER_ID}'
-                data = {'fields': {'project_ngi_name': project.name, 'project_ngi_identifier': project.id}}
-                if not dry_run:
-                    response = requests.post(url, headers=self.headers, json=data)
-                    assert response.status_code == 200, (response.status_code, response.reason)
+            try:
+                ORDER_ID = project.udf['Portal ID']
+            except KeyError:
+                continue
+            if not ORDER_ID.startswith('NGI'):
+                continue
 
-                    self.log.info(f'Updated internal id for order: {ORDER_ID} - {project.id}')
-                else:
-                    print(f'Dry run: {date.today()} Updated internal id for order: {ORDER_ID} - {project.id}')
+            url = f'{self.base_url}/api/v1/order/{ORDER_ID}'
+            data = {'fields': {'project_ngi_name': project.name, 'project_ngi_identifier': project.id}}
+            if not dry_run:
+                response = requests.post(url, headers=self.headers, json=data)
+                assert response.status_code == 200, (response.status_code, response.reason)
+
+                self.log.info(f'Updated internal id for order: {ORDER_ID} - {project.id}')
+            else:
+                print(f'Dry run: {date.today()} Updated internal id for order: {ORDER_ID} - {project.id}')
 
     def update_order_status(self, project_id, dry_run):
         lims_db = genologics_sql.utils.get_session()
