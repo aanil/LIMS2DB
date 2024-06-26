@@ -77,6 +77,9 @@ class Order_Portal_APIs(object):
                 if project.udf.get('Aborted'):
                     url = data['links']['aborted']['href']
                     status_set = 'aborted'
+                elif project.close_date:
+                     url = data['links']['closed']['href']
+                     status_set = 'closed'
                 elif project.udf.get('Queued') and not project.close_date:
                     url = data['links']['processing']['href']
                     status_set = 'processing'
