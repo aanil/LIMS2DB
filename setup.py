@@ -3,7 +3,7 @@ import glob
 import subprocess
 
 def get_version():
-    return "1.0+{}".format(subprocess.check_output(["git", "rev-parse", "HEAD"]))
+    return "1.0+{}".format(subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode('utf-8'))
 try:
     with open("requirements.txt", "r") as f:
         install_requires = [x.strip() for x in f.readlines()]
