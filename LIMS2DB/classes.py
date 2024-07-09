@@ -510,8 +510,6 @@ class ProjectSQL:
             self.obj['open_date'] = self.project.opendate.strftime("%Y-%m-%d")
         if self.project.closedate:
             self.obj['close_date'] = self.project.closedate.strftime("%Y-%m-%d")
-        if self.project.researcher.lab.udf_dict.get("Affiliation"):
-            self.obj['affiliation'] = self.project.researcher.lab.udf_dict.get("Affiliation")
         if self.project.udf_dict.get("Delivery type"):
             self.obj['delivery_type'] = self.project.udf_dict.get("Delivery type")
         if self.project.udf_dict.get("Reference genome"):
@@ -519,6 +517,7 @@ class ProjectSQL:
         self.obj['details'] = self.make_normalized_dict(self.project.udf_dict)
         rem_run_note_udf = self.obj['details'].pop('running_notes', None)
         self.obj['order_details'] = self.get_project_order()
+        self.obj['affiliation'] = self.obj['order_details'].get('owner', {}).get('affiliation', '')
         lims_priority = {1: 'Low', 5: 'Standard', 10: 'High'} #as defined in LIMS
         if self.project.priority:
             self.obj['priority'] = lims_priority.get(self.project.priority, None)
@@ -590,6 +589,9 @@ class ProjectSQL:
                                 proj_order_info[k][vk] = full_order_info.get(k, {}).get(vk)
                     else:
                         proj_order_info[fk] = full_order_info.get(fk)
+                owner_url = full_order_info['owner']['links']['api']['href']
+                owner_affiliation = rget(owner_url, headers=api_header).json().get('university', '')
+                proj_order_info['owner']['affiliation'] = owner_affiliation
             except Exception as e:
                 self.log.warn("Not able to get update order info for project {}".format(self.project.name))
         return proj_order_info
