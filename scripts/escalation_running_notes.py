@@ -129,11 +129,9 @@ def main(args):
     for (escalation, sample) in escalations:
         if not sample.projectid:
             continue
-        step_name = session.execute('select ps.name '
-                                    'from escalationevent esc, process pr, protocolstep ps '
-                                    'where esc.processid=pr.processid and pr.protocolstepid=ps.stepid '
-                                    f'and esc.processid={escalation.processid};'
-                                    ).first()[0]
+        query = (f'select ps.name from escalationevent esc, process pr, protocolstep ps where esc.processid=pr.processid and pr.protocolstepid=ps.stepid '
+                    f'and esc.processid={escalation.processid};')
+        step_name = session.execute(text(query)).first()[0]
         owner = get_researcher(escalation.ownerid)
         reviewer = get_researcher(escalation.reviewerid)
         if sample.projectid in projects.keys() and escalation.eventid in projects[sample.projectid]:
