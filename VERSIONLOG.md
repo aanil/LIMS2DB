@@ -1,5 +1,9 @@
 # LIMS2DB Version Log
 
+## 20240815.1
+
+Support Illumina DNA No-QC protocol
+
 ## 20240404.1
 
 Add support for Smart-seq3 v1.0 protocol
