@@ -121,6 +121,7 @@ ID  process Name
 1907 Library Pooling (NextSeq) v1.0
 2605 Pre-Pooling (NovaSeqXPlus) v1.0
 2611 Make Bulk Pool (NovaSeqXPlus) v1.0
+3107 Illumina DNA No-QC Library Pooling
 === =======================================
 
 
@@ -175,6 +176,7 @@ ID  process Name
 2663 Probe-based Library Construction
 2705 Illumina DNA PCR-free Library Construction
 2813 Pooling and Purification
+3107 Illumina DNA No-QC Library Pooling
 === =======================================
 
 
@@ -313,6 +315,7 @@ ID  process Name
 2657 Fixation, H&E, Tissue Imaging
 2705 Illumina DNA PCR-free Library Construction
 2808 Lysis, RT and pre-Amp
+3106 Illumina DNA No-QC Library Construction
 === =======================================
 
 

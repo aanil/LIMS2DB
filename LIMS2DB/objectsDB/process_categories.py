@@ -52,7 +52,8 @@ POOLING = {
     '1906' : 'Pre-Pooling (NextSeq) v1.0',
     '1907' : 'Library Pooling (NextSeq) v1.0',
     '2605' : 'Pre-Pooling (NovaSeqXPlus) v1.0',
-    '2611' : 'Make Bulk Pool (NovaSeqXPlus) v1.0'}
+    '2611' : 'Make Bulk Pool (NovaSeqXPlus) v1.0',
+    '3107' : 'Illumina DNA No-QC Library Pooling'}
 PREPSTARTFINLIB = {
     '255' : 'Library Pooling (Finished Libraries) 4.0'}
 PREPSTART = {
@@ -82,7 +83,8 @@ PREPSTART = {
     '2656' : 'Deparafinization, H&E, Tissue Imaging',
     '2657' : 'Fixation, H&E, Tissue Imaging',
     '2705' : 'Illumina DNA PCR-free Library Construction',
-    '2808' : 'Lysis, RT and pre-Amp'}
+    '2808' : 'Lysis, RT and pre-Amp',
+    '3106' : 'Illumina DNA No-QC Library Construction'}
 PREPEND = {
     '109' : 'CA Purification',
     '111' : 'Amplify Captured Libraries to Add Index Tags (SS XT) 4.0',
@@ -101,7 +103,8 @@ PREPEND = {
     '2258' : 'ONT Adapter Ligation and Cleanup',
     '2663' : 'Probe-based Library Construction',
     '2705' : 'Illumina DNA PCR-free Library Construction',
-    '2813' : 'Pooling and Purification'}
+    '2813' : 'Pooling and Purification',
+    '3107' : 'Illumina DNA No-QC Library Pooling'}
 LIBVAL = {
     '17' : 'Bioanalyzer QC (Library Validation) 4.0',
     '20' : 'CaliperGX QC (DNA)',
