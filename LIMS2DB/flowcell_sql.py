@@ -83,7 +83,7 @@ def upload_to_couch(couch, runid, lims_data, pro):
     ]:
         dbname  = "x_flowcells"
     elif pc_cg.SEQUENCING.get(str(pro.typeid), "") in ["AVITI Run v1.0"]:
-        dbname = "aviti"
+        dbname = "element_runs"
 
     db = couch[dbname]
     view = db.view("info/id")
