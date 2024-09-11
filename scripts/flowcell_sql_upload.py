@@ -69,7 +69,7 @@ def main(args):
         # generate the lims_data dict key
         lims_data = create_lims_data_obj(db_session, step)
         # update the couch right couch document
-        upload_to_couch(couch, fcid, lims_data)
+        upload_to_couch(couch, fcid, lims_data, step)
 
 
 if __name__ == "__main__":

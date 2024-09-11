@@ -31,9 +31,9 @@ def create_lims_data_obj(session, pro):
 
     if pc_cg.SEQUENCING.get(str(pro.typeid), "") in [
         "AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)",
+        "AVITI Run v1.0",
         "Illumina Sequencing (NextSeq) v1.0",
         "NovaSeqXPlus Run v1.0",
-        "AVITI Run v1.0",
     ]:
         # NovaSeq flowcell have the individual stats as output artifact
         query = "select art.* from artifact art \
@@ -53,9 +53,9 @@ def create_lims_data_obj(session, pro):
     for art in arts:
         if pc_cg.SEQUENCING.get(str(pro.typeid), "") in [
             "AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)",
+            "AVITI Run v1.0",
             "Illumina Sequencing (NextSeq) v1.0",
             "NovaSeqXPlus Run v1.0",
-            "AVITI Run v1.0",
         ]:
             lane = art.name.replace("Lane ", "")
         else:
@@ -73,19 +73,29 @@ def get_sequencing_steps(session, interval="24 hours"):
     return get_last_modified_processes(session, list(pc_cg.SEQUENCING.keys()), interval)
 
 
-def upload_to_couch(couch, runid, lims_data):
-    for dbname in ["flowcells", "x_flowcells", "aviti"]:
-        db = couch[dbname]
-        view = db.view("info/id")
-        doc = None
-        for row in view[runid]:
-            doc = db.get(row.value)
+def upload_to_couch(couch, runid, lims_data, pro):
 
-        if doc:
-            running_notes = {}
-            if "lims_data" in doc and "container_running_notes" in doc["lims_data"]:
-                running_notes = doc["lims_data"].pop("container_running_notes")
-            doc["lims_data"] = lims_data
-            if running_notes:
-                doc["lims_data"]["container_running_notes"] = running_notes
-            db.save(doc)
+    if pc_cg.SEQUENCING.get(str(pro.typeid), "") in [
+        "AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)",
+        "Illumina Sequencing (NextSeq) v1.0",
+        "MiSeq Run (MiSeq) 4.0",
+        "NovaSeqXPlus Run v1.0",
+    ]:
+        dbname  = "x_flowcells"
+    elif pc_cg.SEQUENCING.get(str(pro.typeid), "") in ["AVITI Run v1.0"]:
+        dbname = "aviti"
+
+    db = couch[dbname]
+    view = db.view("info/id")
+    doc = None
+    for row in view[runid]:
+        doc = db.get(row.value)
+
+    if doc:
+        running_notes = {}
+        if "lims_data" in doc and "container_running_notes" in doc["lims_data"]:
+            running_notes = doc["lims_data"].pop("container_running_notes")
+        doc["lims_data"] = lims_data
+        if running_notes:
+            doc["lims_data"]["container_running_notes"] = running_notes
+        db.save(doc)
