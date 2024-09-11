@@ -1,4 +1,3 @@
-
 import logging
 import logging.handlers
 import traceback
@@ -6,9 +5,10 @@ import couchdb
 from email.mime.text import MIMEText
 import smtplib
 
-#merges d2 in d1, keeps values from d1
+
+# merges d2 in d1, keeps values from d1
 def merge(d1, d2):
-    """ Will merge dictionary d2 into dictionary d1.
+    """Will merge dictionary d2 into dictionary d1.
     On the case of finding the same key, the one in d1 will be used.
     :param d1: Dictionary object
     :param s2: Dictionary object
@@ -18,7 +18,7 @@ def merge(d1, d2):
             if isinstance(d1[key], dict) and isinstance(d2[key], dict):
                 merge(d1[key], d2[key])
             elif d1[key] == d2[key]:
-                pass # same leaf value
+                pass  # same leaf value
         else:
             d1[key] = d2[key]
     return d1
@@ -27,24 +27,34 @@ def merge(d1, d2):
 def setupLog(name, logfile):
     mainlog = logging.getLogger(name)
     mainlog.setLevel(level=logging.INFO)
-    mfh = logging.handlers.RotatingFileHandler(logfile, maxBytes=209715200, backupCount=5)
-    mft = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    mfh = logging.handlers.RotatingFileHandler(
+        logfile, maxBytes=209715200, backupCount=5
+    )
+    mft = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     mfh.setFormatter(mft)
     mainlog.addHandler(mfh)
     return mainlog
 
 
 def formatStack(stack):
-    formatted_error=[]
+    formatted_error = []
     for trace in stack:
-        formatted_error.append("File {f}: line {l} in {i}\n{e}".format(f=trace[0], l=trace[1], i=trace[2], e=trace[3]))
+        formatted_error.append(
+            "File {f}: line {l} in {i}\n{e}".format(
+                f=trace[0], l=trace[1], i=trace[2], e=trace[3]
+            )
+        )
 
     return "\n".join(formatted_error)
 
+
 def setupServer(conf):
-    db_conf = conf['statusdb']
-    url="https://{0}:{1}@{2}".format(db_conf['username'], db_conf['password'], db_conf['url'])
+    db_conf = conf["statusdb"]
+    url = "https://{0}:{1}@{2}".format(
+        db_conf["username"], db_conf["password"], db_conf["url"]
+    )
     return couchdb.Server(url)
+
 
 def send_mail(subject, content, receiver):
     """Sends an email.
@@ -53,12 +63,12 @@ def send_mail(subject, content, receiver):
     :param str receiver: Address to send the email
     """
     if not receiver:
-        raise SystemExit('No receiver was given to send mail')
-    msg = MIMEText(content, 'html')
-    msg['Subject'] = f'LIMS2DB notification - {subject}'
-    msg['From'] = 'LIMS2DB@scilifelab.se'
-    msg['To'] = receiver
+        raise SystemExit("No receiver was given to send mail")
+    msg = MIMEText(content, "html")
+    msg["Subject"] = f"LIMS2DB notification - {subject}"
+    msg["From"] = "LIMS2DB@scilifelab.se"
+    msg["To"] = receiver
 
-    s = smtplib.SMTP('localhost')
-    s.sendmail('LIMS2DB', [receiver], msg.as_string())
+    s = smtplib.SMTP("localhost")
+    s.sendmail("LIMS2DB", [receiver], msg.as_string())
     s.quit()

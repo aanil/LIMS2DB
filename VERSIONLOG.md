@@ -1,5 +1,9 @@
 # LIMS2DB Version Log
 
+## 20240911.1
+
+Support AVITI protocol
+
 ## 20240815.1
 
 Support Illumina DNA No-QC protocol
