@@ -1,5 +1,9 @@
 # LIMS2DB Version Log
 
+## 20240912.1
+
+Update project type list for mail_resp
+
 ## 20240911.1
 
 Support AVITI protocol

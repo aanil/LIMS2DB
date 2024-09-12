@@ -23,13 +23,16 @@ def main(args):
     operator = "par.lundin@scilifelab.se"
     summary = {}
     project_types = [
-        "Bcl Conversion & Demultiplexing (Illumina SBS) 4.0",
-        "Illumina Sequencing (Illumina SBS) 4.0",
-        "MiSeq Run (MiSeq) 4.0",
-        "Cluster Generation (Illumina SBS) 4.0",
-        "Denature, Dilute and Load Sample (MiSeq) 4.0",
         "Aggregate QC (DNA) 4.0",
+        "Aggregate QC (Library Validation) 4.0",
         "Aggregate QC (RNA) 4.0",
+        "AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)",
+        "AVITI Run v1.0",
+        "Bcl Conversion & Demultiplexing (AVITI) v1.0",
+        "Bcl Conversion & Demultiplexing (Illumina SBS) 4.0",
+        "Illumina Sequencing (NextSeq) v1.0",
+        "MiSeq Run (MiSeq) 4.0",
+        "NovaSeqXPlus Run v1.0",
         "Project Summary 1.3",
     ]
 
