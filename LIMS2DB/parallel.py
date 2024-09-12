@@ -1,14 +1,14 @@
-
 import logging
 import logging.handlers
 import LIMS2DB.classes as lclasses
 import LIMS2DB.utils as lutils
 import multiprocessing as mp
 import statusdb.db as sdb
+
 try:
-	import queue as Queue
+    import queue as Queue
 except ImportError:
-	import Queue
+    import Queue
 import genologics_sql.tables as gt
 
 from genologics.entities import Process
@@ -17,23 +17,24 @@ from genologics.lims import *
 
 from genologics_sql.utils import *
 
+
 def processWSUL(options, queue, logqueue):
     mycouch = sdb.Couch()
     mycouch.set_db("worksets")
     mycouch.connect()
-    view = mycouch.db.view('worksets/name')
+    view = mycouch.db.view("worksets/name")
     mylims = Lims(BASEURI, USERNAME, PASSWORD)
-    work=True
+    work = True
     procName = mp.current_process().name
     proclog = logging.getLogger(procName)
     proclog.setLevel(level=logging.INFO)
     mfh = QueueHandler(logqueue)
-    mft = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    mft = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     mfh.setFormatter(mft)
     proclog.addHandler(mfh)
 
     while work:
-        #grabs project from queue
+        # grabs project from queue
         try:
             ws_id = queue.get(block=True, timeout=3)
             proclog.info("Starting work on {}".format(ws_id))
@@ -48,63 +49,66 @@ def processWSUL(options, queue, logqueue):
             lc = lclasses.LimsCrawler(mylims, wsp)
             lc.crawl()
             try:
-                ws = lclasses.Workset(mylims,lc, proclog)
+                ws = lclasses.Workset(mylims, lc, proclog)
             except NameError:
                 continue
 
-            #If there is already a workset with that name in the DB
-            if len(view[ws.obj['name']].rows) == 1:
-                remote_doc=view[ws.obj['name']].rows[0].value
-                #remove id and rev for comparison
-                doc_id = remote_doc.pop('_id')
-                doc_rev = remote_doc.pop('_rev')
+            # If there is already a workset with that name in the DB
+            if len(view[ws.obj["name"]].rows) == 1:
+                remote_doc = view[ws.obj["name"]].rows[0].value
+                # remove id and rev for comparison
+                doc_id = remote_doc.pop("_id")
+                doc_rev = remote_doc.pop("_rev")
                 if remote_doc != ws.obj:
-                    #if they are different, though they have the same name, upload the new one
-                    ws.obj=lutils.merge(ws.obj, remote_doc)
-                    ws.obj['_id'] = doc_id
-                    ws.obj['_rev'] = doc_rev
+                    # if they are different, though they have the same name, upload the new one
+                    ws.obj = lutils.merge(ws.obj, remote_doc)
+                    ws.obj["_id"] = doc_id
+                    ws.obj["_rev"] = doc_rev
                     mycouch.db[doc_id] = ws.obj
-                    proclog.info("updating {0}".format(ws.obj['name']))
+                    proclog.info("updating {0}".format(ws.obj["name"]))
                 else:
-                    proclog.info("not modifying {0}".format(ws.obj['name']))
-            elif len(view[ws.obj['name']].rows) == 0:
-                #it is a new doc, upload it
+                    proclog.info("not modifying {0}".format(ws.obj["name"]))
+            elif len(view[ws.obj["name"]].rows) == 0:
+                # it is a new doc, upload it
                 mycouch.save(ws.obj)
-                proclog.info("saving {0}".format(ws.obj['name']))
+                proclog.info("saving {0}".format(ws.obj["name"]))
             else:
-                proclog.warn("more than one row with name {0} found".format(ws.obj['name']))
-            #signals to queue job is done
+                proclog.warn(
+                    "more than one row with name {0} found".format(ws.obj["name"])
+                )
+            # signals to queue job is done
             queue.task_done()
 
-def masterProcess(options,wslist, mainlims, logger):
+
+def masterProcess(options, wslist, mainlims, logger):
     worksetQueue = mp.JoinableQueue()
     logQueue = mp.Queue()
     childs = []
-    procs_nb = 1;
-    #Initial step : order worksets by date:
+    procs_nb = 1
+    # Initial step : order worksets by date:
     logger.info("ordering the workset list")
-    orderedwslist = sorted(wslist, key=lambda x:x.date_run)
+    orderedwslist = sorted(wslist, key=lambda x: x.date_run)
     logger.info("done ordering the workset list")
     if len(wslist) < options.procs:
         procs_nb = len(wslist)
     else:
         procs_nb = options.procs
 
-    #spawn a pool of processes, and pass them queue instance
+    # spawn a pool of processes, and pass them queue instance
     for i in range(procs_nb):
-        p = mp.Process(target=processWSUL, args=(options,worksetQueue, logQueue))
+        p = mp.Process(target=processWSUL, args=(options, worksetQueue, logQueue))
         p.start()
         childs.append(p)
-    #populate queue with data
-    #CHEATING
+    # populate queue with data
+    # CHEATING
     if options.queue:
         worksetQueue.put(options.queue)
-        orderedwslist=[]
+        orderedwslist = []
     for ws in orderedwslist:
         worksetQueue.put(ws.id)
 
-    #wait on the queue until everything has been processed
-    notDone=True
+    # wait on the queue until everything has been processed
+    notDone = True
     while notDone:
         try:
             log = logQueue.get(False)
@@ -113,6 +117,7 @@ def masterProcess(options,wslist, mainlims, logger):
             if not stillRunning(childs):
                 notDone = False
                 break
+
 
 def stillRunning(processList):
     ret = False
@@ -122,27 +127,28 @@ def stillRunning(processList):
 
     return ret
 
-def masterProcessSQL(args ,wslist, logger):
+
+def masterProcessSQL(args, wslist, logger):
     worksetQueue = mp.JoinableQueue()
     logQueue = mp.Queue()
     childs = []
-    procs_nb = 1;
+    procs_nb = 1
     if len(wslist) < args.procs:
         procs_nb = len(wslist)
     else:
         procs_nb = args.procs
 
-    #spawn a pool of processes, and pass them queue instance
+    # spawn a pool of processes, and pass them queue instance
     for i in range(procs_nb):
-        p = mp.Process(target=processWSULSQL, args=(args,worksetQueue, logQueue))
+        p = mp.Process(target=processWSULSQL, args=(args, worksetQueue, logQueue))
         p.start()
         childs.append(p)
-    #populate queue with data
+    # populate queue with data
     for ws in wslist:
         worksetQueue.put(ws.processid)
 
-    #wait on the queue until everything has been processed
-    notDone=True
+    # wait on the queue until everything has been processed
+    notDone = True
     while notDone:
         try:
             log = logQueue.get(False)
@@ -152,23 +158,24 @@ def masterProcessSQL(args ,wslist, logger):
                 notDone = False
                 break
 
+
 def processWSULSQL(args, queue, logqueue):
-    work=True
-    session=get_session()
+    work = True
+    session = get_session()
     with open(args.conf) as conf_file:
-        conf=yaml.load(conf_file, Loader=yaml.SafeLoader)
-    couch=lutils.setupServer(conf)
-    db=couch["worksets"]
+        conf = yaml.load(conf_file, Loader=yaml.SafeLoader)
+    couch = lutils.setupServer(conf)
+    db = couch["worksets"]
     procName = mp.current_process().name
     proclog = logging.getLogger(procName)
     proclog.setLevel(level=logging.INFO)
     mfh = QueueHandler(logqueue)
-    mft = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    mft = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     mfh.setFormatter(mft)
     proclog.addHandler(mfh)
 
     while work:
-        #grabs project from queue
+        # grabs project from queue
         try:
             ws_id = queue.get(block=True, timeout=3)
             proclog.info("Starting work on {}".format(ws_id))
@@ -177,24 +184,33 @@ def processWSULSQL(args, queue, logqueue):
             proclog.info("exiting gracefully")
             break
         else:
-            step=session.query(gt.Process).filter(gt.Process.processid == int(ws_id)).one()
-            ws=lclasses.Workset_SQL(session, proclog, step)
-            doc={}
-            for row in db.view('worksets/lims_id')[ws.obj['id']]:
-                doc=db.get(row.id)
+            step = (
+                session.query(gt.Process)
+                .filter(gt.Process.processid == int(ws_id))
+                .one()
+            )
+            ws = lclasses.Workset_SQL(session, proclog, step)
+            doc = {}
+            for row in db.view("worksets/lims_id")[ws.obj["id"]]:
+                doc = db.get(row.id)
             if doc:
-                final_doc=lutils.merge(ws.obj, doc)
+                final_doc = lutils.merge(ws.obj, doc)
             else:
-                final_doc=ws.obj
-            #clean possible name duplicates
-            for row in db.view('worksets/name')[ws.obj['name']]:
-                doc=db.get(row.id)
-                if doc['id'] != ws.obj['id']:
-                    proclog.warning("Duplicate name {} for worksets {} and {}".format(doc['name'], doc['id'], final_doc['id']))
+                final_doc = ws.obj
+            # clean possible name duplicates
+            for row in db.view("worksets/name")[ws.obj["name"]]:
+                doc = db.get(row.id)
+                if doc["id"] != ws.obj["id"]:
+                    proclog.warning(
+                        "Duplicate name {} for worksets {} and {}".format(
+                            doc["name"], doc["id"], final_doc["id"]
+                        )
+                    )
                     db.delete(doc)
             db.save(final_doc)
-            proclog.info("updating {0}".format(ws.obj['name']))
+            proclog.info("updating {0}".format(ws.obj["name"]))
             queue.task_done()
+
 
 class QueueHandler(logging.Handler):
     """

@@ -1,4 +1,3 @@
-
 from LIMS2DB.utils import setupLog
 from genologics_sql.utils import get_session, get_configuration
 import six.moves.http_client as http_client
@@ -7,9 +6,10 @@ import six.moves.http_client as http_client
 def diff_project_objects(pj_id, couch, proj_db, logfile, oconf):
     # Import is put here to defer circular imports
     from LIMS2DB.classes import ProjectSQL
-    log = setupLog('diff - {}'.format(pj_id), logfile)
 
-    view = proj_db.view('projects/lims_followed')
+    log = setupLog("diff - {}".format(pj_id), logfile)
+
+    view = proj_db.view("projects/lims_followed")
 
     def fetch_project(pj_id):
         try:
@@ -30,15 +30,15 @@ def diff_project_objects(pj_id, couch, proj_db, logfile, oconf):
         return None
 
     old_project = proj_db.get(old_project_couchid)
-    old_project.pop('_id', None)
-    old_project.pop('_rev', None)
-    old_project.pop('modification_time', None)
-    old_project.pop('creation_time', None)
-    old_project['details'].pop('running_notes', None)
-    old_project['details'].pop('snic_checked', None)
+    old_project.pop("_id", None)
+    old_project.pop("_rev", None)
+    old_project.pop("modification_time", None)
+    old_project.pop("creation_time", None)
+    old_project["details"].pop("running_notes", None)
+    old_project["details"].pop("snic_checked", None)
 
     session = get_session()
-    host = get_configuration()['url']
+    host = get_configuration()["url"]
     new_project = ProjectSQL(session, log, pj_id, host, couch, oconf)
 
     fediff = diff_objects(old_project, new_project.obj)
@@ -46,7 +46,7 @@ def diff_project_objects(pj_id, couch, proj_db, logfile, oconf):
     return (fediff, old_project, new_project.obj)
 
 
-def diff_objects(o1, o2, parent=''):
+def diff_objects(o1, o2, parent=""):
     diffs = {}
 
     for key in o1:
@@ -70,7 +70,7 @@ def diff_objects(o1, o2, parent=''):
 
 
 if __name__ == "__main__":
-    a = {'a': 1, 'b': 2, 'c': {'d': 3, 'e': {'f': 5}}}
-    b = {'a': 1, 'b': 7, 'c': {'d': 4, 'e': {'f': 4}}}
+    a = {"a": 1, "b": 2, "c": {"d": 3, "e": {"f": 5}}}
+    b = {"a": 1, "b": 7, "c": {"d": 4, "e": {"f": 4}}}
     diffs = diff_objects(a, b)
     print(diffs)

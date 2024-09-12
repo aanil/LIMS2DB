@@ -27,16 +27,17 @@ SECTIONEND = """=== =======================================
 
 """
 
+
 def make_doc():
-    f = open('docs/process_categories.rst', 'w')
+    f = open("docs/process_categories.rst", "w")
     print(GENERALINFO, file=f)
     for cat in PROCESSCATEGORIES:
         print(cat, file=f)
         print(SECTIONSTART, file=f)
-        #print >> f, PROCESSCATEGORIES[cat]['Description']
+        # print >> f, PROCESSCATEGORIES[cat]['Description']
         print(SECTIONMIDLE, file=f)
         for id, name in PROCESSCATEGORIES[cat].items():
-            if not id=='Description':
-                print('\t'.join([id, name]), file=f)
+            if not id == "Description":
+                print("\t".join([id, name]), file=f)
         print(SECTIONEND, file=f)
     f.close()

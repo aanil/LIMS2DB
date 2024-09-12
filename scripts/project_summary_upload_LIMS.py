@@ -3,6 +3,7 @@
 
 Maya Brandi, Science for Life Laboratory, Stockholm, Sweden.
 """
+
 from __future__ import print_function
 from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.lims import Lims
@@ -20,6 +21,7 @@ import logging
 import logging.handlers
 import multiprocessing as mp
 import os
+
 try:
     import queue as Queue
 except ImportError:
@@ -36,25 +38,33 @@ def main(options):
     mainlims = Lims(BASEURI, USERNAME, PASSWORD)
     lims_db = get_session()
 
-    mainlog = logging.getLogger('psullogger')
+    mainlog = logging.getLogger("psullogger")
     mainlog.setLevel(level=logging.INFO)
-    mfh = logging.handlers.RotatingFileHandler(options.logfile, maxBytes=209715200, backupCount=5)
-    mft = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    mfh = logging.handlers.RotatingFileHandler(
+        options.logfile, maxBytes=209715200, backupCount=5
+    )
+    mft = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     mfh.setFormatter(mft)
     mainlog.addHandler(mfh)
 
     # try getting orderportal config
     oconf = None
     try:
-        with open(options.oconf, 'r') as ocf:
-            oconf = yaml.load(ocf, Loader=yaml.SafeLoader)['order_portal']
+        with open(options.oconf, "r") as ocf:
+            oconf = yaml.load(ocf, Loader=yaml.SafeLoader)["order_portal"]
     except Exception as e:
-        mainlog.warn("Loading orderportal config {} failed due to {}, so order information "
-                     "for project will not be updated".format(options.oconf, e))
+        mainlog.warn(
+            "Loading orderportal config {} failed due to {}, so order information "
+            "for project will not be updated".format(options.oconf, e)
+        )
 
     if options.project_name:
-        host = get_configuration()['url']
-        pj_id = lims_db.query(DBProject.luid).filter(DBProject.name == options.project_name).scalar()
+        host = get_configuration()["url"]
+        pj_id = (
+            lims_db.query(DBProject.luid)
+            .filter(DBProject.name == options.project_name)
+            .scalar()
+        )
         if not pj_id:
             pj_id = options.project_name
         P = ProjectSQL(lims_db, mainlog, pj_id, host, couch, oconf)
@@ -62,7 +72,7 @@ def main(options):
             P.save(update_modification_time=not options.no_new_modification_time)
         else:
             if output_f is not None:
-                with open(output_f, 'w') as f:
+                with open(output_f, "w") as f:
                     f.write(json.dumps(P.obj))
             else:
                 print(json.dumps(P.obj))
@@ -80,8 +90,14 @@ def create_projects_list(options, db_session, lims, log):
         if options.hours:
             postgres_string = "{} hours".format(options.hours)
             project_ids = get_last_modified_projectids(db_session, postgres_string)
-            valid_projects = db_session.query(DBProject).filter(DBProject.luid.in_(project_ids)).all()
-            log.info("project list : {0}".format(" ".join([p.luid for p in valid_projects])))
+            valid_projects = (
+                db_session.query(DBProject)
+                .filter(DBProject.luid.in_(project_ids))
+                .all()
+            )
+            log.info(
+                "project list : {0}".format(" ".join([p.luid for p in valid_projects]))
+            )
             return valid_projects
         else:
             projects = db_session.query(DBProject).all()
@@ -107,7 +123,7 @@ def processPSUL(options, queue, logqueue, oconf=None):
     proclog = logging.getLogger(procName)
     proclog.setLevel(level=logging.INFO)
     mfh = QueueHandler(logqueue)
-    mft = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    mft = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     mfh.setFormatter(mft)
     proclog.addHandler(mfh)
     # Not completely sure what this does, maybe trying to load balance?
@@ -121,7 +137,9 @@ def processPSUL(options, queue, logqueue, oconf=None):
         try:
             projname = queue.get(block=True, timeout=3)
             proclog.info("Starting work on {} ".format(projname))
-            proclog.info("Approximately {} projects left in queue".format(queue.qsize()))
+            proclog.info(
+                "Approximately {} projects left in queue".format(queue.qsize())
+            )
         except Queue.Empty:
             work = False
             proclog.info("exiting gracefully")
@@ -134,18 +152,24 @@ def processPSUL(options, queue, logqueue, oconf=None):
             lockfile = os.path.join(options.lockdir, projname)
             if not os.path.exists(lockfile):
                 try:
-                    open(lockfile, 'w').close()
+                    open(lockfile, "w").close()
                 except:
                     proclog.error("cannot create lockfile {}".format(lockfile))
                 try:
-                    pj_id = db_session.query(DBProject.luid).filter(DBProject.name == projname).scalar()
-                    host = get_configuration()['url']
+                    pj_id = (
+                        db_session.query(DBProject.luid)
+                        .filter(DBProject.name == projname)
+                        .scalar()
+                    )
+                    host = get_configuration()["url"]
                     P = ProjectSQL(db_session, proclog, pj_id, host, couch, oconf)
                     P.save()
                 except:
                     error = sys.exc_info()
                     stack = traceback.extract_tb(error[2])
-                    proclog.error("{0}:{1}\n{2}".format(error[0], error[1], formatStack(stack)))
+                    proclog.error(
+                        "{0}:{1}\n{2}".format(error[0], error[1], formatStack(stack))
+                    )
 
                 try:
                     os.remove(lockfile)
@@ -166,11 +190,17 @@ def masterProcess(options, projectList, mainlims, logger, oconf=None):
     childs = []
     # Initial step : order projects by sample number:
     logger.info("ordering the project list")
-    orderedprojectlist = sorted(projectList, key=lambda x: (mainlims.get_sample_number(projectname=x.name)), reverse=True)
+    orderedprojectlist = sorted(
+        projectList,
+        key=lambda x: (mainlims.get_sample_number(projectname=x.name)),
+        reverse=True,
+    )
     logger.info("done ordering the project list")
     # spawn a pool of processes, and pass them queue instance
     for i in range(options.processes):
-        p = mp.Process(target=processPSUL, args=(options, projectsQueue, logQueue, oconf))
+        p = mp.Process(
+            target=processPSUL, args=(options, projectsQueue, logQueue, oconf)
+        )
         p.start()
         childs.append(p)
     # populate queue with data
@@ -263,42 +293,97 @@ class QueueHandler(logging.Handler):
             self.handleError(record)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     usage = "Usage:       python project_summary_upload_LIMS.py [options]"
     parser = ArgumentParser(usage=usage)
 
-    parser.add_argument("-p", "--project", dest="project_name", default=None,
-                        help="eg: M.Uhlen_13_01. Dont use with -a flagg.")
+    parser.add_argument(
+        "-p",
+        "--project",
+        dest="project_name",
+        default=None,
+        help="eg: M.Uhlen_13_01. Dont use with -a flagg.",
+    )
 
-    parser.add_argument("-a", "--all_projects", action="store_true",
-                        default=False, help=("Upload all Lims projects into couchDB."
-                                             "Don't use together with -f flag."))
-    parser.add_argument("-c", "--conf", default=os.path.join(
-                        os.environ['HOME'], 'conf/LIMS2DB/post_process.yaml'),
-                        help="Config file.  Default: ~/conf/LIMS2DB/post_process.yaml")
-    parser.add_argument("--oconf", default=os.path.join(
-                        os.environ['HOME'], '.ngi_config/orderportal_cred.yaml'),
-                        help="Orderportal config file. Default: ~/.ngi_config/orderportal_cred.yaml")
-    parser.add_argument("--no_upload", dest="upload", default=True, action="store_false",
-                        help=("Use this tag if project objects should not be uploaded,"
-                              " but printed to output_f, or to stdout. Only works with"
-                              " individual projects, not with -a."))
-    parser.add_argument("--output_f", default=None,
-                        help="Output file that will be used only if --no_upload tag is used")
-    parser.add_argument("-m", "--multiprocs", type=int, dest="processes", default=4,
-                        help="The number of processes that will be spawned. Will only work with -a")
-    parser.add_argument("-l", "--logfile", default=os.path.expanduser("~/lims2db_projects.log"),
-                        help="log file that will be used. Default is $HOME/lims2db_projects.log")
-    parser.add_argument("--lockdir", default=os.path.expanduser("~/psul_locks"),
-                        help=("Directory for handling the lock files to avoid multiple updates "
-                              "of one project. default is $HOME/psul_locks "))
-    parser.add_argument("-j", "--hours", type=int, default=None,
-                        help=("only handle projects modified in the last X hours"))
-    parser.add_argument("-i", "--input", default=None,
-                        help="path to the input file containing projects to update")
-    parser.add_argument("--no_new_modification_time", action="store_true",
-                        help=("This updates documents without changing the modification time. "
-                              "Slightly dangerous, but useful e.g. when all projects would be updated."))
+    parser.add_argument(
+        "-a",
+        "--all_projects",
+        action="store_true",
+        default=False,
+        help=(
+            "Upload all Lims projects into couchDB." "Don't use together with -f flag."
+        ),
+    )
+    parser.add_argument(
+        "-c",
+        "--conf",
+        default=os.path.join(os.environ["HOME"], "conf/LIMS2DB/post_process.yaml"),
+        help="Config file.  Default: ~/conf/LIMS2DB/post_process.yaml",
+    )
+    parser.add_argument(
+        "--oconf",
+        default=os.path.join(os.environ["HOME"], ".ngi_config/orderportal_cred.yaml"),
+        help="Orderportal config file. Default: ~/.ngi_config/orderportal_cred.yaml",
+    )
+    parser.add_argument(
+        "--no_upload",
+        dest="upload",
+        default=True,
+        action="store_false",
+        help=(
+            "Use this tag if project objects should not be uploaded,"
+            " but printed to output_f, or to stdout. Only works with"
+            " individual projects, not with -a."
+        ),
+    )
+    parser.add_argument(
+        "--output_f",
+        default=None,
+        help="Output file that will be used only if --no_upload tag is used",
+    )
+    parser.add_argument(
+        "-m",
+        "--multiprocs",
+        type=int,
+        dest="processes",
+        default=4,
+        help="The number of processes that will be spawned. Will only work with -a",
+    )
+    parser.add_argument(
+        "-l",
+        "--logfile",
+        default=os.path.expanduser("~/lims2db_projects.log"),
+        help="log file that will be used. Default is $HOME/lims2db_projects.log",
+    )
+    parser.add_argument(
+        "--lockdir",
+        default=os.path.expanduser("~/psul_locks"),
+        help=(
+            "Directory for handling the lock files to avoid multiple updates "
+            "of one project. default is $HOME/psul_locks "
+        ),
+    )
+    parser.add_argument(
+        "-j",
+        "--hours",
+        type=int,
+        default=None,
+        help=("only handle projects modified in the last X hours"),
+    )
+    parser.add_argument(
+        "-i",
+        "--input",
+        default=None,
+        help="path to the input file containing projects to update",
+    )
+    parser.add_argument(
+        "--no_new_modification_time",
+        action="store_true",
+        help=(
+            "This updates documents without changing the modification time. "
+            "Slightly dangerous, but useful e.g. when all projects would be updated."
+        ),
+    )
 
     options = parser.parse_args()
 
