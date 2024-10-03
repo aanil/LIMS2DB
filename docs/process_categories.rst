@@ -26,7 +26,7 @@ ID  process Name
 2460  ONT Start Sequencing v2.0
 2558  ONT Process Started Runs
 2614  Load to Flowcell (NovaSeqXPlus) v1.0
-3109  Load to Flowcell (AVITI) v1.0
+3160  Load to Flowcell (AVITI) v1.0
 === =======================================
 
 
@@ -123,7 +123,7 @@ ID  process Name
 2605 Pre-Pooling (NovaSeqXPlus) v1.0
 2611 Make Bulk Pool (NovaSeqXPlus) v1.0
 3107 Illumina DNA No-QC Library Pooling
-3110 Pre-Pooling (AVITI) v1.0
+3162 Pre-Pooling (AVITI) v1.0
 === =======================================
 
 
@@ -195,7 +195,7 @@ ID  process Name
 1505	Library Normalization (NovaSeq) v2.0
 1905  Library Normalization (NextSeq) v1.0
 2617  Library Normalization (NovaSeqXPlus) v1.0
-3112  Library Normalization (AVITI) v1.0
+3157  Library Normalization (AVITI) v1.0
 === =======================================
 
 
@@ -270,7 +270,7 @@ ID  process Name
 2262  PromethION Sequencing
 2559  ONT Sequencing and Reloading v3.1
 2612  NovaSeqXPlus Run v1.0
-3113  AVITI Run v1.0
+3163  AVITI Run v1.0
 === =======================================
 
 
@@ -282,7 +282,7 @@ DEMULTIPLEX
 ID  process Name
 === =======================================
 13	 Bcl Conversion & Demultiplexing (Illumina SBS) 4.0
-3105 Bcl Conversion & Demultiplexing (AVITI) v1.0
+3161 Bcl Conversion & Demultiplexing (AVITI) v1.0
 === =======================================
 
 
