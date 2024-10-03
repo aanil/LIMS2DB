@@ -1,5 +1,7 @@
 # LIMS2DB Version Log
 
+## Update AVITI step IDs
+
 ## 20240912.1
 
 Update project type list for mail_resp

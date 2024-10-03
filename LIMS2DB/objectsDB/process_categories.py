@@ -55,7 +55,7 @@ POOLING = {
     "2605": "Pre-Pooling (NovaSeqXPlus) v1.0",
     "2611": "Make Bulk Pool (NovaSeqXPlus) v1.0",
     "3107": "Illumina DNA No-QC Library Pooling",
-    "3110": "Pre-Pooling (AVITI) v1.0",
+    "3162": "Pre-Pooling (AVITI) v1.0",
 }
 PREPSTARTFINLIB = {"255": "Library Pooling (Finished Libraries) 4.0"}
 PREPSTART = {
@@ -144,7 +144,7 @@ SEQSTART = {
     "2460": "ONT Start Sequencing v2.0",
     "2558": "ONT Process Started Runs",
     "2614": "Load to Flowcell (NovaSeqXPlus) v1.0",
-    "3109": "Load to Flowcell (AVITI) v1.0",
+    "3160": "Load to Flowcell (AVITI) v1.0",
 }
 DILSTART = {
     "39": "Library Normalization (Illumina SBS) 4.0",
@@ -153,7 +153,7 @@ DILSTART = {
     "1505": "Library Normalization (NovaSeq) v2.0",
     "1905": "Library Normalization (NextSeq) v1.0",
     "2617": "Library Normalization (NovaSeqXPlus) v1.0",
-    "3112": "Library Normalization (AVITI) v1.0",
+    "3157": "Library Normalization (AVITI) v1.0",
 }
 SEQUENCING = {
     "38": "Illumina Sequencing (Illumina SBS) 4.0",
@@ -167,7 +167,7 @@ SEQUENCING = {
     "2262": "PromethION Sequencing",
     "2559": "ONT Sequencing and Reloading v3.1",
     "2612": "NovaSeqXPlus Run v1.0",
-    "3113": "AVITI Run v1.0",
+    "3163": "AVITI Run v1.0",
 }
 WORKSET = {
     "117": "Applications Generic Process",
@@ -178,7 +178,7 @@ WORKSET = {
 SUMMARY = {"356": "Project Summary 1.3"}
 DEMULTIPLEX = {
     "13": "Bcl Conversion & Demultiplexing (Illumina SBS) 4.0",
-    "3105": "Bcl Conversion & Demultiplexing (AVITI) v1.0",
+    "3161": "Bcl Conversion & Demultiplexing (AVITI) v1.0",
 }
 CALIPER = {"20": "CaliperGX QC (DNA)", "116": "CaliperGX QC (RNA)"}
 FRAGMENT_ANALYZER = {
