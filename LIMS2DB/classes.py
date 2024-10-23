@@ -18,7 +18,6 @@ from LIMS2DB.utils import send_mail
 
 import LIMS2DB.objectsDB.process_categories as pc_cg
 import re
-import six
 import six.moves.http_client as http_client
 import copy
 
@@ -655,6 +654,10 @@ class ProjectSQL:
                 db.save(self.obj)
                 if self.obj.get("details", {}).get("type", "") == "Application":
                     lib_method_text = f"Library method: {self.obj['details'].get('library_construction_method', 'N/A')}"
+                    application = self.obj.get('details', {}).get('application', '')
+                    is_single_cell =  application == 'RNA-seq (single cell)'
+                    if is_single_cell:
+                        single_cell_text = f"[Application: {application}]"
                     if "key  details contract_received" in diffs.keys():
                         genstat_url = f'{self.genstat_proj_url}{self.obj["project_id"]}'
                         if diffs["key  details contract_received"][1] == "missing":
@@ -662,14 +665,18 @@ class ProjectSQL:
                                 "key  details contract_received"
                             ][0]
                             msg = f"Contract received on {old_contract_received} deleted for applications project "
-                            msg += f'<a href="{genstat_url}">{self.obj["project_id"]}, {self.obj["project_name"]}</a>[{lib_method_text}].'
+                            msg += f'<a href="{genstat_url}">{self.obj["project_id"]}, {self.obj["project_name"]}</a>[{lib_method_text}]\
+                            { single_cell_text if is_single_cell else "" }.'
                         else:
                             contract_received = diffs["key  details contract_received"][
                                 1
                             ]
                             msg = "Contract received for applications project "
-                            msg += f'<a href="{genstat_url}">{self.obj["project_id"]}, {self.obj["project_name"]}</a>[{lib_method_text}] on {contract_received}.'
+                            msg += f'<a href="{genstat_url}">{self.obj["project_id"]}, {self.obj["project_name"]}</a>[{lib_method_text}]\
+                            { single_cell_text if is_single_cell else "" } on {contract_received}.'
 
+                        if is_single_cell:
+                            send_mail(f'Contract updated for single cell Project {self.obj["project_name"]}', msg, 'ngi_singlecell_projects@scilifelab.se')
                         send_mail(
                             f'Contract updated for GA Project {self.obj["project_name"]}',
                             msg,
