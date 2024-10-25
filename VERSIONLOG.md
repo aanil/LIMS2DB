@@ -1,5 +1,9 @@
 # LIMS2DB Version Log
 
+## 20241025.1
+
+Send emails on contract updation for RNA-seq (single cell) projects 
+
 ## 20241003.1
 
 Update AVITI step IDs
