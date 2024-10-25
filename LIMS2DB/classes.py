@@ -676,12 +676,15 @@ class ProjectSQL:
                             { single_cell_text if is_single_cell else "" } on {contract_received}.'
 
                         if is_single_cell:
-                            send_mail(f'Contract updated for single cell Project {self.obj["project_name"]}', msg, 'ngi_singlecell_projects@scilifelab.se')
-                        send_mail(
-                            f'Contract updated for GA Project {self.obj["project_name"]}',
-                            msg,
-                            "ngi_ga_projects@scilifelab.se",
-                        )
+                            send_mail(f'Contract updated for single cell Project {self.obj["project_name"]}',
+                                       msg, 
+                                       'ngi_singlecell_projects@scilifelab.se')
+                        else:
+                            send_mail(
+                                f'Contract updated for GA Project {self.obj["project_name"]}',
+                                msg,
+                                "ngi_ga_projects@scilifelab.se",
+                            )
             else:
                 self.log.info("No modifications found for project {}".format(self.pid))
 
