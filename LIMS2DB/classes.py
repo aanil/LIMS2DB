@@ -878,7 +878,7 @@ class ProjectSQL:
 
             self.get_initial_qc(sample)
             self.get_library_preps(sample)
-            self.get_current_step_sample(sample.sampleid)
+            self.get_current_step_sample(sample)
     
     def get_current_step_sample(self, sample):
         """ Get the current steps a sample is in"""
