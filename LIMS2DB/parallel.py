@@ -66,16 +66,16 @@ def processWSUL(options, queue, logqueue):
                     ws.obj["_id"] = doc_id
                     ws.obj["_rev"] = doc_rev
                     mycouch.db[doc_id] = ws.obj
-                    proclog.info("updating {0}".format(ws.obj["name"]))
+                    proclog.info("updating {}".format(ws.obj["name"]))
                 else:
-                    proclog.info("not modifying {0}".format(ws.obj["name"]))
+                    proclog.info("not modifying {}".format(ws.obj["name"]))
             elif len(view[ws.obj["name"]].rows) == 0:
                 # it is a new doc, upload it
                 mycouch.save(ws.obj)
-                proclog.info("saving {0}".format(ws.obj["name"]))
+                proclog.info("saving {}".format(ws.obj["name"]))
             else:
                 proclog.warn(
-                    "more than one row with name {0} found".format(ws.obj["name"])
+                    "more than one row with name {} found".format(ws.obj["name"])
                 )
             # signals to queue job is done
             queue.task_done()
@@ -209,7 +209,7 @@ def processWSULSQL(args, queue, logqueue):
                     )
                     db.delete(doc)
             db.save(final_doc)
-            proclog.info("updating {0}".format(ws.obj["name"]))
+            proclog.info("updating {}".format(ws.obj["name"]))
             queue.task_done()
 
 

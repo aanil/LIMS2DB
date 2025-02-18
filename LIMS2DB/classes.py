@@ -116,12 +116,12 @@ class Workset:
                                     "Concentration" in inp.udf
                                     and "Conc. Units" in inp.udf
                                 ):
-                                    onelib["concentration"] = "{0} {1}".format(
+                                    onelib["concentration"] = "{} {}".format(
                                         round(inp.udf["Concentration"], 2),
                                         inp.udf["Conc. Units"],
                                     )
                                 if "Molar Conc. (nM)" in inp.udf:
-                                    onelib["concentration"] = "{0} nM".format(
+                                    onelib["concentration"] = "{} nM".format(
                                         round(inp.udf["Molar Conc. (nM)"], 2)
                                     )
                                 if "Size (bp)" in inp.udf:
@@ -475,7 +475,7 @@ class Workset_SQL:
                     if "Molar Conc. (nM)" in agr_inp.udf_dict:
                         self.obj["projects"][project_luid]["samples"][sample_name][
                             "library"
-                        ][agr.luid]["concentration"] = "{0:.2f} nM".format(
+                        ][agr.luid]["concentration"] = "{:.2f} nM".format(
                             agr_inp.udf_dict["Molar Conc. (nM)"]
                         )
                     elif (
@@ -484,7 +484,7 @@ class Workset_SQL:
                     ):
                         self.obj["projects"][project_luid]["samples"][sample_name][
                             "library"
-                        ][agr.luid]["concentration"] = "{0:.2f} {1}".format(
+                        ][agr.luid]["concentration"] = "{:.2f} {}".format(
                             agr_inp.udf_dict["Concentration"],
                             agr_inp.udf_dict["Conc. Units"],
                         )
@@ -711,7 +711,7 @@ class ProjectSQL:
         if self.project.udf_dict.get("Reference genome"):
             self.obj["reference_genome"] = self.project.udf_dict.get("Reference genome")
         self.obj["details"] = self.make_normalized_dict(self.project.udf_dict)
-        rem_run_note_udf = self.obj["details"].pop("running_notes", None)
+        self.obj["details"].pop("running_notes", None)
         self.obj["order_details"] = self.get_project_order()
         self.obj["affiliation"] = (
             self.obj["order_details"].get("owner", {}).get("affiliation", "")

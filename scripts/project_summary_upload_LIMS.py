@@ -96,12 +96,12 @@ def create_projects_list(options, db_session, lims, log):
                 .all()
             )
             log.info(
-                "project list : {0}".format(" ".join([p.luid for p in valid_projects]))
+                "project list : {}".format(" ".join([p.luid for p in valid_projects]))
             )
             return valid_projects
         else:
             projects = db_session.query(DBProject).all()
-            log.info("project list : {0}".format(" ".join([p.luid for p in projects])))
+            log.info("project list : {}".format(" ".join([p.luid for p in projects])))
             return projects
 
     elif options.input:
