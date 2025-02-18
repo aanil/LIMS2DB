@@ -1,5 +1,5 @@
 [tool.ruff]
-select = [
+lint.select = [
     #         Ruff default rules
     # ------------------------------
     "E4", # pycodestyle Imports
@@ -12,7 +12,7 @@ select = [
     "I",  # isort         Best-practice sorting of imports
     "UP", # pyupgrade     Make sure syntax is up-to-date
 ]
-ignore = [
+lint.ignore = [
     "E402", # Module level import not at top of file
     "E722", # Do not use bare 'except'
     "E741", # Ambiguous variable name
