@@ -1,7 +1,7 @@
 pyyaml
-genologics_sql
-genologics
+genologics_sql @ git+https://github.com/SciLifeLab/genologics_sql.git
+genologics @ git+https://github.com/SciLifeLab/genologics.git
 six
 markdown
-statusdb @ git+https://github.com/SciLifeLab/statusdb.git
+statusdb @ git+https://github.com/NationalGenomicsInfrastructure/statusdb.git
 
