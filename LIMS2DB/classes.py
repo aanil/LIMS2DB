@@ -1,8 +1,8 @@
 import copy
+import http.client as http_client
 import re
 from datetime import datetime
 
-import six.moves.http_client as http_client
 from genologics_sql.queries import get_children_processes, get_processes_in_history
 from genologics_sql.tables import (
     Artifact,
