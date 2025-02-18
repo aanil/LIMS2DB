@@ -30,10 +30,7 @@ def main(args):
         samples_count = 0
         samples = lims.get_samples(projectname=project.name)
         for sample in samples:
-            if not (
-                "Status (manual)" in sample.udf
-                and sample.udf["Status (manual)"] == "Aborted"
-            ):
+            if not ("Status (manual)" in sample.udf and sample.udf["Status (manual)"] == "Aborted"):
                 samples_count += 1
         try:
             lanes_ordered = project.udf["Sequence units ordered (lanes)"]
@@ -51,9 +48,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--hours", type=int, default=2, help="Amount of hours to check for. Default=2"
-    )
+    parser.add_argument("--hours", type=int, default=2, help="Amount of hours to check for. Default=2")
     parser.add_argument(
         "--conf",
         default=os.path.join(os.environ["HOME"], "opt/config/post_process.yaml"),

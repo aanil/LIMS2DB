@@ -33,27 +33,17 @@ def main(args):
     elif args.recent:
         recent_processes = get_last_modified_processes(
             session,
-            list(pc_cg.AGRLIBVAL.keys())
-            + list(pc_cg.SEQUENCING.keys())
-            + list(pc_cg.WORKSET.keys()),
+            list(pc_cg.AGRLIBVAL.keys()) + list(pc_cg.SEQUENCING.keys()) + list(pc_cg.WORKSET.keys()),
             args.interval,
         )
         processes_to_update = set()
         for p in recent_processes:
-            if (
-                str(p.typeid) in list(pc_cg.WORKSET.keys()) and p.daterun
-            ):  # will only catch finished setup workset plate
+            if str(p.typeid) in list(pc_cg.WORKSET.keys()) and p.daterun:  # will only catch finished setup workset plate
                 processes_to_update.add(p)
             else:
-                processes_to_update.update(
-                    get_processes_in_history(
-                        session, p.processid, list(pc_cg.WORKSET.keys())
-                    )
-                )
+                processes_to_update.update(get_processes_in_history(session, p.processid, list(pc_cg.WORKSET.keys())))
 
-        log.info(
-            f"the following processes will be updated : {processes_to_update}"
-        )
+        log.info(f"the following processes will be updated : {processes_to_update}")
         lpar.masterProcessSQL(args, processes_to_update, log)
 
 
@@ -87,9 +77,7 @@ if __name__ == "__main__":
         help="interval to look at to grab worksets",
     )
 
-    parser.add_argument(
-        "-w", "--workset", dest="ws", default=None, help="tries to work on the given ws"
-    )
+    parser.add_argument("-w", "--workset", dest="ws", default=None, help="tries to work on the given ws")
 
     parser.add_argument(
         "-c",

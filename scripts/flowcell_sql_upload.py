@@ -32,9 +32,7 @@ def main(args):
     # set up a log
     mainlog = logging.getLogger("fsullogger")
     mainlog.setLevel(level=logging.INFO)
-    mfh = logging.handlers.RotatingFileHandler(
-        args.logfile, maxBytes=209715200, backupCount=5
-    )
+    mfh = logging.handlers.RotatingFileHandler(args.logfile, maxBytes=209715200, backupCount=5)
     mft = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     mfh.setFormatter(mft)
     mainlog.addHandler(mfh)
@@ -52,9 +50,7 @@ def main(args):
                 inner join containerplacement cp on ct.containerid=cp.containerid \
                 inner join processiotracker piot on piot.inputartifactid=cp.processartifactid \
                 inner join process pro on pro.processid=piot.processid \
-                where pro.typeid in ({seq_type_ids}) and ct.name='{ct_name}';".format(
-            seq_type_ids=",".join(list(pc_cg.SEQUENCING.keys())), ct_name=args.flowcell
-        )
+                where pro.typeid in ({seq_type_ids}) and ct.name='{ct_name}';".format(seq_type_ids=",".join(list(pc_cg.SEQUENCING.keys())), ct_name=args.flowcell)
         seq_steps = db_session.query(Process).from_statement(text(query)).all()
     else:
         seq_steps = get_sequencing_steps(db_session, interval)
@@ -73,9 +69,7 @@ def main(args):
 
 if __name__ == "__main__":
     usage = "Usage:       python flowcell_sql_upload.py [options]"
-    parser = argparse.ArgumentParser(
-        description="Upload flowcells lims data to statusdb.", usage=usage
-    )
+    parser = argparse.ArgumentParser(description="Upload flowcells lims data to statusdb.", usage=usage)
 
     parser.add_argument(
         "-a",

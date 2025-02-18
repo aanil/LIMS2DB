@@ -1,4 +1,3 @@
-
 from genologics_sql.queries import get_last_modified_processes
 from genologics_sql.tables import Artifact, Container
 from sqlalchemy import text
@@ -67,14 +66,13 @@ def get_sequencing_steps(session, interval="24 hours"):
 
 
 def upload_to_couch(couch, runid, lims_data, pro):
-
     if pc_cg.SEQUENCING.get(str(pro.typeid), "") in [
         "AUTOMATED - NovaSeq Run (NovaSeq 6000 v2.0)",
         "Illumina Sequencing (NextSeq) v1.0",
         "MiSeq Run (MiSeq) 4.0",
         "NovaSeqXPlus Run v1.0",
     ]:
-        dbname  = "x_flowcells"
+        dbname = "x_flowcells"
     elif pc_cg.SEQUENCING.get(str(pro.typeid), "") in ["AVITI Run v1.0"]:
         dbname = "element_runs"
 

@@ -74,9 +74,7 @@ def processWSUL(options, queue, logqueue):
                 mycouch.save(ws.obj)
                 proclog.info("saving {}".format(ws.obj["name"]))
             else:
-                proclog.warn(
-                    "more than one row with name {} found".format(ws.obj["name"])
-                )
+                proclog.warn("more than one row with name {} found".format(ws.obj["name"]))
             # signals to queue job is done
             queue.task_done()
 
@@ -185,11 +183,7 @@ def processWSULSQL(args, queue, logqueue):
             proclog.info("exiting gracefully")
             break
         else:
-            step = (
-                session.query(gt.Process)
-                .filter(gt.Process.processid == int(ws_id))
-                .one()
-            )
+            step = session.query(gt.Process).filter(gt.Process.processid == int(ws_id)).one()
             ws = lclasses.Workset_SQL(session, proclog, step)
             doc = {}
             for row in db.view("worksets/lims_id")[ws.obj["id"]]:
@@ -202,11 +196,7 @@ def processWSULSQL(args, queue, logqueue):
             for row in db.view("worksets/name")[ws.obj["name"]]:
                 doc = db.get(row.id)
                 if doc["id"] != ws.obj["id"]:
-                    proclog.warning(
-                        "Duplicate name {} for worksets {} and {}".format(
-                            doc["name"], doc["id"], final_doc["id"]
-                        )
-                    )
+                    proclog.warning("Duplicate name {} for worksets {} and {}".format(doc["name"], doc["id"], final_doc["id"]))
                     db.delete(doc)
             db.save(final_doc)
             proclog.info("updating {}".format(ws.obj["name"]))

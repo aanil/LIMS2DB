@@ -34,27 +34,13 @@ def main(args):
             try:
                 doc = bioinfodb.get(row.id)
             except Exception as e:
-                log.error(
-                    e
-                    + "in Project "
-                    + project_id
-                    + " Sample "
-                    + sample_id
-                    + " while accessing doc from statusdb"
-                )
+                log.error(e + "in Project " + project_id + " Sample " + sample_id + " while accessing doc from statusdb")
             doc["project_closed"] = True
             try:
                 bioinfodb.save(doc)
                 log.info("Updated Project " + project_id + " Sample " + sample_id)
             except Exception as e:
-                log.error(
-                    e
-                    + "in Project "
-                    + project_id
-                    + " Sample "
-                    + sample_id
-                    + " while saving to statusdb"
-                )
+                log.error(e + "in Project " + project_id + " Sample " + sample_id + " while saving to statusdb")
 
 
 if __name__ == "__main__":

@@ -27,9 +27,7 @@ def merge(d1, d2):
 def setupLog(name, logfile):
     mainlog = logging.getLogger(name)
     mainlog.setLevel(level=logging.INFO)
-    mfh = logging.handlers.RotatingFileHandler(
-        logfile, maxBytes=209715200, backupCount=5
-    )
+    mfh = logging.handlers.RotatingFileHandler(logfile, maxBytes=209715200, backupCount=5)
     mft = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     mfh.setFormatter(mft)
     mainlog.addHandler(mfh)
@@ -39,18 +37,14 @@ def setupLog(name, logfile):
 def formatStack(stack):
     formatted_error = []
     for trace in stack:
-        formatted_error.append(
-            f"File {trace[0]}: line {trace[1]} in {trace[2]}\n{trace[3]}"
-        )
+        formatted_error.append(f"File {trace[0]}: line {trace[1]} in {trace[2]}\n{trace[3]}")
 
     return "\n".join(formatted_error)
 
 
 def setupServer(conf):
     db_conf = conf["statusdb"]
-    url = "https://{}:{}@{}".format(
-        db_conf["username"], db_conf["password"], db_conf["url"]
-    )
+    url = "https://{}:{}@{}".format(db_conf["username"], db_conf["password"], db_conf["url"])
     return couchdb.Server(url)
 
 
