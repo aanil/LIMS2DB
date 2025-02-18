@@ -1708,12 +1708,6 @@ class ProjectSQL:
                     self.obj["samples"][sample.name]["library_prep"][prepname][
                         "volume_(ul)"
                     ] = out_artifact.udf_dict.get("Total Volume (uL)")
-                    self.obj['samples'][sample.name]['library_prep'][prepname][
-                        'amount_(ng)'
-                    ] = out_artifact.udf_dict.get("Amount (ng)")
-                    self.obj['samples'][sample.name]['library_prep'][prepname][
-                        'amount_(fmol)'
-                    ] = out_artifact.udf_dict.get("Amount (fmol)")
 
                 except NoResultFound:
                     self.log.info(
