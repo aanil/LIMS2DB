@@ -1,6 +1,7 @@
-from setuptools import setup, find_packages
 import glob
 import subprocess
+
+from setuptools import find_packages, setup
 
 
 def get_version():
@@ -10,9 +11,9 @@ def get_version():
 
 
 try:
-    with open("requirements.txt", "r") as f:
+    with open("requirements.txt") as f:
         install_requires = [x.strip() for x in f.readlines()]
-except IOError:
+except OSError:
     install_requires = []
 
 setup(

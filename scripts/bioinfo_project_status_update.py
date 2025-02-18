@@ -2,12 +2,14 @@
 
 import argparse
 import os
+
 import yaml
-from genologics.lims import Lims
+from genologics.config import BASEURI, PASSWORD, USERNAME
 from genologics.entities import Project
-from genologics.config import BASEURI, USERNAME, PASSWORD
-import LIMS2DB.utils as lutils
+from genologics.lims import Lims
 from requests.exceptions import HTTPError
+
+import LIMS2DB.utils as lutils
 
 
 def main(args):

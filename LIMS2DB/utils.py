@@ -1,9 +1,9 @@
 import logging
 import logging.handlers
-import traceback
-import couchdb
-from email.mime.text import MIMEText
 import smtplib
+from email.mime.text import MIMEText
+
+import couchdb
 
 
 # merges d2 in d1, keeps values from d1
@@ -40,9 +40,7 @@ def formatStack(stack):
     formatted_error = []
     for trace in stack:
         formatted_error.append(
-            "File {f}: line {l} in {i}\n{e}".format(
-                f=trace[0], l=trace[1], i=trace[2], e=trace[3]
-            )
+            f"File {trace[0]}: line {trace[1]} in {trace[2]}\n{trace[3]}"
         )
 
     return "\n".join(formatted_error)

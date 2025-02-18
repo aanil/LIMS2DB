@@ -1,3 +1,9 @@
+import copy
+import re
+from datetime import datetime
+
+import six.moves.http_client as http_client
+from genologics_sql.queries import get_children_processes, get_processes_in_history
 from genologics_sql.tables import (
     Artifact,
     Container,
@@ -5,21 +11,16 @@ from genologics_sql.tables import (
     GlsFile,
     Process,
     Project,
-    Researcher,
     ReagentType,
+    Researcher,
 )
-from genologics_sql.queries import get_children_processes, get_processes_in_history
-from LIMS2DB.diff import diff_objects
 from requests import get as rget
 from sqlalchemy import text
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
-from datetime import datetime
-from LIMS2DB.utils import send_mail
+from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 
 import LIMS2DB.objectsDB.process_categories as pc_cg
-import re
-import six.moves.http_client as http_client
-import copy
+from LIMS2DB.diff import diff_objects
+from LIMS2DB.utils import send_mail
 
 
 class Workset:
@@ -35,15 +36,13 @@ class Workset:
                 try:
                     self.name.add(out.location[0].name)
                 except:
-                    self.log.warn("no name found for workset {}".format(out.id))
+                    self.log.warn(f"no name found for workset {out.id}")
 
         try:
             self.obj["name"] = self.name.pop()
         except:
             self.log.error(
-                "No name found for current workset {}, might be an ongoing step.".format(
-                    crawler.starting_proc.id
-                )
+                f"No name found for current workset {crawler.starting_proc.id}, might be an ongoing step."
             )
             raise NameError
         self.obj["technician"] = crawler.starting_proc.technician.initials
@@ -289,7 +288,7 @@ class Workset_SQL:
         if not matches:
             meta = (
                 self.session.query(ReagentType.meta_data)
-                .filter(ReagentType.name.like("%{}%".format(barcode)))
+                .filter(ReagentType.name.like(f"%{barcode}%"))
                 .scalar()
             )
             matches = bcp.search(meta)
@@ -305,11 +304,11 @@ class Workset_SQL:
         else:
             self.obj["date_run"] = None
 
-        query = "select distinct co.* from processiotracker pio \
+        query = f"select distinct co.* from processiotracker pio \
                 inner join outputmapping om on om.trackerid=pio.trackerid \
                 inner join containerplacement cp on cp.processartifactid=om.outputartifactid \
                 inner join container co on cp.containerid=co.containerid \
-                where pio.processid = {0};".format(self.start.processid)
+                where pio.processid = {self.start.processid};"
         self.container = self.session.query(Container).from_statement(text(query)).one()
         self.obj["name"] = self.container.name
 
@@ -325,9 +324,9 @@ class Workset_SQL:
 
         # main part
         self.obj["projects"] = {}
-        query = "select art.* from artifact art \
+        query = f"select art.* from artifact art \
                 inner join processiotracker piot on piot.inputartifactid=art.artifactid \
-                where piot.processid = {0}".format(self.start.processid)
+                where piot.processid = {self.start.processid}"
 
         input_arts = self.session.query(Artifact).from_statement(text(query)).all()
 
@@ -379,12 +378,10 @@ class Workset_SQL:
                 "status"
             ] = inp.qc_flag
 
-            query = "select art.* from artifact art \
+            query = f"select art.* from artifact art \
             inner join outputmapping om on om.outputartifactid=art.artifactid \
             inner join processiotracker piot on piot.trackerid=om.trackerid \
-            where piot.inputartifactid={inp_art} and art.artifacttypeid=2 and piot.processid={start_id};".format(
-                inp_art=inp.artifactid, start_id=self.start.processid
-            )
+            where piot.inputartifactid={inp.artifactid} and art.artifacttypeid=2 and piot.processid={self.start.processid};"
 
             # When one input artifact generates multiple output artifacts,
             # expand the input artifact with postfix _1, _2, etc
@@ -448,12 +445,10 @@ class Workset_SQL:
                             "library"
                         ][agr.luid]["date"] = None
 
-                    query = "select art.* from artifact art \
+                    query = f"select art.* from artifact art \
                             inner join processiotracker piot on piot.inputartifactid=art.artifactid \
                             inner join artifact_ancestor_map aam on aam.artifactid=art.artifactid \
-                            where piot.processid={processid} and aam.ancestorartifactid={ancestorid};".format(
-                        processid=agr.processid, ancestorid=out.artifactid
-                    )
+                            where piot.processid={agr.processid} and aam.ancestorartifactid={out.artifactid};"
 
                     agr_inp = (
                         self.session.query(Artifact).from_statement(text(query)).one()
@@ -538,12 +533,10 @@ class Workset_SQL:
                             "sequencing"
                         ][seq.luid]["date"] = seq.daterun.strftime("%Y-%m-%d")
 
-                        query = "select art.* from artifact art \
+                        query = f"select art.* from artifact art \
                                 inner join processiotracker piot on piot.inputartifactid=art.artifactid \
                                 inner join artifact_ancestor_map aam on aam.artifactid=art.artifactid \
-                                where piot.processid={processid} and aam.ancestorartifactid={ancestorid};".format(
-                            processid=seq.processid, ancestorid=out.artifactid
-                        )
+                                where piot.processid={seq.processid} and aam.ancestorartifactid={out.artifactid};"
 
                         seq_inputs = (
                             self.session.query(Artifact)
@@ -598,9 +591,7 @@ class ProjectSQL:
             self.couch["projects"]
         except http_client.BadStatusLine:
             self.log.warning(
-                "Access to couch failed before trying to save new doc for project {}".format(
-                    self.pid
-                )
+                f"Access to couch failed before trying to save new doc for project {self.pid}"
             )
             pass
         db = self.couch["projects"]
@@ -650,7 +641,7 @@ class ProjectSQL:
                     )
                     self.obj["order_details"] = doc["order_details"]
 
-                self.log.info("Trying to save new doc for project {}".format(self.pid))
+                self.log.info(f"Trying to save new doc for project {self.pid}")
                 db.save(self.obj)
                 if self.obj.get("details", {}).get("type", "") == "Application":
                     lib_method_text = f"Library method: {self.obj['details'].get('library_construction_method', 'N/A')}"
@@ -686,12 +677,12 @@ class ProjectSQL:
                                 "ngi_ga_projects@scilifelab.se",
                             )
             else:
-                self.log.info("No modifications found for project {}".format(self.pid))
+                self.log.info(f"No modifications found for project {self.pid}")
 
         else:
             self.obj["creation_time"] = datetime.now().isoformat()
             self.obj["modification_time"] = self.obj["creation_time"]
-            self.log.info("Trying to save new doc for project {}".format(self.pid))
+            self.log.info(f"Trying to save new doc for project {self.pid}")
             db.save(self.obj)
             if self.obj.get("details", {}).get("type", "") == "Application":
                 genstat_url = f'{self.genstat_proj_url}{self.obj["project_id"]}'
@@ -731,13 +722,11 @@ class ProjectSQL:
 
     def get_project_summary(self):
         # get project summaries from project
-        query = "select distinct pr.* from process pr \
+        query = f"select distinct pr.* from process pr \
             inner join processiotracker piot on piot.processid=pr.processid \
             inner join artifact_sample_map asm on piot.inputartifactid=asm.artifactid \
             inner join sample sa on sa.processid=asm.processid \
-            where sa.projectid = {pjid} and pr.typeid={tid} order by createddate desc;".format(
-            pjid=self.project.projectid, tid=list(pc_cg.SUMMARY.keys())[0]
-        )
+            where sa.projectid = {self.project.projectid} and pr.typeid={list(pc_cg.SUMMARY.keys())[0]} order by createddate desc;"
         try:
             pjs = self.session.query(Process).from_statement(text(query)).all()
             self.obj["project_summary"] = self.make_normalized_dict(pjs[0].udf_dict)
@@ -752,18 +741,16 @@ class ProjectSQL:
                 )
         except (NoResultFound, IndexError):
             self.log.info(
-                "No project summary found for project {}".format(self.project.projectid)
+                f"No project summary found for project {self.project.projectid}"
             )
 
     def get_escalations(self):
         # get EscalationEvents from Project
-        query = "select distinct esc.* from escalationevent esc \
+        query = f"select distinct esc.* from escalationevent esc \
                 inner join processiotracker piot on piot.processid=esc.processid \
                 inner join artifact_sample_map asm on piot.inputartifactid=asm.artifactid \
                 inner join sample sa on sa.processid=asm.processid \
-                where esc.reviewdate is NULL and sa.projectid = {pjid};".format(
-            pjid=self.project.projectid
-        )
+                where esc.reviewdate is NULL and sa.projectid = {self.project.projectid};"
         escalations = (
             self.session.query(EscalationEvent).from_statement(text(query)).all()
         )
@@ -788,8 +775,8 @@ class ProjectSQL:
                 esc_list.append(
                     [
                         str(esc.processid),
-                        "{} {}".format(requester.firstname, requester.lastname),
-                        "{} {}".format(reviewer.firstname, reviewer.lastname),
+                        f"{requester.firstname} {requester.lastname}",
+                        f"{reviewer.firstname} {reviewer.lastname}",
                     ]
                 )
             self.obj["escalations"] = esc_list
@@ -855,11 +842,9 @@ class ProjectSQL:
                     rget(owner_url, headers=api_header).json().get("university", "")
                 )
                 proj_order_info["owner"]["affiliation"] = owner_affiliation
-            except Exception as e:
+            except Exception:
                 self.log.warn(
-                    "Not able to get update order info for project {}".format(
-                        self.project.name
-                    )
+                    f"Not able to get update order info for project {self.project.name}"
                 )
         return proj_order_info
 
@@ -882,12 +867,10 @@ class ProjectSQL:
     def get_initial_qc(self, sample):
         self.obj["samples"][sample.name]["initial_qc"] = {}
         # Get initial artifact for given sample
-        query = "select art.* from artifact art \
+        query = f"select art.* from artifact art \
             inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
             inner join sample sa on sa.processid=asm.processid \
-            where sa.processid = {sapid} and art.isoriginal=True".format(
-            sapid=sample.processid
-        )
+            where sa.processid = {sample.processid} and art.isoriginal=True"
         try:
             initial_artifact = (
                 self.session.query(Artifact).from_statement(text(query)).one()
@@ -906,7 +889,7 @@ class ProjectSQL:
             )
         except NoResultFound:
             self.log.info(
-                "did not find the initial artifact of sample {}".format(sample.name)
+                f"did not find the initial artifact of sample {sample.name}"
             )
         # get all initial QC processes for sample
         query = "select pr.* from process pr \
@@ -982,13 +965,11 @@ class ProjectSQL:
                 )
             except AttributeError:
                 self.log.info(
-                    "Didnt find an aggregate for Initial QC of sample {}".format(
-                        sample.name
-                    )
+                    f"Didnt find an aggregate for Initial QC of sample {sample.name}"
                 )
         except AttributeError:
             self.log.info(
-                "Did not find any initial QC for sample {}".format(sample.name)
+                f"Did not find any initial QC for sample {sample.name}"
             )
         # get GlsFile for output artifact of a Fragment Analyzer process where its input is the initial artifact of a given sample
         query = "select gf.* from glsfile gf \
@@ -1032,15 +1013,11 @@ class ProjectSQL:
             )
         if frag_an_file:
             self.obj["samples"][sample.name]["initial_qc"]["frag_an_image"] = (
-                "https://{host}/api/v2/files/40-{sid}".format(
-                    host=self.host, sid=frag_an_file.fileid
-                )
+                f"https://{self.host}/api/v2/files/40-{frag_an_file.fileid}"
             )
         else:
             self.log.info(
-                "Did not find an initial QC Fragment Analyzer for sample {}".format(
-                    sample.name
-                )
+                f"Did not find an initial QC Fragment Analyzer for sample {sample.name}"
             )
         # get GlsFile for output artifact of a Caliper process where its input is the initial artifact of a given sample
         query = "select gf.* from glsfile gf \
@@ -1061,13 +1038,11 @@ class ProjectSQL:
         caliper_file = self.session.query(GlsFile).from_statement(text(query)).first()
         if caliper_file:
             self.obj["samples"][sample.name]["initial_qc"]["caliper_image"] = (
-                "sftp://{host}/home/glsftp/{uri}".format(
-                    host=self.host, uri=caliper_file.contenturi
-                )
+                f"sftp://{self.host}/home/glsftp/{caliper_file.contenturi}"
             )
         else:
             self.log.info(
-                "Did not find an initial QC Caliper for sample {}".format(sample.name)
+                f"Did not find an initial QC Caliper for sample {sample.name}"
             )
 
     def get_library_preps(self, sample):
@@ -1090,14 +1065,12 @@ class ProjectSQL:
                 self.obj["samples"][sample.name]["library_prep"] = {}
 
             # get all the output  artifacts of the libprep that match our sample
-            query = "select art.* from artifact art \
+            query = f"select art.* from artifact art \
             inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
             inner join outputmapping om  on om.outputartifactid=art.artifactid \
             inner join processiotracker piot on piot.trackerid=om.trackerid \
             inner join sample sa on sa.processid=asm.processid \
-            where sa.processid = {sapid} and piot.processid = {libid} and art.artifacttypeid = 2".format(
-                sapid=sample.processid, libid=one_libprep.processid
-            )
+            where sa.processid = {sample.processid} and piot.processid = {one_libprep.processid} and art.artifacttypeid = 2"
             lp_out_arts = self.session.query(Artifact).from_statement(text(query)).all()
             for one_libprep_art in lp_out_arts:
                 prepid += 1
@@ -1156,7 +1129,7 @@ class ProjectSQL:
                         # Missing date run
                         pass
                 except IndexError:
-                    self.log.info("No libstart found for sample {}".format(sample.name))
+                    self.log.info(f"No libstart found for sample {sample.name}")
                     if str(one_libprep.typeid) in list(pc_cg.WORKSET.keys()):
                         if (
                             "first_prep_start_date"
@@ -1196,9 +1169,7 @@ class ProjectSQL:
                     ] = recent.luid
                 except (IndexError, AttributeError):
                     self.log.info(
-                        "no prepend for sample {} prep {}".format(
-                            sample.name, one_libprep.processid
-                        )
+                        f"no prepend for sample {sample.name} prep {one_libprep.processid}"
                     )
 
                 try:
@@ -1214,13 +1185,11 @@ class ProjectSQL:
                         # for small rna (and maybe others), there is more than one agrlibval, and I should not get the latest one,
                         # but the latest one that ran at sample level, not a pool level.
                         # get input artifact of a given process that belongs to sample
-                        query = "select art.* from artifact art \
+                        query = f"select art.* from artifact art \
                             inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
                             inner join processiotracker piot on piot.inputartifactid=art.artifactid \
                             inner join sample sa on sa.processid=asm.processid \
-                            where sa.processid = {sapid} and piot.processid = {agrid}".format(
-                            sapid=sample.processid, agrid=agrlv.processid
-                        )
+                            where sa.processid = {sample.processid} and piot.processid = {agrlv.processid}"
                         try:
                             inp_artifact = (
                                 self.session.query(Artifact)
@@ -1277,11 +1246,9 @@ class ProjectSQL:
                                 self.obj["samples"][sample.name]["library_prep"][
                                     prepname
                                 ]["sequenced_fc"].append(seq_fc_id)
-                    except Exception as e:
+                    except Exception:
                         self.log.warn(
-                            "Problem finding sequenced fc for sample {}".format(
-                                sample.name
-                            )
+                            f"Problem finding sequenced fc for sample {sample.name}"
                         )
                         pass
 
@@ -1293,12 +1260,10 @@ class ProjectSQL:
                         in self.obj["details"]["library_construction_method"].lower()
                     ):
                         # Get initial artifact for given sample
-                        query = "select art.* from artifact art \
+                        query = f"select art.* from artifact art \
                             inner join artifact_sample_map asm on asm.artifactid=art.artifactid \
                             inner join sample sa on sa.processid=asm.processid \
-                            where sa.processid = {sapid} and art.isoriginal=True".format(
-                            sapid=sample.processid
-                        )
+                            where sa.processid = {sample.processid} and art.isoriginal=True"
                         try:
                             initial_artifact = (
                                 self.session.query(Artifact)
@@ -1334,18 +1299,14 @@ class ProjectSQL:
                         "initials"
                     ] = agrlibval.technician.researcher.initials
                     # get input artifact of a given process that belongs to sample and descends from one_lp_art
-                    query = "select art.* from artifact art \
+                    query = f"select art.* from artifact art \
                         inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
                         inner join processiotracker piot on piot.inputartifactid=art.artifactid \
                         inner join sample sa on sa.processid=asm.processid \
                         inner join artifact_ancestor_map aam on art.artifactid=aam.artifactid \
-                        where sa.processid = {sapid} \
-                        and piot.processid = {agrid} \
-                        and aam.ancestorartifactid={lp_art}".format(
-                        sapid=sample.processid,
-                        agrid=agrlibval.processid,
-                        lp_art=one_libprep_art.artifactid,
-                    )
+                        where sa.processid = {sample.processid} \
+                        and piot.processid = {agrlibval.processid} \
+                        and aam.ancestorartifactid={one_libprep_art.artifactid}"
                     try:
                         try:
                             inp_artifact = (
@@ -1374,20 +1335,16 @@ class ProjectSQL:
                                             date_routed = action.lastmodifieddate
                             if not inp_artifact:
                                 self.log.error(
-                                    "Multiple copies of the same sample {0} found in step {0},  None of them is routed. Skipping the libprep ".format(
-                                        sample.name, agrlibval.luid
-                                    )
+                                    f"Multiple copies of the same sample {sample.name} found in step {sample.name},  None of them is routed. Skipping the libprep "
                                 )
                                 continue
                         except NoResultFound:
                             # for the case of finished Libraries
-                            query = "select art.* from artifact art \
+                            query = f"select art.* from artifact art \
                                 inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
                                 inner join processiotracker piot on piot.inputartifactid=art.artifactid \
                                 inner join sample sa on sa.processid=asm.processid \
-                                where sa.processid = {sapid} and piot.processid = {agrid}".format(
-                                sapid=sample.processid, agrid=agrlv.processid
-                            )
+                                where sa.processid = {sample.processid} and piot.processid = {agrlv.processid}"
                             inp_artifact = (
                                 self.session.query(Artifact)
                                 .from_statement(text(query))
@@ -1475,9 +1432,7 @@ class ProjectSQL:
                             ].daterun.strftime("%Y-%m-%d")
                         except IndexError:
                             self.log.info(
-                                "no library validation steps found for sample {} prep {}".format(
-                                    sample.name, agrlibval.luid
-                                )
+                                f"no library validation steps found for sample {sample.name} prep {agrlibval.luid}"
                             )
                             try:
                                 self.obj["samples"][sample.name]["library_prep"][
@@ -1518,22 +1473,16 @@ class ProjectSQL:
                                 "library_validation"
                             ][agrlibval.luid][
                                 "frag_an_image"
-                            ] = "https://{host}/api/v2/files/40-{sid}".format(
-                                host=self.host, sid=frag_an_file.fileid
-                            )
+                            ] = f"https://{self.host}/api/v2/files/40-{frag_an_file.fileid}"
                         else:
                             self.log.info(
-                                "Did not find a libprep Fragment Analyzer for sample {}".format(
-                                    sample.name
-                                )
+                                f"Did not find a libprep Fragment Analyzer for sample {sample.name}"
                             )
                         # Get Ratio(%) from Fragment Analyzer QC
-                        query = "select art.* from artifact art \
+                        query = f"select art.* from artifact art \
                             inner join artifact_sample_map asm on art.artifactid=asm.artifactid \
                             inner join sample sa on sa.processid=asm.processid \
-                            where sa.processid={sapid} and art.name like 'Fragment Analyzer%{sname}';".format(
-                            sapid=sample.processid, sname=sample.name
-                        )
+                            where sa.processid={sample.processid} and art.name like 'Fragment Analyzer%{sample.name}';"
                         frag_an_artifact = (
                             self.session.query(Artifact)
                             .from_statement(text(query))
@@ -1576,14 +1525,10 @@ class ProjectSQL:
                                 "library_validation"
                             ][agrlibval.luid][
                                 "caliper_image"
-                            ] = "sftp://{host}/home/glsftp/{uri}".format(
-                                host=self.host, uri=caliper_file.contenturi
-                            )
+                            ] = f"sftp://{self.host}/home/glsftp/{caliper_file.contenturi}"
                         except AttributeError:
                             self.log.info(
-                                "Did not find a libprep caliper image for sample {}".format(
-                                    sample.name
-                                )
+                                f"Did not find a libprep caliper image for sample {sample.name}"
                             )
                         # handling neoprep
                         if "NeoPrep" in agrlibval.type.displayname:
@@ -1603,21 +1548,16 @@ class ProjectSQL:
                                 pass
 
                             # get output resultfile named like the sample of a Neoprep QC
-                            query = "select art.* from artifact art \
+                            query = f"select art.* from artifact art \
                                 inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
                                 inner join outputmapping om on art.artifactid=om.outputartifactid \
                                 inner join processiotracker piot on piot.trackerid=om.trackerid \
                                 inner join sample sa on sa.processid=asm.processid \
                                 where art.artifacttypeid = 1 \
-                                and art.name like '%{saname}%' \
-                                and sa.processid = {sapid}\
-                                and piot.processid = {agrid} \
-                                and piot.inputartifactid = {inpid}".format(
-                                saname=sample.name,
-                                sapid=sample.processid,
-                                agrid=agrlibval.processid,
-                                inpid=inp_artifact.artifactid,
-                            )
+                                and art.name like '%{sample.name}%' \
+                                and sa.processid = {sample.processid}\
+                                and piot.processid = {agrlibval.processid} \
+                                and piot.inputartifactid = {inp_artifact.artifactid}"
                             try:
                                 out_art = (
                                     self.session.query(Artifact)
@@ -1635,9 +1575,7 @@ class ProjectSQL:
 
                             except NoResultFound:
                                 self.log.info(
-                                    "Did not find the output resultfile of the Neoprep step for sample {}".format(
-                                        sample.name
-                                    )
+                                    f"Did not find the output resultfile of the Neoprep step for sample {sample.name}"
                                 )
                     except NoResultFound:
                         pass
@@ -1657,9 +1595,7 @@ class ProjectSQL:
                         ]["size_(bp)"]
                 except AttributeError:
                     self.log.info(
-                        "No aggregate for sample {} prep {}".format(
-                            sample.name, one_libprep.luid
-                        )
+                        f"No aggregate for sample {sample.name} prep {one_libprep.luid}"
                     )
                 # get output analyte of a given process that belongs to sample and has one_libprep_art as ancestor
                 # Here I commented out the old query from Denis that did not work any more, but I'd like to keep it in case anything is wrong
@@ -1673,16 +1609,14 @@ class ProjectSQL:
                 # and sa.processid = {sapid} \
                 # and piot.processid = {agrid} \
                 # and aam.ancestorartifactid = {libartid}".format(sapid=sample.processid, agrid=one_libprep.processid, libartid=one_libprep_art.artifactid)
-                query = "select art.* from artifact art \
+                query = f"select art.* from artifact art \
                     inner join artifact_sample_map asm on art.artifactid=asm.artifactid \
                     inner join outputmapping om on om.outputartifactid=art.artifactid \
                     inner join processiotracker piot on piot.trackerid=om.trackerid \
                     inner join sample sa on sa.processid=asm.processid \
-                    where sa.processid = {sapid} \
-                    and piot.processid = {libid} \
-                    and art.artifacttypeid = 2".format(
-                    sapid=sample.processid, libid=one_libprep.processid
-                )
+                    where sa.processid = {sample.processid} \
+                    and piot.processid = {one_libprep.processid} \
+                    and art.artifacttypeid = 2"
                 try:
                     # out_artifact = self.session.query(Artifact).from_statement(text(query)).one() This is with the old query from Denis
                     out_artifact = (
@@ -1708,9 +1642,7 @@ class ProjectSQL:
 
                 except NoResultFound:
                     self.log.info(
-                        "Did not find the output the Setup Workset Plate for sample {}".format(
-                            sample.name
-                        )
+                        f"Did not find the output the Setup Workset Plate for sample {sample.name}"
                     )
                 # preprep
                 query = "select pr.* from process pr \
@@ -1742,7 +1674,7 @@ class ProjectSQL:
                         )
                 except AttributeError:
                     self.log.info(
-                        "Did not find a preprep for sample {}".format(sample.name)
+                        f"Did not find a preprep for sample {sample.name}"
                     )
 
                 # get seqruns
@@ -1775,18 +1707,14 @@ class ProjectSQL:
                         sample=sample.processid,
                     )
                     # get all the input artifacts of the seqrun that match our sample and our libprep
-                    query = "select art.* from artifact art \
+                    query = f"select art.* from artifact art \
                     inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
                     inner join processiotracker piot on piot.inputartifactid=art.artifactid \
                     inner join sample sa on sa.processid=asm.processid \
                     inner join artifact_ancestor_map aam on aam.artifactid=art.artifactid \
-                    where sa.processid = {sapid} \
-                    and piot.processid = {seqid} \
-                    and aam.ancestorartifactid = {libpartid}".format(
-                        sapid=sample.processid,
-                        seqid=seq.processid,
-                        libpartid=one_libprep_art.artifactid,
-                    )
+                    where sa.processid = {sample.processid} \
+                    and piot.processid = {seq.processid} \
+                    and aam.ancestorartifactid = {one_libprep_art.artifactid}"
                     inp_arts = (
                         self.session.query(Artifact).from_statement(text(query)).all()
                     )
@@ -1855,17 +1783,12 @@ class ProjectSQL:
                                     ] = dilstarts[0].createddate.strftime("%Y-%m-%d")
                                 except IndexError:
                                     self.log.info(
-                                        "no dilution found for sequencing {} of sample {}".format(
-                                            seq.processid, sample.name
-                                        )
+                                        f"no dilution found for sequencing {seq.processid} of sample {sample.name}"
                                     )
                                 # get the associated demultiplexing step
-                                query = "select pr.* from process pr \
+                                query = f"select pr.* from process pr \
                                         inner join processiotracker piot on piot.processid=pr.processid \
-                                        where pr.typeid={dem} and piot.inputartifactid={iaid};".format(
-                                    dem=list(pc_cg.DEMULTIPLEX.keys())[0],
-                                    iaid=art.artifactid,
-                                )
+                                        where pr.typeid={list(pc_cg.DEMULTIPLEX.keys())[0]} and piot.inputartifactid={art.artifactid};"
                                 try:
                                     dem = (
                                         self.session.query(Process)
@@ -1884,22 +1807,17 @@ class ProjectSQL:
                                         pass
 
                                     # get output resultfile named like the sample of a Demultiplex step
-                                    query = "select art.* from artifact art \
+                                    query = f"select art.* from artifact art \
                                         inner join artifact_sample_map asm on  art.artifactid=asm.artifactid \
                                         inner join outputmapping om on art.artifactid=om.outputartifactid \
                                         inner join processiotracker piot on piot.trackerid=om.trackerid \
                                         inner join sample sa on sa.processid=asm.processid \
                                         inner join artifact_ancestor_map aam on art.artifactid= aam.artifactid \
                                         where art.artifacttypeid = 1 \
-                                        and art.name like '%{saname}%' \
-                                        and sa.processid = {sapid} \
-                                        and piot.processid = {dem}\
-                                        and aam.ancestorartifactid = {artid};".format(
-                                        saname=sample.name,
-                                        sapid=sample.processid,
-                                        dem=dem.processid,
-                                        artid=art.artifactid,
-                                    )
+                                        and art.name like '%{sample.name}%' \
+                                        and sa.processid = {sample.processid} \
+                                        and piot.processid = {dem.processid}\
+                                        and aam.ancestorartifactid = {art.artifactid};"
                                     out_arts = (
                                         self.session.query(Artifact)
                                         .from_statement(text(query))
@@ -1935,15 +1853,11 @@ class ProjectSQL:
                                         ] = seq.createddate.strftime("%Y-%m-%d")
 
                                 self.log.info(
-                                    "no demultiplexing found for sample {}, sequencing {}".format(
-                                        sample.name, seq.processid
-                                    )
+                                    f"no demultiplexing found for sample {sample.name}, sequencing {seq.processid}"
                                 )
                             except:
                                 self.log.info(
-                                    "no run id for sequencing process {}".format(
-                                        seq.luid
-                                    )
+                                    f"no run id for sequencing process {seq.luid}"
                                 )
                         # If it is ONT
                         else:
@@ -1984,7 +1898,7 @@ class ProjectSQL:
         if not matches:
             meta = (
                 self.session.query(ReagentType.meta_data)
-                .filter(ReagentType.name.like("%{}%".format(barcode)))
+                .filter(ReagentType.name.like(f"%{barcode}%"))
                 .scalar()
             )
             matches = bcp.search(meta)

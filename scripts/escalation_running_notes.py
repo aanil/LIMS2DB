@@ -6,16 +6,18 @@ running notes to statusdb. Also notifies project coordinators
 Should be run atleast daily as a cronjob
 """
 
+import argparse
+import datetime
+import os
+
 import genologics_sql.tables as tbls
+import markdown
 from genologics_sql.utils import get_session
 from sqlalchemy import text
 from sqlalchemy.orm import aliased
-import datetime
-import argparse
-import os
 from statusdb.db.utils import load_couch_server
+
 from LIMS2DB.utils import send_mail
-import markdown
 
 
 def main(args):

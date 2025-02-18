@@ -1,15 +1,16 @@
 import argparse
+import os
 
-import LIMS2DB.classes as lclasses
-import LIMS2DB.parallel as lpar
-import LIMS2DB.utils as lutils
-import LIMS2DB.objectsDB.process_categories as pc_cg
 import yaml
+from genologics_sql.queries import get_last_modified_processes, get_processes_in_history
 from genologics_sql.tables import Process
 from genologics_sql.utils import get_session
-from genologics_sql.queries import get_last_modified_processes, get_processes_in_history
-from sqlalchemy import text
-import os
+
+import LIMS2DB.classes as lclasses
+import LIMS2DB.objectsDB.process_categories as pc_cg
+import LIMS2DB.parallel as lpar
+import LIMS2DB.utils as lutils
+
 
 def main(args):
     log = lutils.setupLog("worksetlogger", args.logfile)
@@ -51,7 +52,7 @@ def main(args):
                 )
 
         log.info(
-            "the following processes will be updated : {0}".format(processes_to_update)
+            f"the following processes will be updated : {processes_to_update}"
         )
         lpar.masterProcessSQL(args, processes_to_update, log)
 

@@ -1,6 +1,5 @@
 from LIMS2DB.objectsDB.process_categories import PROCESSCATEGORIES
 
-
 """Script to generate the process chategory info to a Read the Docs friendly rst
 file. The script should be run from setup.py"""
 

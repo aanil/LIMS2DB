@@ -1,14 +1,12 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-from genologics.lims import Lims
-from genologics.config import BASEURI, USERNAME, PASSWORD
-from datetime import date, timedelta
-from email.mime.text import MIMEText
-from statusdb.db.utils import load_couch_server
-
+import argparse
 import os
 import smtplib
-import argparse
+from datetime import date, timedelta
+from email.mime.text import MIMEText
+
+from genologics.config import BASEURI, PASSWORD, USERNAME
+from genologics.lims import Lims
+from statusdb.db.utils import load_couch_server
 
 
 def main(args):
@@ -218,11 +216,9 @@ def main(args):
                         struct["techID"],
                     )
             if body != "":
-                control += "{} : {}\n".format(resp_email, body)
-                body += '\n\n--\nThis mail is an automated mail that is generated once a day and summarizes the events of the previous days in the lims, \
-for the projects you are described as "Lab responsible", "Bioinfo Responsible" or "Project coordinator". You can send comments or suggestions to {}'.format(
-                    operator
-                )
+                control += f"{resp_email} : {body}\n"
+                body += f'\n\n--\nThis mail is an automated mail that is generated once a day and summarizes the events of the previous days in the lims, \
+for the projects you are described as "Lab responsible", "Bioinfo Responsible" or "Project coordinator". You can send comments or suggestions to {operator}'
                 msg = MIMEText(body)
                 msg["Subject"] = "[Lims update] {}".format(" ".join(plist))
                 msg["From"] = "Lims_monitor"
@@ -230,9 +226,7 @@ for the projects you are described as "Lab responsible", "Bioinfo Responsible" o
                     msg["To"] = resp_email
                 except KeyError:
                     msg["To"] = operator
-                    msg["Subject"] = "[Lims update] Failed to send a mail to {}".format(
-                        resp
-                    )
+                    msg["Subject"] = f"[Lims update] Failed to send a mail to {resp}"
 
                 s = smtplib.SMTP("localhost")
                 s.sendmail("genologics-lims@scilifelab.se", msg["To"], msg.as_string())

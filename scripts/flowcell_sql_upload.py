@@ -7,23 +7,22 @@ Denis Moreno, Science for Life Laboratory, Stockholm, Sweden.
 """
 
 import argparse
-import os
-import yaml
 import logging
 import logging.handlers
+import os
+
+import yaml
+from genologics_sql.utils import get_session
+from sqlalchemy import text
 
 import LIMS2DB.objectsDB.process_categories as pc_cg
-
+from LIMS2DB.classes import Process
 from LIMS2DB.flowcell_sql import (
     create_lims_data_obj,
     get_sequencing_steps,
     upload_to_couch,
 )
 from LIMS2DB.utils import setupServer
-from LIMS2DB.classes import Process
-
-from genologics_sql.utils import get_session
-from sqlalchemy import text
 
 
 def main(args):
@@ -45,7 +44,7 @@ def main(args):
         conf = yaml.load(conf_file, Loader=yaml.SafeLoader)
 
     couch = setupServer(conf)
-    interval = "{} hours".format(args.hours)
+    interval = f"{args.hours} hours"
 
     # list the right sequencing steps
     if args.flowcell:
@@ -65,7 +64,7 @@ def main(args):
             if udf.udfname == "Run ID":
                 fcid = udf.udfvalue
 
-        mainlog.info("updating {}".format(fcid))
+        mainlog.info(f"updating {fcid}")
         # generate the lims_data dict key
         lims_data = create_lims_data_obj(db_session, step)
         # update the couch right couch document

@@ -1,21 +1,23 @@
 import logging
 import logging.handlers
+import multiprocessing as mp
+
+import statusdb.db as sdb
+
 import LIMS2DB.classes as lclasses
 import LIMS2DB.utils as lutils
-import multiprocessing as mp
-import statusdb.db as sdb
 
 try:
     import queue as Queue
 except ImportError:
     import Queue
 import genologics_sql.tables as gt
-
+import yaml
+from genologics.config import BASEURI, PASSWORD, USERNAME
 from genologics.entities import Process
-from genologics.config import BASEURI, USERNAME, PASSWORD
 from genologics.lims import Lims
 from genologics_sql.utils import get_session
-import yaml
+
 
 def processWSUL(options, queue, logqueue):
     mycouch = sdb.Couch()
@@ -36,7 +38,7 @@ def processWSUL(options, queue, logqueue):
         # grabs project from queue
         try:
             ws_id = queue.get(block=True, timeout=3)
-            proclog.info("Starting work on {}".format(ws_id))
+            proclog.info(f"Starting work on {ws_id}")
         except Queue.Empty:
             work = False
             proclog.info("exiting gracefully")
@@ -177,7 +179,7 @@ def processWSULSQL(args, queue, logqueue):
         # grabs project from queue
         try:
             ws_id = queue.get(block=True, timeout=3)
-            proclog.info("Starting work on {}".format(ws_id))
+            proclog.info(f"Starting work on {ws_id}")
         except Queue.Empty:
             work = False
             proclog.info("exiting gracefully")

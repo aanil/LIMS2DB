@@ -4,23 +4,23 @@
 Maya Brandi, Science for Life Laboratory, Stockholm, Sweden.
 """
 
-from __future__ import print_function
-from genologics.config import BASEURI, USERNAME, PASSWORD
-from genologics.lims import Lims
-from argparse import ArgumentParser
-from LIMS2DB.utils import formatStack
-from statusdb.db.utils import load_couch_server
-from genologics_sql.queries import get_last_modified_projectids
-from genologics_sql.utils import get_session, get_configuration
-from genologics_sql.tables import Project as DBProject
-from LIMS2DB.classes import ProjectSQL
-
-import yaml
 import json
 import logging
 import logging.handlers
 import multiprocessing as mp
 import os
+from argparse import ArgumentParser
+
+import yaml
+from genologics.config import BASEURI, PASSWORD, USERNAME
+from genologics.lims import Lims
+from genologics_sql.queries import get_last_modified_projectids
+from genologics_sql.tables import Project as DBProject
+from genologics_sql.utils import get_configuration, get_session
+from statusdb.db.utils import load_couch_server
+
+from LIMS2DB.classes import ProjectSQL
+from LIMS2DB.utils import formatStack
 
 try:
     import queue as Queue
@@ -50,12 +50,12 @@ def main(options):
     # try getting orderportal config
     oconf = None
     try:
-        with open(options.oconf, "r") as ocf:
+        with open(options.oconf) as ocf:
             oconf = yaml.load(ocf, Loader=yaml.SafeLoader)["order_portal"]
     except Exception as e:
         mainlog.warn(
-            "Loading orderportal config {} failed due to {}, so order information "
-            "for project will not be updated".format(options.oconf, e)
+            f"Loading orderportal config {options.oconf} failed due to {e}, so order information "
+            "for project will not be updated"
         )
 
     if options.project_name:
@@ -88,7 +88,7 @@ def create_projects_list(options, db_session, lims, log):
     projects = []
     if options.all_projects:
         if options.hours:
-            postgres_string = "{} hours".format(options.hours)
+            postgres_string = f"{options.hours} hours"
             project_ids = get_last_modified_projectids(db_session, postgres_string)
             valid_projects = (
                 db_session.query(DBProject)
@@ -105,7 +105,7 @@ def create_projects_list(options, db_session, lims, log):
             return projects
 
     elif options.input:
-        with open(options.input, "r") as input_file:
+        with open(options.input) as input_file:
             for pname in input_file:
                 try:
                     projects.append(lims.get_projects(name=pname.rstrip())[0])
@@ -136,9 +136,9 @@ def processPSUL(options, queue, logqueue, oconf=None):
         # grabs project from queue
         try:
             projname = queue.get(block=True, timeout=3)
-            proclog.info("Starting work on {} ".format(projname))
+            proclog.info(f"Starting work on {projname} ")
             proclog.info(
-                "Approximately {} projects left in queue".format(queue.qsize())
+                f"Approximately {queue.qsize()} projects left in queue"
             )
         except Queue.Empty:
             work = False
@@ -154,7 +154,7 @@ def processPSUL(options, queue, logqueue, oconf=None):
                 try:
                     open(lockfile, "w").close()
                 except:
-                    proclog.error("cannot create lockfile {}".format(lockfile))
+                    proclog.error(f"cannot create lockfile {lockfile}")
                 try:
                     pj_id = (
                         db_session.query(DBProject.luid)
@@ -168,15 +168,15 @@ def processPSUL(options, queue, logqueue, oconf=None):
                     error = sys.exc_info()
                     stack = traceback.extract_tb(error[2])
                     proclog.error(
-                        "{0}:{1}\n{2}".format(error[0], error[1], formatStack(stack))
+                        f"{error[0]}:{error[1]}\n{formatStack(stack)}"
                     )
 
                 try:
                     os.remove(lockfile)
                 except:
-                    proclog.error("cannot remove lockfile {}".format(lockfile))
+                    proclog.error(f"cannot remove lockfile {lockfile}")
             else:
-                proclog.info("project {} is locked, skipping.".format(projname))
+                proclog.info(f"project {projname} is locked, skipping.")
 
             # signals to queue job is done
             queue.task_done()

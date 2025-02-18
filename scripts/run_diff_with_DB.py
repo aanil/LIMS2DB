@@ -1,20 +1,22 @@
-import LIMS2DB.diff as df
-import datetime
 import argparse
+import datetime
 import os
 import random
+
 import yaml
 from statusdb.db.utils import load_couch_server
+
+import LIMS2DB.diff as df
 
 
 def write_results_to_file(diffs, args):
     with open(args.resultfile, "w") as f:
         for proj_id, diff_tuple in diffs.items():
             if diff_tuple:
-                f.write("Project {} :\n".format(proj_id))
+                f.write(f"Project {proj_id} :\n")
             for diff_key, diff_val in diff_tuple[0].items():
                 f.write(
-                    " {} : was {}, is {}\n".format(diff_key, diff_val[0], diff_val[1])
+                    f" {diff_key} : was {diff_val[0]}, is {diff_val[1]}\n"
                 )
 
 
@@ -22,7 +24,7 @@ def main(args):
     couch = load_couch_server(args.conf)
     proj_db = couch["projects"]
 
-    with open(args.oconf, "r") as ocf:
+    with open(args.oconf) as ocf:
         oconf = yaml.load(ocf, Loader=yaml.SafeLoader)["order_portal"]
 
     diffs = {}
@@ -83,9 +85,7 @@ if __name__ == "__main__":
         "-r",
         dest="resultfile",
         default=os.path.expanduser(
-            "~/psul_validations/{}_psul_validation.out".format(
-                datetime.datetime.now().isoformat()
-            )
+            f"~/psul_validations/{datetime.datetime.now().isoformat()}_psul_validation.out"
         ),
         help="validation output path. default is ~/psul_validations/{date}_psul_validation.out",
     )

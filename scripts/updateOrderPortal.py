@@ -1,19 +1,21 @@
 """Script to update projects from LIMS
 to corresponding orders in Order Portal."""
 
-from genologics.lims import Lims, Project
-from genologics.config import BASEURI, USERNAME, PASSWORD
-from genologics_sql import queries
-import genologics_sql.utils
-from datetime import date, timedelta
-import json
 import argparse
-import requests
+import json
 import os
+from datetime import date, timedelta
+
+import genologics_sql.utils
+import requests
+from genologics.config import BASEURI, PASSWORD, USERNAME
+from genologics.lims import Lims, Project
+from genologics_sql import queries
+
 import LIMS2DB.utils as lutils
 
 
-class Order_Portal_APIs(object):
+class Order_Portal_APIs:
     def __init__(self, url, headers, log):
         self.base_url = url
         self.headers = headers

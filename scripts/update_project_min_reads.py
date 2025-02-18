@@ -1,13 +1,12 @@
-import couchdb
 import argparse
 import os
-import yaml
 
-from genologics_sql.queries import get_last_modified_projectids
-from genologics_sql.utils import get_session
+import yaml
+from genologics.config import BASEURI, PASSWORD, USERNAME
 from genologics.entities import Project
 from genologics.lims import Lims
-from genologics.config import BASEURI, USERNAME, PASSWORD
+from genologics_sql.queries import get_last_modified_projectids
+from genologics_sql.utils import get_session
 
 from LIMS2DB.utils import setupServer
 
@@ -19,7 +18,7 @@ def main(args):
         db_conf = yaml.load(cf, Loader=yaml.SafeLoader)
         couch = setupServer(db_conf)
     db = couch["expected_yields"]
-    postgres_string = "{} hours".format(args.hours)
+    postgres_string = f"{args.hours} hours"
     project_ids = get_last_modified_projectids(lims_db, postgres_string)
 
     min_yields = {}
