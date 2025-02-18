@@ -4,12 +4,12 @@ import LIMS2DB.classes as lclasses
 import LIMS2DB.parallel as lpar
 import LIMS2DB.utils as lutils
 import LIMS2DB.objectsDB.process_categories as pc_cg
-
-from genologics_sql.tables import *
-from genologics_sql.utils import *
-from genologics_sql.queries import *
+import yaml
+from genologics_sql.tables import Process
+from genologics_sql.utils import get_session
+from genologics_sql.queries import get_last_modified_processes, get_processes_in_history
 from sqlalchemy import text
-
+import os
 
 def main(args):
     log = lutils.setupLog("worksetlogger", args.logfile)

@@ -13,10 +13,9 @@ import genologics_sql.tables as gt
 
 from genologics.entities import Process
 from genologics.config import BASEURI, USERNAME, PASSWORD
-from genologics.lims import *
-
-from genologics_sql.utils import *
-
+from genologics.lims import Lims
+from genologics_sql.utils import get_session
+import yaml
 
 def processWSUL(options, queue, logqueue):
     mycouch = sdb.Couch()

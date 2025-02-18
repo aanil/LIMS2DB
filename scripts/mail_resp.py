@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from genologics.lims import *
+from genologics.lims import Lims
 from genologics.config import BASEURI, USERNAME, PASSWORD
-from datetime import *
+from datetime import date, timedelta
 from email.mime.text import MIMEText
 from statusdb.db.utils import load_couch_server
 

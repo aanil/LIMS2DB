@@ -2,8 +2,7 @@ import couchdb
 import logging
 import ast
 
-from genologics_sql.tables import *
-from genologics_sql.utils import *
+from genologics_sql.tables import Container, Artifact
 from genologics_sql.queries import get_last_modified_processes
 
 import LIMS2DB.objectsDB.process_categories as pc_cg
