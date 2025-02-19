@@ -76,7 +76,7 @@ jobs:
 
       - name: Run pip-check-reqs/pip-missing-reqs
         run: |
-          pip-check-reqs .
+          pip-missing-reqs .
 
   # Use Prettier to check various file formats
   prettier:
