@@ -223,10 +223,10 @@ class Workset_SQL:
 
     def extract_barcode(self, chain):
         barcode = ""
-        bcp = re.compile("[ATCG\-]{4,}")
-        TENX_SINGLE_PAT = re.compile("SI-(?:GA|NA)-[A-H][1-9][0-2]?")
-        TENX_DUAL_PAT = re.compile("SI-(?:TT|NT|NN|TN|TS)-[A-H][1-9][0-2]?")
-        SMARTSEQ_PAT = re.compile("SMARTSEQ[1-9]?-[1-9][0-9]?[A-P]")
+        bcp = re.compile(r"[ATCG\-]{4,}")
+        TENX_SINGLE_PAT = re.compile(r"SI-(?:GA|NA)-[A-H][1-9][0-2]?")
+        TENX_DUAL_PAT = re.compile(r"SI-(?:TT|NT|NN|TN|TS)-[A-H][1-9][0-2]?")
+        SMARTSEQ_PAT = re.compile(r"SMARTSEQ[1-9]?-[1-9][0-9]?[A-P]")
         if "NoIndex" in chain:
             return chain
         if TENX_SINGLE_PAT.match(chain) or TENX_DUAL_PAT.match(chain) or SMARTSEQ_PAT.match(chain):
@@ -234,7 +234,7 @@ class Workset_SQL:
         if "(" not in chain:
             barcode = chain
         else:
-            pattern = re.compile("\(([A-Z\-]+)\)")
+            pattern = re.compile(r"\(([A-Z\-]+)\)")
             matches = pattern.search(chain)
             if matches.group(1):
                 barcode = matches.group(1)
@@ -1337,10 +1337,10 @@ class ProjectSQL:
 
     def extract_barcode(self, chain):
         barcode = ""
-        bcp = re.compile("[ATCG\-\_]{4,}")
-        TENX_SINGLE_PAT = re.compile("SI-(?:GA|NA)-[A-H][1-9][0-2]?")
-        TENX_DUAL_PAT = re.compile("SI-(?:TT|NT|NN|TN|TS)-[A-H][1-9][0-2]?")
-        SMARTSEQ_PAT = re.compile("SMARTSEQ[1-9]?-[1-9][0-9]?[A-P]")
+        bcp = re.compile(r"[ATCG\-\_]{4,}")
+        TENX_SINGLE_PAT = re.compile(r"SI-(?:GA|NA)-[A-H][1-9][0-2]?")
+        TENX_DUAL_PAT = re.compile(r"SI-(?:TT|NT|NN|TN|TS)-[A-H][1-9][0-2]?")
+        SMARTSEQ_PAT = re.compile(r"SMARTSEQ[1-9]?-[1-9][0-9]?[A-P]")
         if "NoIndex" in chain:
             return chain
         if TENX_SINGLE_PAT.match(chain) or TENX_DUAL_PAT.match(chain) or SMARTSEQ_PAT.match(chain):
@@ -1348,7 +1348,7 @@ class ProjectSQL:
         if "(" not in chain:
             barcode = chain
         else:
-            pattern = re.compile("\(([A-Z\-\_]+)\)")
+            pattern = re.compile(r"\(([A-Z\-\_]+)\)")
             matches = pattern.search(chain)
             if matches.group(1):
                 barcode = matches.group(1).replace("_", "-")
