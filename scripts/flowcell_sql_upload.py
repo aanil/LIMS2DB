@@ -101,10 +101,7 @@ if __name__ == "__main__":
         "-l",
         "--logfile",
         dest="logfile",
-        help=(
-            "log file",
-            " that will be used. default is $HOME/lims2db_flowcells.log ",
-        ),
+        help="log file that will be used. default is $HOME/lims2db_flowcells.log ",
         default=os.path.expanduser("~/lims2db_flowcells.log"),
     )
 
