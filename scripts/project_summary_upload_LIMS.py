@@ -9,6 +9,10 @@ import logging
 import logging.handlers
 import multiprocessing as mp
 import os
+import queue as Queue
+import sys
+import time
+import traceback
 from argparse import ArgumentParser
 
 import yaml
@@ -21,14 +25,6 @@ from statusdb.db.utils import load_couch_server
 
 from LIMS2DB.classes import ProjectSQL
 from LIMS2DB.utils import formatStack
-
-try:
-    import queue as Queue
-except ImportError:
-    import Queue
-import sys
-import time
-import traceback
 
 
 def main(options):

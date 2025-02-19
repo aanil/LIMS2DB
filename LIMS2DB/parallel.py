@@ -1,22 +1,18 @@
 import logging
 import logging.handlers
 import multiprocessing as mp
+import queue as Queue
 
-import statusdb.db as sdb
-
-import LIMS2DB.classes as lclasses
-import LIMS2DB.utils as lutils
-
-try:
-    import queue as Queue
-except ImportError:
-    import Queue
 import genologics_sql.tables as gt
+import statusdb.db as sdb
 import yaml
 from genologics.config import BASEURI, PASSWORD, USERNAME
 from genologics.entities import Process
 from genologics.lims import Lims
 from genologics_sql.utils import get_session
+
+import LIMS2DB.classes as lclasses
+import LIMS2DB.utils as lutils
 
 
 def processWSUL(options, queue, logqueue):

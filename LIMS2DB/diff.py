@@ -1,4 +1,5 @@
-import six.moves.http_client as http_client
+import http.client as http_client
+
 from genologics_sql.utils import get_configuration, get_session
 
 from LIMS2DB.utils import setupLog
