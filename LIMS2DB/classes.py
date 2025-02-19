@@ -1182,6 +1182,7 @@ class ProjectSQL:
                     self.obj["samples"][sample.name]["library_prep"][prepname]["workset_name"] = out_artifact.containerplacement.container.name
                     self.obj["samples"][sample.name]["library_prep"][prepname]["amount_taken_(ng)"] = out_artifact.udf_dict.get("Amount taken (ng)")
                     self.obj["samples"][sample.name]["library_prep"][prepname]["amount_for_prep_(ng)"] = out_artifact.udf_dict.get("Amount for prep (ng)")
+                    self.obj["samples"][sample.name]["library_prep"][prepname]["amount_for_prep_(fmol)"] = out_artifact.udf_dict.get("Amount for prep (fmol)")
                     self.obj["samples"][sample.name]["library_prep"][prepname]["amount_taken_from_plate_(ng)"] = out_artifact.udf_dict.get("Amount taken from plate (ng)")
                     self.obj["samples"][sample.name]["library_prep"][prepname]["volume_(ul)"] = out_artifact.udf_dict.get("Total Volume (uL)")
 
