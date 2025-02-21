@@ -29,7 +29,7 @@ class Order_Portal_APIs:
             pjs = self.lims.get_projects(open_date=open_date.strftime("%Y-%m-%d"))
         for project in pjs:
             try:
-                pass
+                pname = project.name
             except requests.exceptions.HTTPError:  # project does not exist in LIMS
                 self.log.info(f"Project {project.id} not found in LIMS")
                 continue
