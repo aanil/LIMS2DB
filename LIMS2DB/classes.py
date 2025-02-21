@@ -427,7 +427,7 @@ class Workset_SQL:
 
 
 class ProjectSQL:
-    def __init__(self, session, log, pid, host="genologics.scilifelab.se", couch=None, oconf=None):
+    def __init__(self, session, log, pid, host, couch=None, oconf=None):
         self.log = log
         self.pid = pid
         self.host = host
