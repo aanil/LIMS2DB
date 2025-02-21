@@ -579,6 +579,7 @@ class ProjectSQL:
         self.couch = couch
         self.oconf = oconf
         self.genstat_proj_url = "https://genomics-status.scilifelab.se/project/"
+        self.step_defs = {}
         self.obj = {}
         self.project = (
             self.session.query(Project).filter(Project.luid == self.pid).one()
@@ -886,10 +887,14 @@ class ProjectSQL:
         sample_in_steps = get_currentsteps_protocol_for_sample(self.session, sample.sampleid)
         if sample_in_steps:
             current_steps = {}
-            for step in sample_in_steps:
-                step_details = get_protocolstep_details(self.session, step[0])[0]
-                current_steps[step_details[0]] = {"protocol_name": step_details[1], "is_qc_protocol": step_details[2]}
-            self.obj["samples"][sample.name]["current_step"] = current_steps
+            for (step_id, status) in sample_in_steps:
+                if step_id not in self.step_defs:
+                     self.step_defs[step_id] = get_protocolstep_details(self.session, step_id)[0]
+                step_details = self.step_defs[step_id]
+                # In the form
+                # {"Protocolstepname:Protocolname1":{"is_qc_protocol": false}, "Protocolstepname:Protocolname2":{"is_qc_protocol": true}}
+                current_steps[f"{step_details[0]}:{step_details[1]}"] = {"is_qc_protocol": step_details[2]}
+            self.obj["samples"][sample.name]["current_steps"] = current_steps
 
     def get_initial_qc(self, sample):
         self.obj["samples"][sample.name]["initial_qc"] = {}
