@@ -313,15 +313,16 @@ class Workset_SQL:
         self.container = self.session.query(Container).from_statement(text(query)).one()
         self.obj["name"] = self.container.name
 
-        query = "select rs.initials from principals pr \
+        query = "select rs.email from principals pr \
                 inner join researcher rs on rs.researcherid=pr.researcherid \
                 where principalid=:pid;"
-        self.obj["technician"] = (
-            self.session.query(Researcher.initials)
+        technician_email = (
+            self.session.query(Researcher.email)
             .from_statement(text(query))
             .params(pid=self.start.ownerid)
             .scalar()
         )
+        self.obj["technician"] = technician_email.split("@")[0] if technician_email else ""
 
         # main part
         self.obj["projects"] = {}
@@ -1710,6 +1711,9 @@ class ProjectSQL:
                     self.obj["samples"][sample.name]["library_prep"][prepname][
                         "amount_for_prep_(ng)"
                     ] = out_artifact.udf_dict.get("Amount for prep (ng)")
+                    self.obj["samples"][sample.name]["library_prep"][prepname][
+                        "amount_for_prep_(fmol)"
+                    ] = out_artifact.udf_dict.get("Amount for prep (fmol)")
                     self.obj["samples"][sample.name]["library_prep"][prepname][
                         "amount_taken_from_plate_(ng)"
                     ] = out_artifact.udf_dict.get("Amount taken from plate (ng)")
