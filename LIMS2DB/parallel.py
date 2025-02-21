@@ -62,15 +62,15 @@ def processWSUL(options, queue, logqueue):
                     ws.obj["_id"] = doc_id
                     ws.obj["_rev"] = doc_rev
                     mycouch.db[doc_id] = ws.obj
-                    proclog.info("updating {}".format(ws.obj["name"]))
+                    proclog.info(f"updating {ws.obj['name']}")
                 else:
-                    proclog.info("not modifying {}".format(ws.obj["name"]))
+                    proclog.info(f"not modifying {ws.obj['name']}")
             elif len(view[ws.obj["name"]].rows) == 0:
                 # it is a new doc, upload it
                 mycouch.save(ws.obj)
-                proclog.info("saving {}".format(ws.obj["name"]))
+                proclog.info(f"saving {ws.obj['name']}")
             else:
-                proclog.warn("more than one row with name {} found".format(ws.obj["name"]))
+                proclog.warn(f"more than one row with name {ws.obj['name']} found")
             # signals to queue job is done
             queue.task_done()
 
@@ -192,10 +192,10 @@ def processWSULSQL(args, queue, logqueue):
             for row in db.view("worksets/name")[ws.obj["name"]]:
                 doc = db.get(row.id)
                 if doc["id"] != ws.obj["id"]:
-                    proclog.warning("Duplicate name {} for worksets {} and {}".format(doc["name"], doc["id"], final_doc["id"]))
+                    proclog.warning(f"Duplicate name {doc['name']} for worksets {doc['id']} and {final_doc['id']}")
                     db.delete(doc)
             db.save(final_doc)
-            proclog.info("updating {}".format(ws.obj["name"]))
+            proclog.info(f"updating {ws.obj['name']}")
             queue.task_done()
 
 

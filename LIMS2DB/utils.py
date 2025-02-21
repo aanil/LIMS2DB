@@ -44,7 +44,7 @@ def formatStack(stack):
 
 def setupServer(conf):
     db_conf = conf["statusdb"]
-    url = "https://{}:{}@{}".format(db_conf["username"], db_conf["password"], db_conf["url"])
+    url = f"https://{db_conf['username']}:{db_conf['password']}@{db_conf['url']}"
     return couchdb.Server(url)
 
 

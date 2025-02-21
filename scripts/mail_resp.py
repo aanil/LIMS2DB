@@ -170,14 +170,14 @@ def main(args):
             for struct in summary[resp]:
                 if resp != struct.get("tech") and not struct["sum"]:
                     plist.add(struct["project"])
-                    body += "In project {},  {} ({})".format(struct["project"], struct["process"], struct["limsid"])
+                    body += f"In project {struct['project']},  {struct['process']} ({struct['limsid']})"
                     if struct["start"] and yesterday.strftime("%Y-%m-%d") == struct["start"]:
-                        body += "started on {}, ".format(struct["start"])
+                        body += f"started on {struct['start']}, "
                     elif struct["end"]:
-                        body += "ended on {}, ".format(struct["end"])
+                        body += f"ended on {struct['end']}, "
                     else:
                         body += "has been updated yesterday, "
-                    body += "Done by {}\n".format(struct["tech"])
+                    body += f"Done by {struct['tech']}\n"
                 elif struct["sum"]:
                     plist.add(struct["project"])
                     body += "Project {} {} on {} by {}\n".format(
@@ -191,7 +191,7 @@ def main(args):
                 body += f'\n\n--\nThis mail is an automated mail that is generated once a day and summarizes the events of the previous days in the lims, \
 for the projects you are described as "Lab responsible", "Bioinfo Responsible" or "Project coordinator". You can send comments or suggestions to {operator}'
                 msg = MIMEText(body)
-                msg["Subject"] = "[Lims update] {}".format(" ".join(plist))
+                msg["Subject"] = f"[Lims update] {' '.join(plist)}"
                 msg["From"] = "Lims_monitor"
                 try:
                     msg["To"] = resp_email

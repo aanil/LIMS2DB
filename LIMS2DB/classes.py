@@ -67,7 +67,7 @@ class Workset:
             except KeyError:
                 pjs[p.id]["application"] = None
             try:
-                pjs[p.id]["sequencing_setup"] = "{} {}".format(p.udf["Sequencing platform"], p.udf["Sequencing setup"])
+                pjs[p.id]["sequencing_setup"] = f"{p.udf['Sequencing platform']} {p.udf['Sequencing setup']}"
             except KeyError:
                 pjs[p.id]["sequencing_setup"] = None
 
@@ -106,7 +106,7 @@ class Workset:
                                         inp.udf["Conc. Units"],
                                     )
                                 if "Molar Conc. (nM)" in inp.udf:
-                                    onelib["concentration"] = "{} nM".format(round(inp.udf["Molar Conc. (nM)"], 2))
+                                    onelib["concentration"] = f"{round(inp.udf['Molar Conc. (nM)'], 2)} nM"
                                 if "Size (bp)" in inp.udf:
                                     onelib["size"] = round(inp.udf["Size (bp)"], 2)
                                 if "NeoPrep Machine QC" in inp.udf and onelib["status"] == "UNKNOWN":
@@ -380,7 +380,7 @@ class Workset_SQL:
                         self.obj["projects"][project_luid]["samples"][sample_name]["library_status"] = agr_inp.qc_flag
                     self.obj["projects"][project_luid]["samples"][sample_name]["library"][agr.luid]["art"] = agr_inp.luid
                     if "Molar Conc. (nM)" in agr_inp.udf_dict:
-                        self.obj["projects"][project_luid]["samples"][sample_name]["library"][agr.luid]["concentration"] = "{:.2f} nM".format(agr_inp.udf_dict["Molar Conc. (nM)"])
+                        self.obj["projects"][project_luid]["samples"][sample_name]["library"][agr.luid]["concentration"] = f"{agr_inp.udf_dict['Molar Conc. (nM)']:.2f} nM"
                     elif "Concentration" in agr_inp.udf_dict and "Conc. Units" in agr_inp.udf_dict:
                         self.obj["projects"][project_luid]["samples"][sample_name]["library"][agr.luid]["concentration"] = "{:.2f} {}".format(
                             agr_inp.udf_dict["Concentration"],

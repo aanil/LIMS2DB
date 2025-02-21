@@ -78,11 +78,11 @@ def create_projects_list(options, db_session, lims, log):
             postgres_string = f"{options.hours} hours"
             project_ids = get_last_modified_projectids(db_session, postgres_string)
             valid_projects = db_session.query(DBProject).filter(DBProject.luid.in_(project_ids)).all()
-            log.info("project list : {}".format(" ".join([p.luid for p in valid_projects])))
+            log.info(f"project list : {' '.join([p.luid for p in valid_projects])}")
             return valid_projects
         else:
             projects = db_session.query(DBProject).all()
-            log.info("project list : {}".format(" ".join([p.luid for p in projects])))
+            log.info(f"project list : {' '.join([p.luid for p in projects])}")
             return projects
 
     elif options.input:

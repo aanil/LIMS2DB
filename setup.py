@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 
 
 def get_version():
-    return "1.0+{}".format(subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("utf-8"))
+    return f"1.0+{subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip().decode('utf-8')}"
 
 
 try:
