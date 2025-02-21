@@ -262,10 +262,12 @@ class Workset_SQL:
         self.container = self.session.query(Container).from_statement(text(query)).one()
         self.obj["name"] = self.container.name
 
-        query = "select rs.initials from principals pr \
+        query = "select rs.email from principals pr \
                 inner join researcher rs on rs.researcherid=pr.researcherid \
                 where principalid=:pid;"
-        self.obj["technician"] = self.session.query(Researcher.initials).from_statement(text(query)).params(pid=self.start.ownerid).scalar()
+
+        technician_email = self.session.query(Researcher.email).from_statement(text(query)).params(pid=self.start.ownerid).scalar()
+        self.obj["technician"] = technician_email.split("@")[0] if technician_email else ""
 
         # main part
         self.obj["projects"] = {}
