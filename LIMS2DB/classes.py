@@ -705,8 +705,8 @@ class ProjectSQL:
                     self.step_defs[step_id] = get_protocolstep_details(self.session, step_id)[0]
                 step_details = self.step_defs[step_id]
                 # In the form
-                # {"Protocolstepname:Protocolname1":{"is_qc_protocol": false}, "Protocolstepname:Protocolname2":{"is_qc_protocol": true}}
-                current_steps[f"{step_details[0]}:{step_details[1]}"] = {"is_qc_protocol": step_details[2]}
+                # step_id: INT, step_name: STR, protocol_name: STR, is_qc_protocol: BOOL, status: STR [queued, in-step]
+                current_steps[step_id] = {"step_name": step_details[0], "protocol_name": step_details[1], "is_qc_protocol": step_details[2], "status": status}
             self.obj["samples"][sample.name]["current_steps"] = current_steps
 
     def get_initial_qc(self, sample):
