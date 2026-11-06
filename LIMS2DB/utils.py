@@ -1,9 +1,13 @@
+import json
 import logging
 import logging.handlers
 import smtplib
+import tempfile
 from email.mime.text import MIMEText
+from importlib.resources import files
 
 from ibmcloudant import CouchDbSessionAuthenticator, cloudant_v1
+from scilifelab_metadata_templates import genomics
 
 
 # merges d2 in d1, keeps values from d1
@@ -81,6 +85,57 @@ def stillRunning(processList):
             ret = True
 
     return ret
+
+
+def validate_mock_tsv_file(tsv_source):
+    """Validate a mock TSV using the upstream genomics validator.
+
+    The validator only accepts a path, so we materialize the in-memory StringIO
+    content into a temporary file backed by RAM first and then call the upstream
+    validator on that filename.
+    """
+    validation_errors = []
+    try:
+        tsv_source.seek(0)
+        content = tsv_source.getvalue()
+
+        with tempfile.SpooledTemporaryFile(mode="w+", encoding="utf-8", newline="", max_size=1024 * 1024) as handle:
+            handle.write(content)
+            handle.seek(0)
+            validation_errors = genomics.validate_genomics_data.validate_tsv(handle.name)
+    except Exception as exc:
+        logging.error(f"Validation failed: {exc}")
+
+    return validation_errors
+
+
+def match_samples_to_validation_errors(samples, validation_errors):
+    """Match samples to validation errors based on sample_alias.
+
+    :param samples: List of samples
+    :param validation_errors: List of validation error dictionaries
+    :return: List of samples with validation errors
+    """
+    samples_with_errors = []
+    for error in validation_errors:
+        row_number = error.get("row")
+        samples_with_errors.append(samples[row_number - 1])
+
+    return samples_with_errors
+
+
+def generate_tsv_template():
+    """Generates a TSV template based on the genomics metadata template.
+    :return: TSV template as a dictionary with default values
+    """
+    ena_tsv_metadata = json.loads(files("scilifelab_metadata_templates.genomics").joinpath("templates/genomics_technical_metadata_schema.json").read_text())
+    tsv_file_headers = list(ena_tsv_metadata.get("properties", {}).keys())
+    tsv_file_headers.remove("reverse_file_name")  # Remove reverse file name and md5 as they
+    tsv_file_headers.remove("reverse_file_md5")  # will be added later in case of paired reads
+    version = ena_tsv_metadata.get("version", "")
+    template = {header: "" for header in tsv_file_headers}
+    template["template_version"] = version
+    return template
 
 
 class QueueHandler(logging.Handler):
