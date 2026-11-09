@@ -1,6 +1,7 @@
 import json
 import logging
 import logging.handlers
+import os
 import smtplib
 import tempfile
 from email.mime.text import MIMEText
@@ -94,19 +95,26 @@ def validate_mock_tsv_file(tsv_source):
     content into a temporary file backed by RAM first and then call the upstream
     validator on that filename.
     """
-    validation_errors = []
+    temp_path = None
     try:
         tsv_source.seek(0)
         content = tsv_source.getvalue()
 
-        with tempfile.SpooledTemporaryFile(mode="w+", encoding="utf-8", newline="", max_size=1024 * 1024) as handle:
+        with tempfile.NamedTemporaryFile(
+            mode="w+",
+            encoding="utf-8",
+            newline="",
+            suffix=".tsv",
+            delete=False,
+        ) as handle:
             handle.write(content)
-            handle.seek(0)
-            validation_errors = genomics.validate_genomics_data.validate_tsv(handle.name)
-    except Exception as exc:
-        logging.error(f"Validation failed: {exc}")
+            temp_path = handle.name
 
-    return validation_errors
+        return genomics.validate_genomics_data(temp_path)
+
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            os.unlink(temp_path)
 
 
 def match_samples_to_validation_errors(samples, validation_errors):
@@ -119,7 +127,9 @@ def match_samples_to_validation_errors(samples, validation_errors):
     samples_with_errors = []
     for error in validation_errors:
         row_number = error.get("row")
-        samples_with_errors.append(samples[row_number - 1])
+        sample = samples[row_number - 1]
+        if sample not in samples_with_errors:
+            samples_with_errors.append(sample)
 
     return samples_with_errors
 

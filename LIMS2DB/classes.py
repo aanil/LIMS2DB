@@ -1261,7 +1261,7 @@ class ProjectSQL:
         """Get the instrument model mapping from the configuration"""
         result = self.couch.get_document(
             db="gs_configs",
-            doc_id="metadata_instrument_mapping",
+            doc_id="metadata_instrument_mappings",
         ).get_result()
         if result and "instruments" in result:
             return result["instruments"]
